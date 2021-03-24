@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zaydek/retro/pkg/ipc"
 	"github.com/zaydek/retro/pkg/stdio_logger"
-	"github.com/zaydek/retro/pkg/terminal"
+	"github.com/zaydek/retro/pkg/watch"
 )
 
 const (
@@ -44,46 +45,49 @@ func getFSPath(url string) string {
 	return out
 }
 
-func Start() {
+func Dev() {
 	os.Setenv("WWW_DIR", "www")
 	os.Setenv("SRC_DIR", "src")
 	os.Setenv("OUT_DIR", "out")
 
-	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/bundle.js")
+	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.js")
 	if err != nil {
 		panic(err)
 	}
 
-	// service := ipc.Service{
-	// 	Stdin:  stdin,
-	// 	Stdout: stdout,
-	// 	Stderr: stderr,
-	// }
-
 	dev := make(chan BuildResponse, 1)
+
+	// Setup a second watcher for .scss, etc. Tracked by
+	// https://github.com/evanw/esbuild/issues/808.
+	go func() {
+		for watchRes := range watch.Directory(SRC_DIR, 100*time.Millisecond) {
+			if watchRes.Error != nil {
+				panic(err)
+			}
+			// fmt.Println("something changed")
+			stdin <- ipc.Request{Kind: "rebuild"}
+		}
+	}()
 
 	go func() {
 		stdin <- ipc.Request{Kind: "build"}
 		for {
 			select {
 			case out := <-stdout:
+				// fmt.Println("stdout")
 				var res BuildResponse
 				if err := json.Unmarshal(out.Data, &res); err != nil {
 					panic(err)
 				}
 				dev <- res
 			case err := <-stderr:
-				if err != "" {
-					stdio_logger.Stderr(err)
-				}
+				// fmt.Println("stderr")
+				stdio_logger.Stderr(err)
 			}
 		}
 	}()
 
 	Serve(ServerOptions{DevEvents: dev})
-
-	// ch := make(chan struct{})
-	// <-ch
 }
 
 type ServerOptions struct {
@@ -140,7 +144,7 @@ func Serve(opts ServerOptions) {
 		port, _ = strconv.Atoi(envPort)
 	}
 
-	stdio_logger.Stdout(terminal.Boldf("Ready on port %s.", terminal.Cyanf("'%d'", port)))
+	// stdio_logger.Stdout(terminal.Boldf("Ready on port %s", terminal.Cyanf("'%d'", port)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 		panic(err)
 	}

@@ -1,10 +1,15 @@
 import { PATH } from "env"
-import "./App.css"
+import "./App.scss"
+
+// import href from "./App.scss"
 
 export default function App() {
 	return (
-		<div className="App">
-			<h1>Hello, world!</h1>
-		</div>
+		<>
+			{/* <link rel="stylesheet" href={href} /> */}
+			<div className="App">
+				<h1>How are you?</h1>
+			</div>
+		</>
 	)
 }

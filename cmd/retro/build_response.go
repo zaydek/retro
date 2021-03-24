@@ -47,6 +47,14 @@ func getVSCodePos(x interface{}) string {
 	panic("Internal error")
 }
 
+func pipes(str string) string {
+	out := str
+	out = strings.Replace(out, "╵", "|", -1)
+	out = strings.Replace(out, "│", "|", -1)
+	out = strings.Replace(out, "╷", "|", -1)
+	return out
+}
+
 func formatMessage(m api.Message, kind MessageKind) string {
 	var class, typ string
 	switch kind {
@@ -77,22 +85,24 @@ func formatMessage(m api.Message, kind MessageKind) string {
 		focus = strings.Repeat("~", m.Location.Length)
 	}
 
+	text := strings.Split(m.Location.LineText, "\n")[0]
+
 	var str string
 	str += fmt.Sprintf(`<strong class="bold"> &gt; <a href="%s">%s</a>: <span class="%s">%s:</span> %s</strong>
     %d │ %s<span class="focus">%s</span>%s
-    %s | %s<span class="focus">%s</span>
+    %s │ %s<span class="focus">%s</span>
 `,
 		getVSCodePos(m),
 		getPos(m, 0),
 		class,
 		typ,
-		m.Text,
+		pipes(m.Text),
 		m.Location.Line,
-		html.EscapeString(m.Location.LineText[:m.Location.Column]),
-		html.EscapeString(m.Location.LineText[m.Location.Column:m.Location.Column+m.Location.Length]),
-		html.EscapeString(m.Location.LineText[m.Location.Column+m.Location.Length:]),
+		html.EscapeString(text[:m.Location.Column]),
+		html.EscapeString(text[m.Location.Column:m.Location.Column+m.Location.Length]),
+		html.EscapeString(text[m.Location.Column+m.Location.Length:]),
 		strings.Repeat(" ", len(strconv.Itoa(m.Location.Line))),
-		strings.Repeat(" ", tabLen(m.Location.LineText[:m.Location.Column])),
+		strings.Repeat(" ", tabLen(text[:m.Location.Column])),
 		focus,
 	)
 	if len(m.Notes) > 0 {
@@ -103,19 +113,21 @@ func formatMessage(m api.Message, kind MessageKind) string {
 				focus = strings.Repeat("~", n.Location.Length)
 			}
 
+			text := strings.Split(n.Location.LineText, "\n")[0]
+
 			str += fmt.Sprintf(`   <a href="%s">%s</a>: <span class="bold">note:</span> %s
     %d │ %s<span class="focus">%s</span>%s
-    %s | %s<span class="focus">%s</span>
+    %s │ %s<span class="focus">%s</span>
 `,
 				getVSCodePos(n),
 				getPos(n, 0),
-				n.Text,
+				pipes(n.Text),
 				n.Location.Line,
-				html.EscapeString(n.Location.LineText[:n.Location.Column]),
-				html.EscapeString(n.Location.LineText[n.Location.Column:n.Location.Column+n.Location.Length]),
-				html.EscapeString(n.Location.LineText[n.Location.Column+n.Location.Length:]),
+				html.EscapeString(text[:n.Location.Column]),
+				html.EscapeString(text[n.Location.Column:n.Location.Column+n.Location.Length]),
+				html.EscapeString(text[n.Location.Column+n.Location.Length:]),
 				strings.Repeat(" ", len(strconv.Itoa(n.Location.Line))),
-				strings.Repeat(" ", tabLen(n.Location.LineText[:n.Location.Column])),
+				strings.Repeat(" ", tabLen(text[:n.Location.Column])),
 				focus,
 			)
 		}

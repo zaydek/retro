@@ -57,11 +57,19 @@ func NewCommand(args ...string) (stdin chan Request, stdout chan Response, stder
 		buf := make([]byte, 1024*1024)
 		scanner.Buffer(buf, len(buf))
 		for scanner.Scan() {
-			var res Response
-			if err := json.Unmarshal(scanner.Bytes(), &res); err != nil {
-				panic(err)
+			// var res Response
+			// if err := json.Unmarshal(scanner.Bytes(), &res); err != nil {
+			// 	panic(err)
+			// }
+			// stdout <- res
+
+			if bstr := scanner.Bytes(); len(bstr) > 0 {
+				var res Response
+				if err := json.Unmarshal(bstr, &res); err != nil {
+					panic(err)
+				}
+				stdout <- res
 			}
-			stdout <- res
 		}
 		if err := scanner.Err(); err != nil {
 			panic(err)
@@ -81,10 +89,9 @@ func NewCommand(args ...string) (stdin chan Request, stdout chan Response, stder
 			return len(data), data, nil
 		})
 		for scanner.Scan() {
-			// if str := scanner.Text(); str != "" {
-			// 	stderr <- str
-			// }
-			stderr <- scanner.Text()
+			if str := scanner.Text(); str != "" {
+				stderr <- str
+			}
 		}
 		if err := scanner.Err(); err != nil {
 			panic(err)

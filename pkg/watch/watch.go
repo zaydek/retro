@@ -6,7 +6,9 @@ import (
 	"time"
 )
 
-type WatchResult struct{ Err error }
+type WatchResult struct {
+	Error error
+}
 
 // Directory creates a new watcher for directory dir.
 func Directory(dir string, poll time.Duration) <-chan WatchResult {

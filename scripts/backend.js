@@ -30,7 +30,7 @@ async function resolvePlugins() {
 	return require(path.join(process.cwd(), "plugins.js"))
 }
 
-// let result = undefined
+let result = null
 
 async function build() {
 	// TODO: Refactor to Go
@@ -66,7 +66,7 @@ async function build() {
 		})
 
 		// out/bundle.js
-		const result = await esbuild.build({
+		result = await esbuild.build({
 			...common,
 			bundle: true,
 			entryPoints: [path.join(SRC_DIR, "index.js")], // TODO: Add support for ".jsx", ".ts", and ".tsx"
@@ -76,47 +76,17 @@ async function build() {
 			inject: ["scripts/shims/require.js"], // Add support for vendor
 			plugins: await resolvePlugins(),
 
-			// TODO: Does watch enable incremental and or vice-versa?
 			incremental: true,
-			watch: {
-				onRebuild(error, result) {
-					const response = {
-						warnings: [],
-						errors: [],
-					}
-
-					// I.e. try
-					if (result !== null) {
-						if (result.warnings.length > 0) {
-							response.warnings = result.warnings
-						}
-					}
-
-					// I.e. catch
-					if (error !== null) {
-						if (error.errors.length > 0) {
-							response.errors = error.errors
-						}
-						if (error.warnings.length > 0) {
-							response.warnings = error.warnings
-						}
-					}
-
-					stdout({
-						Kind: "rebuild-done",
-						Data: response,
-					})
-				},
-			},
+			watch: true,
 		})
-		if (result.warnings.length > 0) {
+		if (result?.warnings?.length > 0) {
 			response.warnings = result.warnings
 		}
 	} catch (error) {
-		if (error.errors.length > 0) {
+		if (error?.errors?.length > 0) {
 			response.errors = error.errors
 		}
-		if (error.warnings.length > 0) {
+		if (error?.warnings?.length > 0) {
 			response.warnings = error.warnings
 		}
 	}
@@ -131,6 +101,34 @@ async function build() {
 
 	stdout({
 		Kind: "build-done",
+		Data: response,
+	})
+}
+
+async function rebuild() {
+	if (result === null) return
+
+	const response = {
+		warnings: [],
+		errors: [],
+	}
+
+	try {
+		const result2 = await result.rebuild()
+		if (result2?.warnings?.length > 0) {
+			response.warnings = result2.warnings
+		}
+	} catch (error) {
+		if (error?.errors?.length > 0) {
+			response.errors = error.errors
+		}
+		if (error?.warnings?.length > 0) {
+			response.warnings = error.warnings
+		}
+	}
+
+	stdout({
+		Kind: "rebuild-done",
 		Data: response,
 	})
 }
@@ -156,18 +154,17 @@ const readline = (() => {
 async function main() {
 	esbuild.build({})
 
-	let rebuild = undefined
 	while (true) {
 		const jsonstr = await readline()
 		const msg = JSON.parse(jsonstr)
 		try {
 			switch (msg.Kind) {
 				case "build":
-					rebuild = await build(msg.data)
+					await build()
 					break
-				// case "rebuild":
-				// 	await rebuild()
-				// 	break
+				case "rebuild":
+					await rebuild()
+					break
 				default:
 					throw new Error("Internal error")
 			}
