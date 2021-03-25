@@ -10,13 +10,13 @@ import (
 )
 
 type LoggerOptions struct {
-	Datetime bool
-	Date     bool
-	Time     bool
+	Datetime bool // Mar 02 15:04:05 AM
+	Date     bool // Mar 02
+	Time     bool // 15:04:05 AM
 }
 
 type StdioLogger struct {
-	format string
+	fmt string
 }
 
 func extractFormat(opt LoggerOptions) string {
@@ -42,37 +42,34 @@ func New(args ...LoggerOptions) *StdioLogger {
 	if len(args) == 1 {
 		opt = args[0]
 	}
-	logger := &StdioLogger{format: extractFormat(opt)}
+	logger := &StdioLogger{fmt: extractFormat(opt)}
 	return logger
 }
 
 func (l *StdioLogger) Set(opt LoggerOptions) {
-	l.format = extractFormat(opt)
+	l.fmt = extractFormat(opt)
 }
 
 func (l *StdioLogger) TransformStdout(args ...interface{}) string {
 	var tstr string
-	if l.format != "" {
-		tstr += terminal.Dim(time.Now().Format(l.format))
-		tstr += "  "
+	if l.fmt != "" {
+		tstr += terminal.Dim(time.Now().Format(l.fmt))
+		// tstr += " "
 	}
-	str := strings.TrimRight(fmt.Sprint(args...), "\n")
-	arr := strings.Split(str, "\n")
+	arr := strings.Split(strings.TrimRight(fmt.Sprint(args...), "\n"), "\n")
 	for x, v := range arr {
-		// arr[x] = fmt.Sprintf("%s%s  %s\x1b[0m", tstr, terminal.BoldCyan("stdout"), v)
-		arr[x] = fmt.Sprintf("%s%s\x1b[0m", tstr, v)
+		arr[x] = fmt.Sprintf("%s  %s\x1b[0m", tstr, v)
 	}
 	return strings.Join(arr, "\n")
 }
 
 func (l *StdioLogger) TransformStderr(args ...interface{}) string {
 	var tstr string
-	if l.format != "" {
-		tstr += terminal.Dim(time.Now().Format(l.format))
-		tstr += "  "
+	if l.fmt != "" {
+		tstr += terminal.Dim(time.Now().Format(l.fmt))
+		tstr += " "
 	}
-	str := strings.TrimRight(fmt.Sprint(args...), "\n")
-	arr := strings.Split(str, "\n")
+	arr := strings.Split(strings.TrimRight(fmt.Sprint(args...), "\n"), "\n")
 	for x, v := range arr {
 		arr[x] = fmt.Sprintf("%s%s  %s\x1b[0m", tstr, terminal.BoldRed("stderr"), v)
 	}

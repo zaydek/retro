@@ -25,7 +25,8 @@ const (
 
 var EPOCH = time.Now()
 
-var accent = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
+var cyan = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
+var magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
 
 ////////////////////////////////////////////////////////////////////////////////
 // % retro dev
@@ -137,40 +138,56 @@ func (r Runner) Serve(opts ServerOptions) {
 	}
 
 	dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
-	stdio_logger.Stdout(accent(fmt.Sprintf("Ready on port '%d' %s", r.getPort(), dur)))
+	stdio_logger.Stdout(cyan(fmt.Sprintf("Ready on port '%d' %s", r.getPort(), dur)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", r.getPort()), nil); err != nil {
 		panic(err)
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Start
+// % retro
 
-func Start() {
+func Run() {
 	// TODO
 	os.Setenv("RETRO_VERSION", "0.0.0")
 
 	cmd, err := cli.ParseCLIArguments()
+
+	// Inspect the error for version or usage
 	switch err {
 	case cli.VersionError:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
 		return
 	case cli.UsageError:
-		fmt.Println(pretty.Inset(pretty.Spaces(accent(usage))))
+		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))
 		os.Exit(1)
 		return
 	}
 
-	// TODO: Server guards
+	// Report errors
 	switch err.(type) {
 	case cli.CommandError:
-		stdio_logger.Stderr(accent(err.Error()))
+		fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
 		os.Exit(1)
 	default:
 		if err != nil {
 			panic(err)
 		}
 	}
+
+	// Report errors
+	err2 := guards()
+	switch err2.(type) {
+	case HTMLError:
+		fmt.Fprintln(os.Stderr, pretty.Error(err2.Error()))
+		os.Exit(1)
+	default:
+		if err2 != nil {
+			panic(err2)
+		}
+	}
+
+	// TODO: Server guards
 
 	run := Runner{Command: cmd}
 	switch cmd.(type) {
