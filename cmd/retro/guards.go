@@ -24,7 +24,6 @@ func (t HTMLError) Error() string {
 }
 
 func guards() error {
-	// Read 'www/index.html'
 	path := filepath.Join(WWW_DIR, "index.html")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(filepath.Dir(path), MODE_DIR); err != nil {
@@ -34,12 +33,18 @@ func guards() error {
 			[]byte(`<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8" />
+		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Hello, world!</title>
+		<link rel="stylesheet" href="/bundle.css" />
 	</head>
-	<body></body>
-</html>`), MODE_FILE)
+	<body>
+		<div id="root"></div>
+		<script src="/vendor.js"></script>
+		script src="/bundle.js"></script>
+	</body>
+</html>
+`), MODE_FILE)
 		if err != nil {
 			return err
 		}
@@ -49,7 +54,8 @@ func guards() error {
 		return err
 	}
 
-	// Guard '<link rel="stylesheet" href="/bundle.css" />'
+	//////////////////////////////////////////////////////////////////////////////
+
 	if !bytes.Contains(html, []byte(`<link rel="stylesheet" href="/bundle.css" />`)) {
 		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<link rel="stylesheet" href="/bundle.css" />'`), terminal.Magenta("'<head>'")) + `
 
@@ -69,7 +75,8 @@ For example:
 </html>`)
 	}
 
-	// Guard '<div id="root"></div>'
+	//////////////////////////////////////////////////////////////////////////////
+
 	if !bytes.Contains(html, []byte(`<div id="root"></div>`)) {
 		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<div id="root"></div>'`), terminal.Magenta("'<body>'")) + `
 
@@ -89,7 +96,8 @@ For example:
 </html>`)
 	}
 
-	// Guard '<script src="/vendor.js"></script>'
+	//////////////////////////////////////////////////////////////////////////////
+
 	if !bytes.Contains(html, []byte(`<script src="/vendor.js"></script>`)) {
 		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/vendor.js"></script>'`), terminal.Magenta("'<body>'")) + `
 
@@ -109,7 +117,8 @@ For example:
 </html>`)
 	}
 
-	// Guard '<script src="/bundle.js"></script>'
+	//////////////////////////////////////////////////////////////////////////////
+
 	if !bytes.Contains(html, []byte(`<script src="/bundle.js"></script>`)) {
 		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/bundle.js"></script>'`), terminal.Magenta("'<body>'")) + `
 
@@ -127,28 +136,6 @@ For example:
 		` + terminal.Dim("...") + `
 	</body>
 </html>`)
-	}
-
-	// Remove 'out'
-	rmdirs := []string{OUT_DIR}
-	for _, rmdir := range rmdirs {
-		if err := os.RemoveAll(rmdir); err != nil {
-			return err
-		}
-	}
-
-	// Create 'www', 'src/pages', 'out'
-	mkdirs := []string{WWW_DIR, SRC_DIR, OUT_DIR}
-	for _, mkdir := range mkdirs {
-		if err := os.MkdirAll(mkdir, MODE_DIR); err != nil {
-			return err
-		}
-	}
-
-	// Copy 'www' to 'out'
-	excludes := []string{path}
-	if err := cpdir(WWW_DIR, OUT_DIR, excludes); err != nil {
-		return err
 	}
 
 	return nil

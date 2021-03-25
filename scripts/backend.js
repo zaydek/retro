@@ -34,28 +34,10 @@ async function resolvePlugins() {
 let result = null
 
 async function build() {
-	// TODO: Refactor to Go
-	const sources = (await fs.promises.readdir(OUT_DIR)).map(source => path.join(OUT_DIR, source))
-	for (const v of sources) {
-		// prettier-ignore
-		if (!v.endsWith(".css") && !v.endsWith(".css.map") &&
-				!v.endsWith(".js") && !v.endsWith(".js.map")) {
-			continue
-		}
-		await fs.promises.unlink(v)
-	}
-
 	const response = {
 		warnings: [],
 		errors: [],
 	}
-
-	// TODO: Refactor to Go
-	// prettier-ignore
-	await fs.promises.copyFile(
-		path.join(WWW_DIR, "index.html"),
-		path.join(OUT_DIR, "index.html"),
-	)
 
 	try {
 		// out/vendor.js
@@ -90,14 +72,6 @@ async function build() {
 		if (error?.warnings?.length > 0) {
 			response.warnings = error.warnings
 		}
-	}
-
-	// TODO: Refactor to Go
-	try {
-		await fs.promises.stat(path.join(OUT_DIR, "bundle.css"))
-	} catch {
-		// Create bundle.css so <link ... href="/bundle.css"> does not error
-		await fs.promises.writeFile(path.join(OUT_DIR, "bundle.css"), "")
 	}
 
 	stdout({

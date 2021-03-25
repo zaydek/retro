@@ -152,8 +152,6 @@ func Run() {
 	os.Setenv("RETRO_VERSION", "0.0.0")
 
 	cmd, err := cli.ParseCLIArguments()
-
-	// Inspect the error for version or usage
 	switch err {
 	case cli.VersionError:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
@@ -164,7 +162,6 @@ func Run() {
 		return
 	}
 
-	// Report errors
 	switch err.(type) {
 	case cli.CommandError:
 		fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
@@ -175,27 +172,33 @@ func Run() {
 		}
 	}
 
-	// Report errors
-	err2 := guards()
-	switch err2.(type) {
-	case HTMLError:
-		fmt.Fprintln(os.Stderr, pretty.Error(err2.Error()))
-		os.Exit(1)
-	default:
-		if err2 != nil {
-			panic(err2)
-		}
-	}
-
-	// TODO: Server guards
-
 	run := Runner{Command: cmd}
 	switch cmd.(type) {
 	case cli.DevCommand:
 		os.Setenv("NODE_ENV", "development")
+		guarderr := guards()
+		switch guarderr.(type) {
+		case HTMLError:
+			fmt.Fprintln(os.Stderr, pretty.Error(guarderr.Error()))
+			os.Exit(1)
+		default:
+			if guarderr != nil {
+				panic(guarderr)
+			}
+		}
 		run.Dev()
 	case cli.BuildCommand:
 		os.Setenv("NODE_ENV", "production")
+		guardErr := guards()
+		switch guardErr.(type) {
+		case HTMLError:
+			fmt.Fprintln(os.Stderr, pretty.Error(guardErr.Error()))
+			os.Exit(1)
+		default:
+			if guardErr != nil {
+				panic(guardErr)
+			}
+		}
 		run.Build()
 	case cli.ServeCommand:
 		os.Setenv("NODE_ENV", "production")
