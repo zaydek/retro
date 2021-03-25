@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
+	terminal_to_html "github.com/buildkite/terminal-to-html/v3"
+	"github.com/zaydek/retro/cmd/pretty"
+	"github.com/zaydek/retro/cmd/retro/cli"
 	"github.com/zaydek/retro/pkg/ipc"
 	"github.com/zaydek/retro/pkg/stdio_logger"
+	"github.com/zaydek/retro/pkg/terminal"
 	"github.com/zaydek/retro/pkg/watch"
 )
 
@@ -21,34 +23,17 @@ const (
 	OUT_DIR = "out"
 )
 
-func getBrowserPath(url string) string {
-	out := url
-	if strings.HasSuffix(url, "/index.html") {
-		out = out[:len(out)-len("index.html")] // Keep "/"
-	} else if strings.HasSuffix(url, "/index") {
-		out = out[:len(out)-len("index")] // Keep "/"
-	} else if strings.HasSuffix(url, ".html") {
-		out = out[:len(out)-len(".html")]
-	}
-	return out
-}
+var EPOCH = time.Now()
 
-func getFSPath(url string) string {
-	out := url
-	if strings.HasSuffix(url, "/") {
-		out += "index.html"
-	} else if strings.HasSuffix(url, "/index") {
-		out += ".html"
-	} else if ext := filepath.Ext(url); ext == "" {
-		out += ".html"
-	}
-	return out
-}
+var accent = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
 
-func Dev() {
-	os.Setenv("WWW_DIR", "www")
-	os.Setenv("SRC_DIR", "src")
-	os.Setenv("OUT_DIR", "out")
+////////////////////////////////////////////////////////////////////////////////
+// % retro dev
+
+func (r Runner) Dev() {
+	os.Setenv("WWW_DIR", WWW_DIR)
+	os.Setenv("SRC_DIR", SRC_DIR)
+	os.Setenv("OUT_DIR", OUT_DIR)
 
 	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.js")
 	if err != nil {
@@ -81,20 +66,32 @@ func Dev() {
 				}
 				dev <- res
 			case err := <-stderr:
+				transformed := stdio_logger.TransformStderr(err)
+				fmt.Println(string(terminal_to_html.Render([]byte(transformed))))
 				// fmt.Println("stderr")
 				stdio_logger.Stderr(err)
 			}
 		}
 	}()
 
-	Serve(ServerOptions{DevEvents: dev})
+	r.Serve(ServerOptions{DevEvents: dev})
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// % retro build
+
+func (r Runner) Build() {
+	fmt.Println("TODO")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// % retro serve
 
 type ServerOptions struct {
 	DevEvents chan BuildResponse
 }
 
-func Serve(opts ServerOptions) {
+func (r Runner) Serve(opts ServerOptions) {
 	var res BuildResponse
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -139,13 +136,54 @@ func Serve(opts ServerOptions) {
 		})
 	}
 
-	var port = 8000
-	if envPort := os.Getenv("PORT"); envPort != "" {
-		port, _ = strconv.Atoi(envPort)
-	}
-
-	// stdio_logger.Stdout(terminal.Boldf("Ready on port %s", terminal.Cyanf("'%d'", port)))
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+	dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
+	stdio_logger.Stdout(accent(fmt.Sprintf("Ready on port '%d' %s", r.getPort(), dur)))
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", r.getPort()), nil); err != nil {
 		panic(err)
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Start
+
+func Start() {
+	// TODO
+	os.Setenv("RETRO_VERSION", "0.0.0")
+
+	cmd, err := cli.ParseCLIArguments()
+	switch err {
+	case cli.VersionError:
+		fmt.Println(os.Getenv("RETRO_VERSION"))
+		return
+	case cli.UsageError:
+		fmt.Println(pretty.Inset(pretty.Spaces(accent(usage))))
+		os.Exit(1)
+		return
+	}
+
+	// TODO: Server guards
+	switch err.(type) {
+	case cli.CommandError:
+		stdio_logger.Stderr(accent(err.Error()))
+		os.Exit(1)
+	default:
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	run := Runner{Command: cmd}
+	switch cmd.(type) {
+	case cli.DevCommand:
+		os.Setenv("NODE_ENV", "development")
+		run.Dev()
+	case cli.BuildCommand:
+		os.Setenv("NODE_ENV", "production")
+		run.Build()
+	case cli.ServeCommand:
+		os.Setenv("NODE_ENV", "production")
+		run.Serve(ServerOptions{})
+	}
+
+	// ...
 }

@@ -5,11 +5,8 @@ import "./App.scss"
 
 export default function App() {
 	return (
-		<>
-			{/* <link rel="stylesheet" href={href} /> */}
-			<div className="App">
-				<h1>How are you?</h1>
-			</div>
-		</>
+		<div>
+			<h1>Yo mama hahahahaha</h1>
+		</div>
 	)
 }

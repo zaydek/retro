@@ -50,34 +50,41 @@ func (l *StdioLogger) Set(opt LoggerOptions) {
 	l.format = extractFormat(opt)
 }
 
-func (l *StdioLogger) Stdout(args ...interface{}) {
+func (l *StdioLogger) TransformStdout(args ...interface{}) string {
 	var tstr string
 	if l.format != "" {
 		tstr += terminal.Dim(time.Now().Format(l.format))
 		tstr += "  "
 	}
-
 	str := strings.TrimRight(fmt.Sprint(args...), "\n")
-	lines := strings.Split(str, "\n")
-	for x, line := range lines {
-		lines[x] = fmt.Sprintf("%s%s\x1b[0m", tstr, line)
+	arr := strings.Split(str, "\n")
+	for x, v := range arr {
+		// arr[x] = fmt.Sprintf("%s%s  %s\x1b[0m", tstr, terminal.BoldCyan("stdout"), v)
+		arr[x] = fmt.Sprintf("%s%s\x1b[0m", tstr, v)
 	}
-	fmt.Fprintln(os.Stdout, strings.Join(lines, "\n"))
+	return strings.Join(arr, "\n")
+}
+
+func (l *StdioLogger) TransformStderr(args ...interface{}) string {
+	var tstr string
+	if l.format != "" {
+		tstr += terminal.Dim(time.Now().Format(l.format))
+		tstr += "  "
+	}
+	str := strings.TrimRight(fmt.Sprint(args...), "\n")
+	arr := strings.Split(str, "\n")
+	for x, v := range arr {
+		arr[x] = fmt.Sprintf("%s%s  %s\x1b[0m", tstr, terminal.BoldRed("stderr"), v)
+	}
+	return strings.Join(arr, "\n")
+}
+
+func (l *StdioLogger) Stdout(args ...interface{}) {
+	fmt.Fprintln(os.Stdout, l.TransformStdout(args...))
 }
 
 func (l *StdioLogger) Stderr(args ...interface{}) {
-	var tstr string
-	if l.format != "" {
-		tstr += terminal.Dim(time.Now().Format(l.format))
-		tstr += "  "
-	}
-
-	str := strings.TrimRight(fmt.Sprint(args...), "\n")
-	lines := strings.Split(str, "\n")
-	for x, line := range lines {
-		lines[x] = fmt.Sprintf("%s%s %s\x1b[0m", tstr, terminal.BoldRed("stderr"), line)
-	}
-	fmt.Fprintln(os.Stderr, strings.Join(lines, "\n"))
+	fmt.Fprintln(os.Stderr, l.TransformStderr(args...))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,6 +93,14 @@ var stdio = New(LoggerOptions{Datetime: true})
 
 func Set(opt LoggerOptions) {
 	stdio.Set(opt)
+}
+
+func TransformStdout(args ...interface{}) string {
+	return stdio.TransformStdout(args...)
+}
+
+func TransformStderr(args ...interface{}) string {
+	return stdio.TransformStderr(args...)
 }
 
 func Stdout(args ...interface{}) {

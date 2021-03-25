@@ -42,6 +42,7 @@ const scssPlugin = {
 	},
 }
 
+// TODO: Change to a configuration-based object
 module.exports = [
 	envPlugin,
 	scssPlugin,

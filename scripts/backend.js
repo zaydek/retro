@@ -17,6 +17,7 @@ const common = {
 	loader: {
 		".js": "jsx",
 	},
+	logLevel: process.env["VERBOSE"] === "true" ? "warning" : "silent",
 	minify: env === "production",
 	sourcemap: true,
 }

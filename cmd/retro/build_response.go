@@ -85,6 +85,7 @@ func formatMessage(m api.Message, kind MessageKind) string {
 		focus = strings.Repeat("~", m.Location.Length)
 	}
 
+	// tstr := fmt.Sprintf("<span class=\"dim\">%s</span>  <span class=\"error\">%s</span> ", time.Now().Format("Mar 02 15:04:05 AM"), "stderr")
 	text := strings.Split(m.Location.LineText, "\n")[0]
 
 	var str string
@@ -105,6 +106,13 @@ func formatMessage(m api.Message, kind MessageKind) string {
 		strings.Repeat(" ", tabLen(text[:m.Location.Column])),
 		focus,
 	)
+
+	// arr := strings.Split(str, "\n")
+	// for x, v := range arr {
+	// 	arr[x] = tstr + v
+	// }
+	// str = strings.Join(arr, "\n")
+
 	if len(m.Notes) > 0 {
 		for _, n := range m.Notes {
 
