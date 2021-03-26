@@ -1,6 +1,8 @@
 package retro
 
 import (
+	_ "embed"
+
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,11 +12,12 @@ import (
 	"time"
 
 	terminal_to_html "github.com/buildkite/terminal-to-html/v3"
-	"github.com/zaydek/retro/cmd/pretty"
 	"github.com/zaydek/retro/cmd/retro/cli"
+	"github.com/zaydek/retro/cmd/retro/pretty"
 	"github.com/zaydek/retro/pkg/ipc"
 	"github.com/zaydek/retro/pkg/stdio_logger"
 	"github.com/zaydek/retro/pkg/terminal"
+	"github.com/zaydek/retro/pkg/vs"
 	"github.com/zaydek/retro/pkg/watch"
 )
 
@@ -155,14 +158,38 @@ func (r Runner) Serve(opt ServerOptions) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+var pkg Package
+
+type Package struct {
+	react                string
+	react_dom            string
+	retro                string
+	retro_store          string
+	retro_browser_router string
+}
+
+//go:embed vs.txt
+var contents string
+
 func Run() {
-	// TODO: Read from version.txt
-	os.Setenv("RETRO_VERSION", "0.0.0")
+	// Parse 'pkg.txt' and set pkg
+	pkgMap, err := vs.Parse(contents)
+	if err != nil {
+		panic(err)
+	}
+
+	pkg = Package{
+		react:                pkgMap["react"],
+		react_dom:            pkgMap["react-dom"],
+		retro:                pkgMap["@zaydek/retro"],
+		retro_store:          pkgMap["@zaydek/retro-store"],
+		retro_browser_router: pkgMap["@zaydek/retro-browser-router"],
+	}
 
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Println(os.Getenv("RETRO_VERSION"))
+		fmt.Println(pkg.retro)
 		return
 	case cli.UsageError:
 		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))

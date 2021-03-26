@@ -1,4 +1,4 @@
-package versions
+package vs
 
 import (
 	_ "embed"
@@ -24,7 +24,7 @@ func TestExact(t *testing.T) {
 
 	vs, err := Parse(contents)
 	must(err)
-	expect.DeepEqual(t, vs, Versions{
+	expect.DeepEqual(t, vs, Version{
 		"react":     "v17.0.1",
 		"react-dom": "v17.0.1",
 	})
@@ -40,7 +40,7 @@ func TestLatest(t *testing.T) {
 
 	vs, err := Parse(contents)
 	must(err)
-	expect.DeepEqual(t, vs, Versions{
+	expect.DeepEqual(t, vs, Version{
 		"react":     "latest",
 		"react-dom": "latest",
 	})

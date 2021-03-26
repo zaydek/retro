@@ -1,4 +1,4 @@
-package versions
+package vs
 
 import (
 	"errors"
@@ -8,12 +8,12 @@ import (
 
 var ParseError = errors.New("versions: cannot parse contents")
 
-type Versions map[string]string
+type Version map[string]string
 
 // https://regex101.com/r/0L0wqz/1
 var rowRegex = regexp.MustCompile(`^\| +([^ ]+) +\| +([^ ]+) +\|$`)
 
-func Parse(contents string) (Versions, error) {
+func Parse(contents string) (Version, error) {
 	vs := map[string]string{}
 
 	arr := strings.Split(strings.TrimSpace(contents), "\n")
