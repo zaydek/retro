@@ -90,8 +90,8 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Green(`<div id="root"></div>`) + `
 		` + terminal.Dim("...") + `
+		` + terminal.Green(`<div id="root"></div>`) + `
 	</body>
 </html>`)
 	}
@@ -111,8 +111,8 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
 		` + terminal.Dim("...") + `
+		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
 	</body>
 </html>`)
 	}
@@ -132,8 +132,8 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Green(`<script src="/bundle.js"></script>`) + `
 		` + terminal.Dim("...") + `
+		` + terminal.Green(`<script src="/bundle.js"></script>`) + `
 	</body>
 </html>`)
 	}

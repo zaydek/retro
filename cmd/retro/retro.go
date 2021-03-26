@@ -189,12 +189,13 @@ func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Println(pkg.retro)
-		return
+		fmt.Fprintln(os.Stdout, pkg.retro)
+		os.Exit(0)
 	case cli.UsageError:
-		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))
-		os.Exit(1)
-		return
+		fallthrough
+	case cli.HelpError:
+		fmt.Fprintln(os.Stdout, pretty.Inset(pretty.Spaces(cyan(usage))))
+		os.Exit(0)
 	}
 
 	switch err.(type) {
@@ -211,14 +212,14 @@ func Run() {
 	switch cmd.(type) {
 	case cli.DevCommand:
 		os.Setenv("NODE_ENV", "development")
-		guarderr := guards()
-		switch guarderr.(type) {
+		guardErr := guards()
+		switch guardErr.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guarderr.Error())))
+			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guardErr.Error())))
 			os.Exit(1)
 		default:
-			if guarderr != nil {
-				panic(guarderr)
+			if guardErr != nil {
+				panic(guardErr)
 			}
 		}
 		run.Dev()
@@ -239,6 +240,4 @@ func Run() {
 		os.Setenv("NODE_ENV", "production")
 		run.Serve(ServerOptions{})
 	}
-
-	// ...
 }

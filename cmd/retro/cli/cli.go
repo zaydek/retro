@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	VersionError = errors.New("version")
-	UsageError   = errors.New("usage")
+	VersionError = errors.New("cli: version error")
+	UsageError   = errors.New("cli: usage error")
+	HelpError    = errors.New("cli: help error")
 )
 
 type ErrorKind int
@@ -150,7 +151,7 @@ func ParseCLIArguments() (interface{}, error) {
 	} else if cmdArg == "usage" || cmdArg == "--usage" {
 		return nil, UsageError
 	} else if cmdArg == "help" || cmdArg == "--help" {
-		return nil, UsageError
+		return nil, HelpError
 	} else if cmdArg == "dev" {
 		cmd, cmdErr = ParseDevCommand(os.Args[2:]...)
 	} else if cmdArg == "export" {
