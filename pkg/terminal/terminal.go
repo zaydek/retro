@@ -157,8 +157,8 @@ func New(codes ...string) Formatter {
 func (f Formatter) Sprintf(format string, args ...interface{}) string {
 	var str string
 	str = fmt.Sprintf(format, args...)
-	if f.code == "" {
-		return str
+	if f.code == "" || (format == "" && len(args) == 0) {
+		return ""
 	}
 	str = f.code + strings.ReplaceAll(str, ResetCode, ResetCode+f.code) + ResetCode
 	return str
@@ -167,8 +167,8 @@ func (f Formatter) Sprintf(format string, args ...interface{}) string {
 func (f Formatter) Sprint(args ...interface{}) string {
 	var str string
 	str = fmt.Sprint(args...)
-	if f.code == "" {
-		return str
+	if f.code == "" || str == "" {
+		return ""
 	}
 	str = f.code + strings.ReplaceAll(str, ResetCode, ResetCode+f.code) + ResetCode
 	return str

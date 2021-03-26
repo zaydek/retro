@@ -104,7 +104,6 @@ func (r Runner) Serve(opt ServerOptions) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Server error (500)
 		if res.Dirty() {
-			// http.Error(w, "500 server error", http.StatusInternalServerError)
 			fmt.Fprintln(w, res.HTML())
 			return
 		}
