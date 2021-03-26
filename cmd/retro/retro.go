@@ -62,40 +62,62 @@ func (r BuildResponse) String() string {
 }
 
 func (r BuildResponse) HTML() string {
-	code := string(render.Render([]byte(r.String())))
+	str := r.String()
+	str = strings.ReplaceAll(str, "╷", "|")
+	str = strings.ReplaceAll(str, "│", "|")
+	str = strings.ReplaceAll(str, "╵", "|")
+
+	code := string(render.Render([]byte(str)))
 	return `<!DOCTYPE html>
 <html>
 	<head>
 		<title>Error</title>
 		<style>
 
-* { margin: 0; }
-
-:root {
-	--color: #c7c7c7;
-	--background: #000000;
-	--bold: #feffff;
-	--red: #ff6d67;
-	--yellow: #fefb67;
-	--focus: #00c200;
-}
-
-body {
-  color: var(--color);
-  background-color: var(--background);
+html {
+	color: #c7c7c7;
+	background-color: #000000;
 }
 
 code {
-	font: 12px / 1.5 "Monaco", monospace;
+	font: 16px / 1.4 "Monaco", monospace;
 }
 
 a { color: unset; text-decoration: unset; }
 a:hover { text-decoration: underline; }
 
-/* .bold { color: var(--bold); } */
-/* .red { color: var(--red); } */
-/* .yellow { color: var(--yellow); } */
-/* .focus { color: var(--focus); } */
+.term-fg1 {
+	font-weight: bold;
+	color: #feffff;
+}
+
+.term-fg2 { color: #838887; } /* TODO */
+.term-fg3 { font-style: italic; }
+.term-fg4 { text-decoration: underline; }
+
+/*
+ * iTerm ANSI Colors - Normal (Dark Background)
+ */
+.term-fg30 { color: #000000; }
+.term-fg31 { color: #c91b00; }
+.term-fg32 { color: #00c200; }
+.term-fg33 { color: #c7c400; }
+.term-fg34 { color: #0225c7; }
+.term-fg35 { color: #c930c7; }
+.term-fg36 { color: #00c5c7; }
+.term-fg37 { color: #c7c7c7; }
+
+/*
+ * iTerm ANSI Colors - Bright (Dark Background)
+ */
+.term-fg1.term-fg30 { color: #676767; }
+.term-fg1.term-fg31 { color: #ff6d67; }
+.term-fg1.term-fg32 { color: #5ff967; }
+.term-fg1.term-fg33 { color: #fefb67; }
+.term-fg1.term-fg34 { color: #6871ff; }
+.term-fg1.term-fg35 { color: #ff76ff; }
+.term-fg1.term-fg36 { color: #5ffdff; }
+.term-fg1.term-fg37 { color: #feffff; }
 
 		</style>
 	</head>
@@ -193,8 +215,9 @@ func (r Runner) Serve(opt ServerOptions) {
 
 		// 500 Server error
 		if buildRes.Dirty() {
-			fmt.Fprintln(w, buildRes.HTML())
-			logRequest500(req, start)
+			fmt.Fprint(w, buildRes.HTML())
+			logRequest500(req, start) // Takes precedence
+			// fmt.Fprint(os.Stderr, buildRes)
 			return
 		}
 		// 200 OK - Serve any
