@@ -195,7 +195,7 @@ func ls(dir string) (lsInfos, error) {
 }
 
 // https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format
-func prettyByteCount(b int64) string {
+func byteCount(b int64) string {
 	const u = 1024
 
 	if b < u {
@@ -206,7 +206,7 @@ func prettyByteCount(b int64) string {
 		div *= u
 		exp++
 	}
-	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+	return fmt.Sprintf("%.0f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 var greedyExtRe = regexp.MustCompile(`(\.).*$`)
@@ -251,7 +251,7 @@ func (r Runner) Build() {
 		fmt.Printf(" %v%s%v\n",
 			hue(v.path),
 			strings.Repeat(" ", 25-len(v.path)),
-			terminal.Dimf("(%s)", prettyByteCount(v.size)),
+			terminal.Dimf("(%s)", byteCount(v.size)),
 		)
 
 		if !strings.HasSuffix(v.path, ".map") {
@@ -261,8 +261,8 @@ func (r Runner) Build() {
 	}
 
 	fmt.Println()
-	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s)", prettyByteCount(sum)))
-	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s) (w/ sourcemaps)", prettyByteCount(sumMap)))
+	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("%s", byteCount(sum)))
+	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("%s w/ sourcemaps", byteCount(sumMap)))
 
 	durStr := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
 
