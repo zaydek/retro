@@ -2,6 +2,7 @@ package retro
 
 import (
 	_ "embed"
+	"io/ioutil"
 	"strings"
 
 	"encoding/json"
@@ -112,17 +113,13 @@ a:hover { text-decoration: underline; }
 	</head>
 	<body>
 		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
-		<script type="module">const dev = new EventSource("/~dev"); dev.addEventListener("reload", () => { localStorage.setItem("/~dev", "" + Date.now()); window.location.reload() }); dev.addEventListener("error", e => { try { console.error(JSON.parse(e.data)) } catch {} }); window.addEventListener("storage", e => { if (e.key === "/~dev") { window.location.reload() } })</script>
 	</body>
+	` + devStub + `
 </html>
 `
 }
 
 func (r Runner) Dev() {
-	os.Setenv("WWW_DIR", WWW_DIR)
-	os.Setenv("SRC_DIR", SRC_DIR)
-	os.Setenv("OUT_DIR", OUT_DIR)
-
 	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
 	if err != nil {
 		panic(err)
@@ -174,22 +171,22 @@ type ServerOptions struct {
 	Ready chan struct{}
 }
 
-func logRequest200(r *http.Request, start time.Time) {
+func serve200Str(r *http.Request, start time.Time) string {
 	var durStr string
 	if dur := time.Since(start); dur >= time.Millisecond {
 		durStr += " "
 		durStr += terminal.Dimf("(%s)", pretty.Duration(dur))
 	}
-	stdio_logger.Stdout(cyan(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr)))
+	return cyan(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr))
 }
 
-func logRequest500(r *http.Request, start time.Time) {
+func serve500Str(r *http.Request, start time.Time) string {
 	var durStr string
 	if dur := time.Since(start); dur >= time.Millisecond {
 		durStr += " "
 		durStr += terminal.Dimf("(%s)", pretty.Duration(dur))
 	}
-	stdio_logger.Stdout(red(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr)))
+	return red(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr))
 }
 
 func (r Runner) Serve(opt ServerOptions) {
@@ -200,7 +197,7 @@ func (r Runner) Serve(opt ServerOptions) {
 		start := time.Now()
 		if res.Dirty() {
 			fmt.Fprint(w, res.HTML())
-			logRequest500(req, start)
+			stdio_logger.Stdout(serve500Str(req, start))
 			return
 		}
 		// 200 OK - Serve any
@@ -211,7 +208,7 @@ func (r Runner) Serve(opt ServerOptions) {
 		}
 		// 200 OK - Serve index.html
 		http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
-		logRequest200(req, start)
+		stdio_logger.Stdout(serve200Str(req, start))
 	})
 
 	if opt.Dev != nil {
@@ -263,10 +260,28 @@ var pkg struct {
 }
 
 //go:embed deps.json
-var contents []byte
+var deps string
+
+// Server-sent events and localStorage events
+const devStub = `<script type="module">const dev = new EventSource("/~dev"); dev.addEventListener("reload", () => { localStorage.setItem("/~dev", "" + Date.now()); window.location.reload() }); dev.addEventListener("error", e => { try { console.error(JSON.parse(e.data)) } catch {} }); window.addEventListener("storage", e => { if (e.key === "/~dev") { window.location.reload() } })</script>`
+
+func copyEntryPoint() error {
+	bstr, err := ioutil.ReadFile(filepath.Join(WWW_DIR, "index.html"))
+	if err != nil {
+		return err
+	}
+	contents := string(bstr)
+	if os.Getenv("ENV") == "development" {
+		contents = strings.Replace(contents, ">\n</html>", fmt.Sprintf(">\n\t%s\n</html>", devStub), 1)
+	}
+	if err := ioutil.WriteFile(filepath.Join(OUT_DIR, "index.html"), []byte(contents), MODE_FILE); err != nil {
+		return err
+	}
+	return nil
+}
 
 func Run() {
-	if err := json.Unmarshal(contents, &pkg); err != nil {
+	if err := json.Unmarshal([]byte(deps), &pkg); err != nil {
 		panic(err)
 	}
 
@@ -295,7 +310,13 @@ func Run() {
 	run := Runner{Command: cmd}
 	switch cmd.(type) {
 	case cli.DevCommand:
-		os.Setenv("NODE_ENV", "development")
+
+		os.Setenv("CMD", "dev")
+		os.Setenv("ENV", "development")
+		os.Setenv("WWW_DIR", WWW_DIR)
+		os.Setenv("SRC_DIR", SRC_DIR)
+		os.Setenv("OUT_DIR", OUT_DIR)
+
 		guardErr := guards()
 		switch guardErr.(type) {
 		case HTMLError:
@@ -306,9 +327,20 @@ func Run() {
 				panic(guardErr)
 			}
 		}
+
+		if err := copyEntryPoint(); err != nil {
+			panic(err)
+		}
+
 		run.Dev()
 	case cli.BuildCommand:
-		os.Setenv("NODE_ENV", "production")
+
+		os.Setenv("CMD", "build")
+		os.Setenv("ENV", "production")
+		os.Setenv("WWW_DIR", WWW_DIR)
+		os.Setenv("SRC_DIR", SRC_DIR)
+		os.Setenv("OUT_DIR", OUT_DIR)
+
 		guardErr := guards()
 		switch guardErr.(type) {
 		case HTMLError:
@@ -319,9 +351,20 @@ func Run() {
 				panic(guardErr)
 			}
 		}
+
+		if err := copyEntryPoint(); err != nil {
+			panic(err)
+		}
+
 		run.Build()
 	case cli.ServeCommand:
-		os.Setenv("NODE_ENV", "production")
+
+		os.Setenv("CMD", "serve")
+		os.Setenv("ENV", "production")
+		os.Setenv("WWW_DIR", WWW_DIR)
+		os.Setenv("SRC_DIR", SRC_DIR)
+		os.Setenv("OUT_DIR", OUT_DIR)
+
 		run.Serve(ServerOptions{})
 	}
 }

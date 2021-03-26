@@ -12,7 +12,7 @@ type copyInfo struct {
 }
 
 // NOTE: This implementation uses Go 1.15. For Go 1.16, use package io/fs.
-func cpdir(src, dst string, excludes []string) error {
+func copyAll(src, dst string, excludes []string) error {
 	// Sweep for sources and targets
 	var cpInfos []copyInfo
 	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {

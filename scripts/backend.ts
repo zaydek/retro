@@ -37,16 +37,21 @@ function InternalError<T>(param: T): T {
 	return param
 }
 
+const CMD = process.env["CMD"] ?? InternalError("")
+const ENV = process.env["ENV"] ?? InternalError("")
 const WWW_DIR = process.env["WWW_DIR"] ?? InternalError("")
 const SRC_DIR = process.env["SRC_DIR"] ?? InternalError("")
 const OUT_DIR = process.env["OUT_DIR"] ?? InternalError("")
-
-const ENV = process.env["NODE_ENV"] ?? InternalError("")
 
 const common: esbuild.BuildOptions = {
 	color: true,
 	define: {
 		"process.env.NODE_ENV": JSON.stringify(ENV),
+		CMD: JSON.stringify(CMD),
+		ENV: JSON.stringify(ENV),
+		WWW_DIR: JSON.stringify(WWW_DIR),
+		SRC_DIR: JSON.stringify(SRC_DIR),
+		OUT_DIR: JSON.stringify(OUT_DIR),
 	},
 	loader: {
 		".js": "jsx",
@@ -101,7 +106,7 @@ async function build(): Promise<BuildResponse> {
 			inject: ["scripts/shims/require.js"], // Add support for vendor
 			plugins: config?.plugins,
 
-			incremental: true,
+			incremental: ENV === "development",
 		})
 		if (result.warnings.length > 0) {
 			buildRes.warnings = result.warnings
