@@ -64,25 +64,25 @@ func TestBuildCommand(t *testing.T) {
 	var cmd BuildCommand
 	var err error
 
-	cmd, err = ParseExportCommand()
+	cmd, err = ParseBuildCommand()
 	must(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseExportCommand("--sourcemap")
+	cmd, err = ParseBuildCommand("--sourcemap")
 	must(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseExportCommand("--sourcemap=true")
+	cmd, err = ParseBuildCommand("--sourcemap=true")
 	must(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseExportCommand("--sourcemap=false")
+	cmd, err = ParseBuildCommand("--sourcemap=false")
 	must(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: false,

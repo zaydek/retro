@@ -92,7 +92,7 @@ func ParseDevCommand(args ...string) (DevCommand, error) {
 	return cmd, nil
 }
 
-func ParseExportCommand(args ...string) (BuildCommand, error) {
+func ParseBuildCommand(args ...string) (BuildCommand, error) {
 	cmd := BuildCommand{
 		Sourcemap: true,
 	}
@@ -143,8 +143,10 @@ func ParseCLIArguments() (interface{}, error) {
 		return nil, UsageError
 	}
 
-	var cmd interface{}
-	var cmdErr error
+	var (
+		cmd interface{}
+		err error
+	)
 
 	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
 		return nil, VersionError
@@ -153,13 +155,13 @@ func ParseCLIArguments() (interface{}, error) {
 	} else if cmdArg == "help" || cmdArg == "--help" {
 		return nil, HelpError
 	} else if cmdArg == "dev" {
-		cmd, cmdErr = ParseDevCommand(os.Args[2:]...)
-	} else if cmdArg == "export" {
-		cmd, cmdErr = ParseExportCommand(os.Args[2:]...)
+		cmd, err = ParseDevCommand(os.Args[2:]...)
+	} else if cmdArg == "build" {
+		cmd, err = ParseBuildCommand(os.Args[2:]...)
 	} else if cmdArg == "serve" {
-		cmd, cmdErr = ParseServeCommand(os.Args[2:]...)
+		cmd, err = ParseServeCommand(os.Args[2:]...)
 	} else {
-		cmdErr = CommandError{Kind: BadCommandArgument, BadCmdArgument: cmdArg}
+		err = CommandError{Kind: BadCommandArgument, BadCmdArgument: cmdArg}
 	}
-	return cmd, cmdErr
+	return cmd, err
 }

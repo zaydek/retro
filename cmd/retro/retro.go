@@ -161,7 +161,26 @@ func (r Runner) Dev() {
 ////////////////////////////////////////////////////////////////////////////////
 
 func (r Runner) Build() {
-	fmt.Println("TODO")
+	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
+	if err != nil {
+		panic(err)
+	}
+
+	stdin <- ipc.Request{Kind: "build"}
+	select {
+	case <-stdout:
+	case err := <-stderr:
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	var durStr string
+	if dur := time.Since(EPOCH); dur >= time.Millisecond {
+		// durStr += " "
+		durStr += terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
+	}
+
+	fmt.Println(cyan(fmt.Sprintf("%s", durStr)))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -288,13 +307,13 @@ func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Fprintln(os.Stdout, pkg.Retro)
-		os.Exit(0)
+		fmt.Println(pkg.Retro)
+		return
 	case cli.UsageError:
 		fallthrough
 	case cli.HelpError:
-		fmt.Fprintln(os.Stdout, pretty.Inset(pretty.Spaces(cyan(usage))))
-		os.Exit(0)
+		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))
+		return
 	}
 
 	switch err.(type) {
