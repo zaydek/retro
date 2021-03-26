@@ -103,7 +103,7 @@ async function build() {
 }
 
 async function rebuild() {
-	if (result === null) return
+	if (result === null) throw new Error("Internal error")
 
 	const rebuildRes = {
 		warnings: [],
@@ -134,11 +134,8 @@ async function main() {
 		const msg = JSON.parse(jsonstr)
 		try {
 			switch (msg.Kind) {
-				case "dev":
-					await build({})
-					break
 				case "build":
-					await build({})
+					await build()
 					break
 				case "rebuild":
 					await rebuild()

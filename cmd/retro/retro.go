@@ -38,36 +38,35 @@ var (
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type BuildResponse struct {
+type BackendResponse struct {
 	Errors   []api.Message
 	Warnings []api.Message
 }
 
-func (r BuildResponse) Dirty() bool {
+func (r BackendResponse) Dirty() bool {
 	return len(r.Errors) > 0 || len(r.Warnings) > 0
 }
 
-func (r BuildResponse) String() string {
-	errors := api.FormatMessages(r.Errors, api.FormatMessagesOptions{
+func (r BackendResponse) String() string {
+	e := api.FormatMessages(r.Errors, api.FormatMessagesOptions{
 		Color:         true,
 		Kind:          api.ErrorMessage,
 		TerminalWidth: 80,
 	})
-	warnings := api.FormatMessages(r.Warnings, api.FormatMessagesOptions{
+	w := api.FormatMessages(r.Warnings, api.FormatMessagesOptions{
 		Color:         true,
 		Kind:          api.WarningMessage,
 		TerminalWidth: 80,
 	})
-	return strings.Join(append(errors, warnings...), "")
+	return strings.Join(append(e, w...), "")
 }
 
-func (r BuildResponse) HTML() string {
+func (r BackendResponse) HTML() string {
 	str := r.String()
 	str = strings.ReplaceAll(str, "╷", "|")
 	str = strings.ReplaceAll(str, "│", "|")
 	str = strings.ReplaceAll(str, "╵", "|")
 
-	code := string(render.Render([]byte(str)))
 	return `<!DOCTYPE html>
 <html>
 	<head>
@@ -91,13 +90,6 @@ a:hover { text-decoration: underline; }
 	color: #feffff;
 }
 
-.term-fg2 { color: #838887; } /* TODO */
-.term-fg3 { font-style: italic; }
-.term-fg4 { text-decoration: underline; }
-
-/*
- * iTerm ANSI Colors - Normal (Dark Background)
- */
 .term-fg30 { color: #000000; }
 .term-fg31 { color: #c91b00; }
 .term-fg32 { color: #00c200; }
@@ -107,9 +99,6 @@ a:hover { text-decoration: underline; }
 .term-fg36 { color: #00c5c7; }
 .term-fg37 { color: #c7c7c7; }
 
-/*
- * iTerm ANSI Colors - Bright (Dark Background)
- */
 .term-fg1.term-fg30 { color: #676767; }
 .term-fg1.term-fg31 { color: #ff6d67; }
 .term-fg1.term-fg32 { color: #5ff967; }
@@ -122,7 +111,7 @@ a:hover { text-decoration: underline; }
 		</style>
 	</head>
 	<body>
-		<pre><code>` + code + `</pre></code>
+		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
 		<script type="module">const dev = new EventSource("/~dev"); dev.addEventListener("reload", () => { localStorage.setItem("/~dev", "" + Date.now()); window.location.reload() }); dev.addEventListener("error", e => { try { console.error(JSON.parse(e.data)) } catch {} }); window.addEventListener("storage", e => { if (e.key === "/~dev") { window.location.reload() } })</script>
 	</body>
 </html>
@@ -139,7 +128,7 @@ func (r Runner) Dev() {
 		panic(err)
 	}
 
-	dev := make(chan BuildResponse, 1)
+	dev := make(chan BackendResponse, 1)
 	ready := make(chan struct{})
 
 	go func() {
@@ -147,10 +136,6 @@ func (r Runner) Dev() {
 			if result.Error != nil {
 				panic(result.Error)
 			}
-			// // Dedupe stderr
-			// if stderrRes.IsDirty() {
-			// 	return
-			// }
 			stdin <- ipc.Request{Kind: "rebuild"}
 		}
 	}()
@@ -162,11 +147,11 @@ func (r Runner) Dev() {
 			select {
 			case out := <-stdout:
 				once.Do(func() { ready <- struct{}{} })
-				var buildRes BuildResponse
-				if err := json.Unmarshal(out.Data, &buildRes); err != nil {
+				var res BackendResponse
+				if err := json.Unmarshal(out.Data, &res); err != nil {
 					panic(err)
 				}
-				dev <- buildRes
+				dev <- res
 			case err := <-stderr:
 				panic(err)
 			}
@@ -185,7 +170,7 @@ func (r Runner) Build() {
 ////////////////////////////////////////////////////////////////////////////////
 
 type ServerOptions struct {
-	Dev   chan BuildResponse
+	Dev   chan BackendResponse
 	Ready chan struct{}
 }
 
@@ -208,16 +193,14 @@ func logRequest500(r *http.Request, start time.Time) {
 }
 
 func (r Runner) Serve(opt ServerOptions) {
-	var buildRes BuildResponse
+	var res BackendResponse
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		start := time.Now()
-
 		// 500 Server error
-		if buildRes.Dirty() {
-			fmt.Fprint(w, buildRes.HTML())
-			logRequest500(req, start) // Takes precedence
-			// fmt.Fprint(os.Stderr, buildRes)
+		start := time.Now()
+		if res.Dirty() {
+			fmt.Fprint(w, res.HTML())
+			logRequest500(req, start)
 			return
 		}
 		// 200 OK - Serve any
@@ -243,7 +226,7 @@ func (r Runner) Serve(opt ServerOptions) {
 			}
 			for {
 				select {
-				case buildRes = <-opt.Dev:
+				case res = <-opt.Dev:
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-req.Context().Done():

@@ -12,8 +12,9 @@ const sass = {
 		build.onLoad({ filter: /.*/, namespace: "scss-ns" }, async args => {
 			// NOTE: esbuild does not yet support CSS sourcemaps. Tracked by
 			// https://github.com/evanw/esbuild/issues/519.
-			const file = path.join("src", args.path)
-			const result = sass.renderSync({ file })
+			const result = sass.renderSync({
+				file: path.join("src", args.path),
+			})
 			return {
 				contents: result.css.toString(),
 				loader: "css",
