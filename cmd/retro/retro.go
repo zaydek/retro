@@ -261,8 +261,8 @@ func (r Runner) Build() {
 	}
 
 	fmt.Println()
-	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("%s", byteCount(sum)))
-	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("%s w/ sourcemaps", byteCount(sumMap)))
+	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s)", byteCount(sum)))
+	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s w/ sourcemaps)", byteCount(sumMap)))
 
 	durStr := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
 
@@ -424,7 +424,21 @@ func Run() {
 		os.Setenv("SRC_DIR", SRC_DIR)
 		os.Setenv("OUT_DIR", OUT_DIR)
 
-		guardErr := guards()
+		rmdirs := []string{OUT_DIR}
+		for _, rmdir := range rmdirs {
+			if err := os.RemoveAll(rmdir); err != nil {
+				panic(err)
+			}
+		}
+
+		mkdirs := []string{WWW_DIR, SRC_DIR, OUT_DIR}
+		for _, mkdir := range mkdirs {
+			if err := os.MkdirAll(mkdir, MODE_DIR); err != nil {
+				panic(err)
+			}
+		}
+
+		guardErr := entryPointGuards()
 		switch guardErr.(type) {
 		case HTMLError:
 			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guardErr.Error())))
@@ -451,7 +465,21 @@ func Run() {
 		os.Setenv("SRC_DIR", SRC_DIR)
 		os.Setenv("OUT_DIR", OUT_DIR)
 
-		guardErr := guards()
+		rmdirs := []string{OUT_DIR}
+		for _, rmdir := range rmdirs {
+			if err := os.RemoveAll(rmdir); err != nil {
+				panic(err)
+			}
+		}
+
+		mkdirs := []string{WWW_DIR, SRC_DIR, OUT_DIR}
+		for _, mkdir := range mkdirs {
+			if err := os.MkdirAll(mkdir, MODE_DIR); err != nil {
+				panic(err)
+			}
+		}
+
+		guardErr := entryPointGuards()
 		switch guardErr.(type) {
 		case HTMLError:
 			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guardErr.Error())))

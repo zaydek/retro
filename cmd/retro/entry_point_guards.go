@@ -23,8 +23,9 @@ func (t HTMLError) Error() string {
 	return t.err.Error()
 }
 
-func guards() error {
+func entryPointGuards() error {
 	path := filepath.Join(WWW_DIR, "index.html")
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(filepath.Dir(path), MODE_DIR); err != nil {
 			return err
@@ -49,6 +50,7 @@ func guards() error {
 			return err
 		}
 	}
+
 	html, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
