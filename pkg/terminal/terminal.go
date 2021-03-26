@@ -31,8 +31,6 @@ const (
 )
 
 var (
-	None = New()
-
 	Normal        = New(NormalCode).Sprint
 	Bold          = New(BoldCode).Sprint
 	Dim           = New(DimCode).Sprint

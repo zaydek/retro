@@ -27,11 +27,10 @@ func copyAll(src, dst string, excludes []string) error {
 				return nil
 			}
 		}
-		cpInfo := copyInfo{
+		cpInfos = append(cpInfos, copyInfo{
 			source: path,
 			target: filepath.Join(dst, filepath.Base(path)),
-		}
-		cpInfos = append(cpInfos, cpInfo)
+		})
 		return nil
 	})
 	if err != nil {

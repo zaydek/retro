@@ -3,6 +3,8 @@ package retro
 import (
 	_ "embed"
 	"io/ioutil"
+	"regexp"
+	"sort"
 	"strings"
 
 	"encoding/json"
@@ -160,6 +162,55 @@ func (r Runner) Dev() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type lsInfo struct {
+	path string
+	size int64
+}
+
+type lsInfos []lsInfo
+
+func (a lsInfos) Len() int           { return len(a) }
+func (a lsInfos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a lsInfos) Less(i, j int) bool { return a[i].path < a[j].path }
+
+func ls(dir string) (lsInfos, error) {
+	var ls lsInfos
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		ls = append(ls, lsInfo{
+			path: path,
+			size: info.Size(),
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ls, nil
+}
+
+// https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format
+func prettyByteCount(b int64) string {
+	const u = 1024
+
+	if b < u {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(u), 0
+	for n := b / u; n >= u; n /= u {
+		div *= u
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+var greedyExtRe = regexp.MustCompile(`(\.).*$`)
+
 func (r Runner) Build() {
 	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
 	if err != nil {
@@ -174,13 +225,50 @@ func (r Runner) Build() {
 		os.Exit(1)
 	}
 
-	var durStr string
-	if dur := time.Since(EPOCH); dur >= time.Millisecond {
-		// durStr += " "
-		durStr += terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
+	infos, err := ls(OUT_DIR)
+	if err != nil {
+		panic(err)
 	}
 
-	fmt.Println(cyan(fmt.Sprintf("%s", durStr)))
+	sort.Sort(infos)
+
+	var sum, sumMap int64
+	for x, v := range infos {
+		var hue = terminal.Normal
+		if strings.HasSuffix(v.path, ".html") {
+			hue = terminal.Normal
+		} else if strings.HasSuffix(v.path, ".js") || strings.HasSuffix(v.path, ".js.map") {
+			hue = terminal.Yellow
+		} else if strings.HasSuffix(v.path, ".css") || strings.HasSuffix(v.path, ".css.map") {
+			hue = terminal.Cyan
+		} else {
+			hue = terminal.Dim
+		}
+
+		if x == 0 {
+			fmt.Println()
+		}
+		fmt.Printf(" %v%s%v\n",
+			hue(v.path),
+			strings.Repeat(" ", 25-len(v.path)),
+			terminal.Dimf("(%s)", prettyByteCount(v.size)),
+		)
+
+		if !strings.HasSuffix(v.path, ".map") {
+			sum += v.size
+		}
+		sumMap += v.size
+	}
+
+	fmt.Println()
+	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s)", prettyByteCount(sum)))
+	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s) (w/ sourcemaps)", prettyByteCount(sumMap)))
+
+	durStr := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
+
+	fmt.Println()
+	fmt.Println(fmt.Sprintf("%s", durStr))
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -347,6 +435,9 @@ func Run() {
 			}
 		}
 
+		if err := copyAll(WWW_DIR, filepath.Join(OUT_DIR, WWW_DIR), []string{"index.html"}); err != nil {
+			panic(err)
+		}
 		if err := copyEntryPoint(); err != nil {
 			panic(err)
 		}
@@ -371,6 +462,9 @@ func Run() {
 			}
 		}
 
+		if err := copyAll(WWW_DIR, filepath.Join(OUT_DIR, WWW_DIR), []string{filepath.Join(WWW_DIR, "index.html")}); err != nil {
+			panic(err)
+		}
 		if err := copyEntryPoint(); err != nil {
 			panic(err)
 		}
