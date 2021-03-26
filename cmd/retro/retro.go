@@ -219,10 +219,18 @@ func (r Runner) Build() {
 
 	stdin <- ipc.Request{Kind: "build"}
 	select {
-	case <-stdout:
-	case err := <-stderr:
-		fmt.Fprintln(os.Stderr, err)
+	case out := <-stdout:
+		var res BackendResponse
+		if err := json.Unmarshal(out.Data, &res); err != nil {
+			panic(err)
+		}
+		if !res.Dirty() {
+			break
+		}
+		fmt.Fprint(os.Stderr, res) // Use fmt.Fprint not fmt.Fprintln
 		os.Exit(1)
+	case err := <-stderr:
+		panic(err)
 	}
 
 	infos, err := ls(OUT_DIR)
