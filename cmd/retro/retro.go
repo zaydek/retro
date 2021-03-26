@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	terminal_to_html "github.com/buildkite/terminal-to-html/v3"
@@ -55,12 +56,17 @@ func (r Runner) Dev() {
 		}
 	}()
 
+	ready := make(chan struct{})
+
+	var once sync.Once
 	go func() {
 		stdin <- ipc.Request{Kind: "build"}
 		for {
 			select {
 			case out := <-stdout:
-				// fmt.Println("stdout")
+				once.Do(func() {
+					ready <- struct{}{}
+				})
 				var res BuildResponse
 				if err := json.Unmarshal(out.Data, &res); err != nil {
 					panic(err)
@@ -69,13 +75,12 @@ func (r Runner) Dev() {
 			case err := <-stderr:
 				transformed := stdio_logger.TransformStderr(err)
 				fmt.Println(string(terminal_to_html.Render([]byte(transformed))))
-				// fmt.Println("stderr")
 				stdio_logger.Stderr(err)
 			}
 		}
 	}()
 
-	r.Serve(ServerOptions{DevEvents: dev})
+	r.Serve(ServerOptions{Ready: ready, DevEvents: dev})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,10 +94,11 @@ func (r Runner) Build() {
 // % retro serve
 
 type ServerOptions struct {
+	Ready     chan struct{}
 	DevEvents chan BuildResponse
 }
 
-func (r Runner) Serve(opts ServerOptions) {
+func (r Runner) Serve(opt ServerOptions) {
 	var res BuildResponse
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +117,7 @@ func (r Runner) Serve(opts ServerOptions) {
 		http.ServeFile(w, r, filepath.Join(OUT_DIR, path))
 	})
 
-	if opts.DevEvents != nil {
+	if opt.DevEvents != nil {
 		// Set server-sent event headers
 		http.HandleFunc("/~dev", func(w http.ResponseWriter, req *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
@@ -123,7 +129,7 @@ func (r Runner) Serve(opts ServerOptions) {
 			}
 			for {
 				select {
-				case res = <-opts.DevEvents:
+				case res = <-opt.DevEvents:
 					bstr, err := json.Marshal(res)
 					if err != nil {
 						panic(err)
@@ -137,6 +143,10 @@ func (r Runner) Serve(opts ServerOptions) {
 		})
 	}
 
+	if opt.Ready != nil {
+		<-opt.Ready
+	}
+
 	dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
 	stdio_logger.Stdout(cyan(fmt.Sprintf("Ready on port '%d' %s", r.getPort(), dur)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", r.getPort()), nil); err != nil {
@@ -145,10 +155,9 @@ func (r Runner) Serve(opts ServerOptions) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// % retro
 
 func Run() {
-	// TODO
+	// TODO: Read from version.txt
 	os.Setenv("RETRO_VERSION", "0.0.0")
 
 	cmd, err := cli.ParseCLIArguments()

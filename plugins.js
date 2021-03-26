@@ -1,3 +1,5 @@
+require("esbuild")
+
 // https://esbuild.github.io/plugins/#using-plugins
 const envPlugin = {
 	name: "env",
@@ -37,6 +39,8 @@ const scssPlugin = {
 			return {
 				contents: result.css.toString(),
 				loader: "css",
+				// watchDirs: result.stats.includedFiles, // TODO
+				// watchFiles: result.stats.entry, // TODO
 			}
 		})
 	},
