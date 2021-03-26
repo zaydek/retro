@@ -44,7 +44,7 @@ func guards() error {
 		script src="/bundle.js"></script>
 	</body>
 </html>
-`), MODE_FILE)
+` /* EOF */), MODE_FILE)
 		if err != nil {
 			return err
 		}
@@ -66,7 +66,7 @@ For example:
 	<head lang="en">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		` + terminal.Magenta(`<link rel="stylesheet" href="/bundle.css" />`) + `
+		` + terminal.Green(`<link rel="stylesheet" href="/bundle.css" />`) + `
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
@@ -90,7 +90,7 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Magenta(`<div id="root"></div>`) + `
+		` + terminal.Green(`<div id="root"></div>`) + `
 		` + terminal.Dim("...") + `
 	</body>
 </html>`)
@@ -111,7 +111,7 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Magenta(`<script src="/vendor.js"></script>`) + `
+		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
 		` + terminal.Dim("...") + `
 	</body>
 </html>`)
@@ -132,7 +132,7 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Magenta(`<script src="/bundle.js"></script>`) + `
+		` + terminal.Green(`<script src="/bundle.js"></script>`) + `
 		` + terminal.Dim("...") + `
 	</body>
 </html>`)

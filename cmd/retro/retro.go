@@ -168,7 +168,7 @@ type Package struct {
 	retro_browser_router string
 }
 
-//go:embed vs.txt
+//go:embed pkg.txt
 var contents string
 
 func Run() {
@@ -199,7 +199,7 @@ func Run() {
 
 	switch err.(type) {
 	case cli.CommandError:
-		fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
+		fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
 		os.Exit(1)
 	default:
 		if err != nil {
@@ -214,7 +214,7 @@ func Run() {
 		guarderr := guards()
 		switch guarderr.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(guarderr.Error()))
+			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guarderr.Error())))
 			os.Exit(1)
 		default:
 			if guarderr != nil {
@@ -227,7 +227,7 @@ func Run() {
 		guardErr := guards()
 		switch guardErr.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(guardErr.Error()))
+			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guardErr.Error())))
 			os.Exit(1)
 		default:
 			if guardErr != nil {

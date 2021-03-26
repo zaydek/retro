@@ -19,7 +19,9 @@ type ErrorKind int
 const (
 	BadCommandArgument ErrorKind = iota
 	BadArgument
-	BadPort
+	BadPortValue
+	BadSourcemapValue
+	BadPortRange
 )
 
 type CommandError struct {
@@ -34,12 +36,16 @@ type CommandError struct {
 
 func (e CommandError) Error() string {
 	switch e.Kind {
+	case BadPortValue:
+		return fmt.Sprintf("'--port' must be a number (default '8000').")
+	case BadSourcemapValue:
+		return fmt.Sprintf("'--sourcemap' must be a 'true' or 'false' or empty (default 'true').")
 	case BadCommandArgument:
 		return fmt.Sprintf("Unsupported command argument '%s'.", e.BadCmdArgument)
 	case BadArgument:
 		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
-	case BadPort:
-		return fmt.Sprintf("'--port' must be between '1000' and '10000'; used '%d'.", e.BadPort)
+	case BadPortRange:
+		return fmt.Sprintf("'--port' must be between '1000' and '10_000' (you may use '_' as a separator); used '%d'.", e.BadPort)
 	}
 	panic("Internal error")
 }
@@ -48,7 +54,8 @@ func (e CommandError) Unwrap() error {
 	return e.Err
 }
 
-var portRegex = regexp.MustCompile(`^--port=(\d+)$`)
+// Support '_' as a separator
+var portRegex = regexp.MustCompile(`^--port=([\d_]+)$`)
 
 func ParseDevCommand(args ...string) (DevCommand, error) {
 	cmd := DevCommand{
@@ -56,13 +63,14 @@ func ParseDevCommand(args ...string) (DevCommand, error) {
 		Port:      8000,
 	}
 	for _, arg := range args {
-		cmdErr := CommandError{Kind: BadArgument, BadArgument: arg}
+		err := CommandError{Kind: BadArgument, BadArgument: arg}
 		if strings.HasPrefix(arg, "--port") {
 			matches := portRegex.FindStringSubmatch(arg)
 			if len(matches) == 2 {
-				cmd.Port, _ = strconv.Atoi(matches[1])
+				cmd.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
 			} else {
-				return DevCommand{}, cmdErr
+				err.Kind = BadPortValue
+				return DevCommand{}, err
 			}
 		} else if strings.HasPrefix(arg, "--sourcemap") {
 			if arg == "--sourcemap" {
@@ -70,14 +78,15 @@ func ParseDevCommand(args ...string) (DevCommand, error) {
 			} else if arg == "--sourcemap=true" || arg == "--sourcemap=false" {
 				cmd.Sourcemap = arg == "--sourcemap=true"
 			} else {
-				return DevCommand{}, cmdErr
+				err.Kind = BadSourcemapValue
+				return DevCommand{}, err
 			}
 		} else {
-			return DevCommand{}, cmdErr
+			return DevCommand{}, err
 		}
 	}
 	if cmd.Port < 1_000 || cmd.Port >= 10_000 {
-		return DevCommand{}, CommandError{Kind: BadPort, BadPort: cmd.Port}
+		return DevCommand{}, CommandError{Kind: BadPortRange, BadPort: cmd.Port}
 	}
 	return cmd, nil
 }
@@ -87,17 +96,18 @@ func ParseExportCommand(args ...string) (BuildCommand, error) {
 		Sourcemap: true,
 	}
 	for _, arg := range args {
-		cmdErr := CommandError{Kind: BadArgument, BadArgument: arg}
+		err := CommandError{Kind: BadArgument, BadArgument: arg}
 		if strings.HasPrefix(arg, "--sourcemap") {
 			if arg == "--sourcemap" {
 				cmd.Sourcemap = true
 			} else if arg == "--sourcemap=true" || arg == "--sourcemap=false" {
 				cmd.Sourcemap = arg == "--sourcemap=true"
 			} else {
-				return BuildCommand{}, cmdErr
+				err.Kind = BadSourcemapValue
+				return BuildCommand{}, err
 			}
 		} else {
-			return BuildCommand{}, cmdErr
+			return BuildCommand{}, err
 		}
 	}
 	return cmd, nil
@@ -108,20 +118,21 @@ func ParseServeCommand(args ...string) (ServeCommand, error) {
 		Port: 8000,
 	}
 	for _, arg := range args {
-		cmdErr := CommandError{Kind: BadArgument, BadArgument: arg}
+		err := CommandError{Kind: BadArgument, BadArgument: arg}
 		if strings.HasPrefix(arg, "--port") {
 			matches := portRegex.FindStringSubmatch(arg)
 			if len(matches) == 2 {
-				cmd.Port, _ = strconv.Atoi(matches[1])
+				cmd.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
 			} else {
-				return ServeCommand{}, cmdErr
+				err.Kind = BadPortValue
+				return ServeCommand{}, err
 			}
 		} else {
-			return ServeCommand{}, cmdErr
+			return ServeCommand{}, err
 		}
 	}
 	if cmd.Port < 1_000 || cmd.Port >= 10_000 {
-		return ServeCommand{}, CommandError{Kind: BadPort, BadPort: cmd.Port}
+		return ServeCommand{}, CommandError{Kind: BadPortRange, BadPort: cmd.Port}
 	}
 	return cmd, nil
 }
@@ -134,9 +145,11 @@ func ParseCLIArguments() (interface{}, error) {
 	var cmd interface{}
 	var cmdErr error
 
-	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "--v" {
+	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
 		return nil, VersionError
-	} else if cmdArg == "usage" || cmdArg == "--usage" || cmdArg == "help" || cmdArg == "--help" {
+	} else if cmdArg == "usage" || cmdArg == "--usage" {
+		return nil, UsageError
+	} else if cmdArg == "help" || cmdArg == "--help" {
 		return nil, UsageError
 	} else if cmdArg == "dev" {
 		cmd, cmdErr = ParseDevCommand(os.Args[2:]...)
