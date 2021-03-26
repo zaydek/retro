@@ -28,8 +28,11 @@ const (
 
 var EPOCH = time.Now()
 
-var cyan = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
-var magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
+var (
+	cyan    = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
+	red     = func(str string) string { return pretty.Accent(str, terminal.Red) }
+	magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
+)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -76,11 +79,7 @@ func (r Runner) Dev() {
 		}
 	}()
 
-	r.Serve(ServerOptions{
-		Stdin:     stdin,
-		DevEvents: dev,
-		Ready:     ready,
-	})
+	r.Serve(ServerOptions{DevEvents: dev, Ready: ready})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,7 +91,6 @@ func (r Runner) Build() {
 ////////////////////////////////////////////////////////////////////////////////
 
 type ServerOptions struct {
-	Stdin     chan ipc.Request
 	DevEvents chan BuildResponse
 	Ready     chan struct{}
 }
@@ -100,19 +98,27 @@ type ServerOptions struct {
 func (r Runner) Serve(opt ServerOptions) {
 	var res BuildResponse
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Server error (500)
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		start := time.Now()
+
+		// 500 Server error
 		if res.Dirty() {
 			fmt.Fprintln(w, res.HTML())
+			dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(start)))
+			stdio_logger.Stdout(red(fmt.Sprintf("'%s %s' %s", req.Method, req.URL.Path, dur)))
 			return
 		}
-		// opt.Stdin <- ipc.Request{Kind: "rebuild"}
-		path := getFSPath(r.URL.Path)
-		if ext := filepath.Ext(path); ext == ".html" {
-			http.ServeFile(w, r, filepath.Join(OUT_DIR, "index.html"))
+		// 200 OK
+		path := getFSPath(req.URL.Path)
+		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
+			// Serve any
+			http.ServeFile(w, req, filepath.Join(OUT_DIR, path))
 			return
 		}
-		http.ServeFile(w, r, filepath.Join(OUT_DIR, path))
+		// Serve index.html
+		http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
+		dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(start)))
+		stdio_logger.Stdout(cyan(fmt.Sprintf("'%s %s' %s", req.Method, req.URL.Path, dur)))
 	})
 
 	if opt.DevEvents != nil {
