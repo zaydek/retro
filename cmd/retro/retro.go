@@ -123,7 +123,7 @@ func (r Runner) Dev() {
 	os.Setenv("SRC_DIR", SRC_DIR)
 	os.Setenv("OUT_DIR", OUT_DIR)
 
-	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.js")
+	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
 	if err != nil {
 		panic(err)
 	}
