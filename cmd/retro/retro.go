@@ -169,8 +169,20 @@ type lsInfo struct {
 
 type lsInfos []lsInfo
 
-func (a lsInfos) Len() int           { return len(a) }
-func (a lsInfos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+var greedyExtRe = regexp.MustCompile(`(\.).*$`)
+
+func greedyExt(path string) string {
+	matches := greedyExtRe.FindAllString(path, -1)
+	if len(matches) == 0 {
+		return ""
+	}
+	return matches[0]
+}
+
+func (a lsInfos) Len() int      { return len(a) }
+func (a lsInfos) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+// func (a lsInfos) Less(i, j int) bool { return greedyExt(a[i].path) < greedyExt(a[j].path) }
 func (a lsInfos) Less(i, j int) bool { return a[i].path < a[j].path }
 
 func ls(dir string) (lsInfos, error) {
@@ -208,8 +220,6 @@ func byteCount(b int64) string {
 	}
 	return fmt.Sprintf("%.0f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
-
-var greedyExtRe = regexp.MustCompile(`(\.).*$`)
 
 func (r Runner) Build() {
 	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
