@@ -2,6 +2,7 @@ package retro
 
 import (
 	_ "embed"
+	"strings"
 
 	"encoding/json"
 	"fmt"
@@ -11,12 +12,13 @@ import (
 	"sync"
 	"time"
 
+	render "github.com/buildkite/terminal-to-html/v3"
+	"github.com/evanw/esbuild/pkg/api"
 	"github.com/zaydek/retro/cmd/retro/cli"
 	"github.com/zaydek/retro/cmd/retro/pretty"
 	"github.com/zaydek/retro/pkg/ipc"
 	"github.com/zaydek/retro/pkg/stdio_logger"
 	"github.com/zaydek/retro/pkg/terminal"
-	"github.com/zaydek/retro/pkg/vs"
 	"github.com/zaydek/retro/pkg/watch"
 )
 
@@ -30,11 +32,80 @@ var EPOCH = time.Now()
 
 var (
 	cyan    = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
-	red     = func(str string) string { return pretty.Accent(str, terminal.Red) }
 	magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
+	red     = func(str string) string { return pretty.Accent(str, terminal.Red) }
 )
 
 ////////////////////////////////////////////////////////////////////////////////
+
+type BuildResponse struct {
+	Errors   []api.Message
+	Warnings []api.Message
+}
+
+func (r BuildResponse) Dirty() bool {
+	return len(r.Errors) > 0 || len(r.Warnings) > 0
+}
+
+func (r BuildResponse) String() string {
+	errors := api.FormatMessages(r.Errors, api.FormatMessagesOptions{
+		Color:         true,
+		Kind:          api.ErrorMessage,
+		TerminalWidth: 80,
+	})
+	warnings := api.FormatMessages(r.Warnings, api.FormatMessagesOptions{
+		Color:         true,
+		Kind:          api.WarningMessage,
+		TerminalWidth: 80,
+	})
+	return strings.Join(append(errors, warnings...), "")
+}
+
+func (r BuildResponse) HTML() string {
+	code := string(render.Render([]byte(r.String())))
+	return `<!DOCTYPE html>
+<html>
+	<head>
+		<title>Error</title>
+		<style>
+
+* { margin: 0; }
+
+:root {
+	--color: #c7c7c7;
+	--background: #000000;
+	--bold: #feffff;
+	--red: #ff6d67;
+	--yellow: #fefb67;
+	--focus: #00c200;
+}
+
+body {
+  color: var(--color);
+  background-color: var(--background);
+}
+
+code {
+	font: 12px / 1.5 "Monaco", monospace;
+}
+
+a { color: unset; text-decoration: unset; }
+a:hover { text-decoration: underline; }
+
+/* .bold { color: var(--bold); } */
+/* .red { color: var(--red); } */
+/* .yellow { color: var(--yellow); } */
+/* .focus { color: var(--focus); } */
+
+		</style>
+	</head>
+	<body>
+		<pre><code>` + code + `</pre></code>
+		<script type="module">const dev = new EventSource("/~dev"); dev.addEventListener("reload", () => { localStorage.setItem("/~dev", "" + Date.now()); window.location.reload() }); dev.addEventListener("error", e => { try { console.error(JSON.parse(e.data)) } catch {} }); window.addEventListener("storage", e => { if (e.key === "/~dev") { window.location.reload() } })</script>
+	</body>
+</html>
+`
+}
 
 func (r Runner) Dev() {
 	os.Setenv("WWW_DIR", WWW_DIR)
@@ -54,32 +125,33 @@ func (r Runner) Dev() {
 			if result.Error != nil {
 				panic(result.Error)
 			}
+			// // Dedupe stderr
+			// if stderrRes.IsDirty() {
+			// 	return
+			// }
 			stdin <- ipc.Request{Kind: "rebuild"}
 		}
 	}()
 
 	var once sync.Once
 	go func() {
-		stdin <- ipc.Request{Kind: "dev"}
+		stdin <- ipc.Request{Kind: "build"}
 		for {
 			select {
 			case out := <-stdout:
 				once.Do(func() { ready <- struct{}{} })
-				var res BuildResponse
-				if err := json.Unmarshal(out.Data, &res); err != nil {
+				var buildRes BuildResponse
+				if err := json.Unmarshal(out.Data, &buildRes); err != nil {
 					panic(err)
 				}
-				dev <- res
+				dev <- buildRes
 			case err := <-stderr:
-				stdio_logger.Stderr(err)
-				// transformed := stdio_logger.TransformStderr(err)
-				// fmt.Println(string(terminal_to_html.Render([]byte(transformed))))
-				// os.Exit(1)
+				panic(err)
 			}
 		}
 	}()
 
-	r.Serve(ServerOptions{DevEvents: dev, Ready: ready})
+	r.Serve(ServerOptions{Dev: dev, Ready: ready})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -91,37 +163,52 @@ func (r Runner) Build() {
 ////////////////////////////////////////////////////////////////////////////////
 
 type ServerOptions struct {
-	DevEvents chan BuildResponse
-	Ready     chan struct{}
+	Dev   chan BuildResponse
+	Ready chan struct{}
+}
+
+func logRequest200(r *http.Request, start time.Time) {
+	var durStr string
+	if dur := time.Since(start); dur >= time.Millisecond {
+		durStr += " "
+		durStr += terminal.Dimf("(%s)", pretty.Duration(dur))
+	}
+	stdio_logger.Stdout(cyan(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr)))
+}
+
+func logRequest500(r *http.Request, start time.Time) {
+	var durStr string
+	if dur := time.Since(start); dur >= time.Millisecond {
+		durStr += " "
+		durStr += terminal.Dimf("(%s)", pretty.Duration(dur))
+	}
+	stdio_logger.Stdout(red(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr)))
 }
 
 func (r Runner) Serve(opt ServerOptions) {
-	var res BuildResponse
+	var buildRes BuildResponse
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		start := time.Now()
 
 		// 500 Server error
-		if res.Dirty() {
-			fmt.Fprintln(w, res.HTML())
-			dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(start)))
-			stdio_logger.Stdout(red(fmt.Sprintf("'%s %s' %s", req.Method, req.URL.Path, dur)))
+		if buildRes.Dirty() {
+			fmt.Fprintln(w, buildRes.HTML())
+			logRequest500(req, start)
 			return
 		}
-		// 200 OK
+		// 200 OK - Serve any
 		path := getFSPath(req.URL.Path)
 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
-			// Serve any
 			http.ServeFile(w, req, filepath.Join(OUT_DIR, path))
 			return
 		}
-		// Serve index.html
+		// 200 OK - Serve index.html
 		http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
-		dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(start)))
-		stdio_logger.Stdout(cyan(fmt.Sprintf("'%s %s' %s", req.Method, req.URL.Path, dur)))
+		logRequest200(req, start)
 	})
 
-	if opt.DevEvents != nil {
+	if opt.Dev != nil {
 		// Set server-sent event headers
 		http.HandleFunc("/~dev", func(w http.ResponseWriter, req *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
@@ -133,12 +220,8 @@ func (r Runner) Serve(opt ServerOptions) {
 			}
 			for {
 				select {
-				case res = <-opt.DevEvents:
-					bstr, err := json.Marshal(res)
-					if err != nil {
-						panic(err)
-					}
-					fmt.Fprintf(w, "event: reload\ndata: %s\n\n", string(bstr))
+				case buildRes = <-opt.Dev:
+					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-req.Context().Done():
 					return
@@ -151,8 +234,13 @@ func (r Runner) Serve(opt ServerOptions) {
 		<-opt.Ready
 	}
 
-	dur := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
-	stdio_logger.Stdout(cyan(fmt.Sprintf("Ready on port '%d' %s", r.getPort(), dur)))
+	var durStr string
+	if dur := time.Since(EPOCH); dur >= time.Millisecond {
+		durStr += " "
+		durStr += terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
+	}
+
+	stdio_logger.Stdout(cyan(fmt.Sprintf("Ready on port '%d'%s", r.getPort(), durStr)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", r.getPort()), nil); err != nil {
 		panic(err)
 	}
@@ -160,38 +248,26 @@ func (r Runner) Serve(opt ServerOptions) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-var pkg Package
-
-type Package struct {
-	react                string
-	react_dom            string
-	retro                string
-	retro_store          string
-	retro_browser_router string
+var pkg struct {
+	React              string `json:"react"`
+	ReactDOM           string `json:"react-dom"`
+	Retro              string `json:"@zaydek/retro"`
+	RetroStore         string `json:"@zaydek/retro-store"`
+	RetroBrowserRouter string `json:"@zaydek/retro-browser-router"`
 }
 
-//go:embed pkg.txt
-var contents string
+//go:embed deps.json
+var contents []byte
 
 func Run() {
-	// Parse 'pkg.txt' and set pkg
-	pkgMap, err := vs.Parse(contents)
-	if err != nil {
+	if err := json.Unmarshal(contents, &pkg); err != nil {
 		panic(err)
-	}
-
-	pkg = Package{
-		react:                pkgMap["react"],
-		react_dom:            pkgMap["react-dom"],
-		retro:                pkgMap["@zaydek/retro"],
-		retro_store:          pkgMap["@zaydek/retro-store"],
-		retro_browser_router: pkgMap["@zaydek/retro-browser-router"],
 	}
 
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Fprintln(os.Stdout, pkg.retro)
+		fmt.Fprintln(os.Stdout, pkg.Retro)
 		os.Exit(0)
 	case cli.UsageError:
 		fallthrough

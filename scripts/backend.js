@@ -35,7 +35,7 @@ const common = {
 	loader: {
 		".js": "jsx",
 	},
-	logLevel: process.env["VERBOSE"] === "true" ? "warning" : "silent",
+	logLevel: "silent",
 	minify: env === "production",
 	sourcemap: true,
 }
@@ -51,7 +51,7 @@ async function resolveUserConfig() {
 
 let result = undefined
 
-async function build(opt) {
+async function build() {
 	const buildRes = {
 		warnings: [],
 		errors: [],
@@ -76,49 +76,16 @@ async function build(opt) {
 			define: { ...config.define, ...common.define },
 			loader: { ...config.loader, ...common.loader },
 
+			// TODO: Add support for ".jsx", ".ts", and ".tsx"
 			bundle: true,
-			entryPoints: [path.join(SRC_DIR, "index.js")], // TODO: Add support for ".jsx", ".ts", and ".tsx"
+			entryPoints: [path.join(SRC_DIR, "index.js")],
 			outfile: path.join(OUT_DIR, "bundle.js"),
 
 			external: ["react", "react-dom"], // Dedupe React APIs (because of vendor)
 			inject: ["scripts/shims/require.js"], // Add support for vendor
 			plugins: config?.plugins,
 
-			// https://github.com/evanw/esbuild/issues/1063
 			incremental: true,
-
-			// watch: !opt.watch
-			// 	? undefined
-			// 	: {
-			// 			onRebuild(error, result) {
-			// 				require("child_process").execSync("osascript -e 'beep'")
-			// 				require("child_process").execSync("osascript -e 'beep'")
-			//
-			// 				const rebuildRes = {
-			// 					warnings: [],
-			// 					errors: [],
-			// 				}
-			// 				// E.g. try
-			// 				if (result !== null) {
-			// 					if (result.warnings.length > 0) {
-			// 						rebuildRes.warnings = result.warnings
-			// 					}
-			// 				}
-			// 				// E.g. catch
-			// 				if (error !== null) {
-			// 					if (error.errors.length > 0) {
-			// 						rebuildRes.errors = error.errors
-			// 					}
-			// 					if (error.warnings.length > 0) {
-			// 						rebuildRes.warnings = error.warnings
-			// 					}
-			// 				}
-			// 				stdout({
-			// 					Kind: "rebuild-done",
-			// 					Data: rebuildRes,
-			// 				})
-			// 			},
-			// 	  },
 		})
 		if (result?.warnings?.length > 0) {
 			buildRes.warnings = result.warnings
@@ -132,17 +99,13 @@ async function build(opt) {
 		}
 	}
 
-	require("child_process").execSync("osascript -e 'beep'")
-	stdout({
-		Kind: "build-done",
-		Data: buildRes,
-	})
+	stdout({ Kind: "build-done", Data: buildRes })
 }
 
 async function rebuild() {
 	if (result === null) return
 
-	const buildRes = {
+	const rebuildRes = {
 		warnings: [],
 		errors: [],
 	}
@@ -150,21 +113,18 @@ async function rebuild() {
 	try {
 		const result2 = await result.rebuild()
 		if (result2?.warnings?.length > 0) {
-			buildRes.warnings = result2.warnings
+			rebuildRes.warnings = result2.warnings
 		}
 	} catch (error) {
 		if (error?.errors?.length > 0) {
-			buildRes.errors = error.errors
+			rebuildRes.errors = error.errors
 		}
 		if (error?.warnings?.length > 0) {
-			buildRes.warnings = error.warnings
+			rebuildRes.warnings = error.warnings
 		}
 	}
 
-	stdout({
-		Kind: "rebuild-done",
-		Data: buildRes,
-	})
+	stdout({ Kind: "rebuild-done", Data: rebuildRes })
 }
 
 async function main() {
@@ -175,14 +135,10 @@ async function main() {
 		try {
 			switch (msg.Kind) {
 				case "dev":
-					await build({
-						watch: true,
-					})
+					await build({})
 					break
 				case "build":
-					await build({
-						watch: false,
-					})
+					await build({})
 					break
 				case "rebuild":
 					await rebuild()
