@@ -105,31 +105,3 @@ func NewCommand(args ...string) (stdin chan Request, stdout chan Response, stder
 
 	return stdin, stdout, stderr, nil
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-type Service struct {
-	Stdin  chan Request
-	Stdout chan Response
-	Stderr chan string
-}
-
-func (s Service) Send(msg Request, ptr interface{}) (stderr string, err error) {
-	s.Stdin <- msg
-
-loop:
-	for {
-		select {
-		case out := <-s.Stdout:
-			if out.Kind == "eof" {
-				if err := json.Unmarshal(out.Data, ptr); err != nil {
-					return "", err
-				}
-				break loop
-			}
-		case str := <-s.Stderr:
-			stderr = str
-		}
-	}
-	return stderr, nil
-}

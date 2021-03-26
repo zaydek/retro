@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	terminal_to_html "github.com/buildkite/terminal-to-html/v3"
 	"github.com/zaydek/retro/cmd/retro/cli"
 	"github.com/zaydek/retro/cmd/retro/pretty"
 	"github.com/zaydek/retro/pkg/ipc"
@@ -33,7 +32,6 @@ var cyan = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
 var magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
 
 ////////////////////////////////////////////////////////////////////////////////
-// % retro dev
 
 func (r Runner) Dev() {
 	os.Setenv("WWW_DIR", WWW_DIR)
@@ -46,59 +44,57 @@ func (r Runner) Dev() {
 	}
 
 	dev := make(chan BuildResponse, 1)
+	ready := make(chan struct{})
 
-	// Setup a second watcher for .scss, etc. Tracked by
-	// https://github.com/evanw/esbuild/issues/808.
 	go func() {
-		for watchRes := range watch.Directory(SRC_DIR, 100*time.Millisecond) {
-			if watchRes.Error != nil {
-				panic(err)
+		for result := range watch.Directory(SRC_DIR, 100*time.Millisecond) {
+			if result.Error != nil {
+				panic(result.Error)
 			}
-			// fmt.Println("something changed")
 			stdin <- ipc.Request{Kind: "rebuild"}
 		}
 	}()
 
-	ready := make(chan struct{})
-
 	var once sync.Once
 	go func() {
-		stdin <- ipc.Request{Kind: "build"}
+		stdin <- ipc.Request{Kind: "dev"}
 		for {
 			select {
 			case out := <-stdout:
-				once.Do(func() {
-					ready <- struct{}{}
-				})
+				once.Do(func() { ready <- struct{}{} })
 				var res BuildResponse
 				if err := json.Unmarshal(out.Data, &res); err != nil {
 					panic(err)
 				}
 				dev <- res
 			case err := <-stderr:
-				transformed := stdio_logger.TransformStderr(err)
-				fmt.Println(string(terminal_to_html.Render([]byte(transformed))))
 				stdio_logger.Stderr(err)
+				// transformed := stdio_logger.TransformStderr(err)
+				// fmt.Println(string(terminal_to_html.Render([]byte(transformed))))
+				// os.Exit(1)
 			}
 		}
 	}()
 
-	r.Serve(ServerOptions{Ready: ready, DevEvents: dev})
+	r.Serve(ServerOptions{
+		Stdin:     stdin,
+		DevEvents: dev,
+		Ready:     ready,
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// % retro build
 
 func (r Runner) Build() {
 	fmt.Println("TODO")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// % retro serve
 
 type ServerOptions struct {
-	Ready     chan struct{}
+	Stdin     chan ipc.Request
 	DevEvents chan BuildResponse
+	Ready     chan struct{}
 }
 
 func (r Runner) Serve(opt ServerOptions) {
@@ -110,7 +106,7 @@ func (r Runner) Serve(opt ServerOptions) {
 			fmt.Fprintln(w, res.HTML())
 			return
 		}
-
+		// opt.Stdin <- ipc.Request{Kind: "rebuild"}
 		path := getFSPath(r.URL.Path)
 		if ext := filepath.Ext(path); ext == ".html" {
 			http.ServeFile(w, r, filepath.Join(OUT_DIR, "index.html"))

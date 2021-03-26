@@ -29,6 +29,7 @@ func Directory(dir string, poll time.Duration) <-chan WatchResult {
 				if err != nil {
 					return err
 				}
+				// if filepath.Ext(path) == ext {
 				if prev, ok := mtimeMap[path]; !ok {
 					mtimeMap[path] = info.ModTime()
 				} else {
@@ -37,6 +38,7 @@ func Directory(dir string, poll time.Duration) <-chan WatchResult {
 						ch <- WatchResult{nil}
 					}
 				}
+				// }
 				return nil
 			})
 			if err != nil {
