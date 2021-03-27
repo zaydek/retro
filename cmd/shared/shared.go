@@ -1,6 +1,10 @@
 package shared
 
-import "encoding/json"
+import (
+	_ "embed"
+
+	"encoding/json"
+)
 
 //go:embed deps.json
 var deps string

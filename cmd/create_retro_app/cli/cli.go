@@ -54,16 +54,21 @@ func ParseCommand(args ...string) (Command, error) {
 	for _, arg := range args {
 		err := CommandError{Kind: BadArgument, BadArgument: arg}
 		if strings.HasPrefix(arg, "--template") {
-			if len(arg) < len("--template=") {
+			if len(arg) <= len("--template=") {
 				return Command{}, err
 			}
+			fmt.Printf("%q\n", arg[len("--template="):])
 			switch strings.ToLower(arg[len("--template="):]) {
 			case "js":
+				fallthrough
 			case "jsx":
+				fallthrough
 			case "javascript":
 				cmd.Template = "javascript"
 			case "ts":
+				fallthrough
 			case "tsx":
+				fallthrough
 			case "typescript":
 				cmd.Template = "typescript"
 			default:

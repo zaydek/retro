@@ -13,7 +13,7 @@ func check(t *testing.T, err error) {
 	t.Fatalf("check: %s", err)
 }
 
-func TestParseArguments(t *testing.T) {
+func TestParseCommand(t *testing.T) {
 	var (
 		cmd Command
 		err error
