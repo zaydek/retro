@@ -42,6 +42,10 @@ var (
 ////////////////////////////////////////////////////////////////////////////////
 
 type BackendResponse struct {
+	Metafile struct {
+		Vendor map[string]interface{}
+		Bundle map[string]interface{}
+	}
 	Errors   []api.Message
 	Warnings []api.Message
 }
@@ -182,7 +186,10 @@ func greedyExt(path string) string {
 func (a lsInfos) Len() int      { return len(a) }
 func (a lsInfos) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 
+// // Sort by ext
 // func (a lsInfos) Less(i, j int) bool { return greedyExt(a[i].path) < greedyExt(a[j].path) }
+
+// Sort by name
 func (a lsInfos) Less(i, j int) bool { return a[i].path < a[j].path }
 
 func ls(dir string) (lsInfos, error) {
@@ -234,11 +241,13 @@ func (r Runner) Build() {
 		if err := json.Unmarshal(out.Data, &res); err != nil {
 			panic(err)
 		}
-		if !res.Dirty() {
-			break
+
+		fmt.Println(string(out.Data))
+
+		if res.Dirty() {
+			fmt.Fprint(os.Stderr, res)
+			os.Exit(1)
 		}
-		fmt.Fprint(os.Stderr, res) // Use fmt.Fprint not fmt.Fprintln
-		os.Exit(1)
 	case err := <-stderr:
 		panic(err)
 	}
@@ -251,24 +260,21 @@ func (r Runner) Build() {
 	sort.Sort(infos)
 
 	var sum, sumMap int64
-	for x, v := range infos {
-		var hue = terminal.Normal
+	for _, v := range infos {
+		var color = terminal.Normal
 		if strings.HasSuffix(v.path, ".html") {
-			hue = terminal.Normal
+			color = terminal.Normal
 		} else if strings.HasSuffix(v.path, ".js") || strings.HasSuffix(v.path, ".js.map") {
-			hue = terminal.Yellow
+			color = terminal.Yellow
 		} else if strings.HasSuffix(v.path, ".css") || strings.HasSuffix(v.path, ".css.map") {
-			hue = terminal.Cyan
+			color = terminal.Cyan
 		} else {
-			hue = terminal.Dim
+			color = terminal.Dim
 		}
 
-		if x == 0 {
-			fmt.Println()
-		}
-		fmt.Printf(" %v%s%v\n",
-			hue(v.path),
-			strings.Repeat(" ", 25-len(v.path)),
+		fmt.Printf("%v%s%v\n",
+			color(v.path),
+			strings.Repeat(" ", 32-len(v.path)),
 			terminal.Dimf("(%s)", byteCount(v.size)),
 		)
 
@@ -278,9 +284,9 @@ func (r Runner) Build() {
 		sumMap += v.size
 	}
 
-	fmt.Println()
-	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s)", byteCount(sum)))
-	fmt.Println(strings.Repeat(" ", 25), terminal.Dimf("(%s w/ sourcemaps)", byteCount(sumMap)))
+	// TODO: Wrap w/ 'if r.Sourcemap { ... }'
+	fmt.Println(strings.Repeat(" ", 32) + terminal.Dimf("(%s sum)", byteCount(sum)))
+	fmt.Println(strings.Repeat(" ", 32) + terminal.Dimf("(%s sum w/ sourcemaps)", byteCount(sumMap)))
 
 	durStr := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
 
@@ -296,7 +302,7 @@ type ServerOptions struct {
 	Ready chan struct{}
 }
 
-func serve200Str(r *http.Request, start time.Time) string {
+func formatServe200(r *http.Request, start time.Time) string {
 	var durStr string
 	if dur := time.Since(start); dur >= time.Millisecond {
 		durStr += " "
@@ -305,7 +311,7 @@ func serve200Str(r *http.Request, start time.Time) string {
 	return cyan(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr))
 }
 
-func serve500Str(r *http.Request, start time.Time) string {
+func formatServe500(r *http.Request, start time.Time) string {
 	var durStr string
 	if dur := time.Since(start); dur >= time.Millisecond {
 		durStr += " "
@@ -318,14 +324,18 @@ func (r Runner) Serve(opt ServerOptions) {
 	var res BackendResponse
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/~dev" {
+			return
+		}
+
 		// 500 Server error
 		start := time.Now()
 		if res.Dirty() {
 			fmt.Fprint(w, res.HTML())
-			stdio_logger.Stdout(serve500Str(req, start))
+			stdio_logger.Stdout(formatServe500(req, start))
 			return
 		}
-		// 200 OK - Serve any
+		// 200 OK - Serve any (not index.html)
 		path := getFSPath(req.URL.Path)
 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
 			http.ServeFile(w, req, filepath.Join(OUT_DIR, path))
@@ -333,7 +343,7 @@ func (r Runner) Serve(opt ServerOptions) {
 		}
 		// 200 OK - Serve index.html
 		http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
-		stdio_logger.Stdout(serve200Str(req, start))
+		stdio_logger.Stdout(formatServe200(req, start))
 	})
 
 	if opt.Dev != nil {
@@ -397,7 +407,7 @@ func copyEntryPoint() error {
 	}
 	contents := string(bstr)
 	if os.Getenv("ENV") == "development" {
-		contents = strings.Replace(contents, ">\n</html>", fmt.Sprintf(">\n\t%s\n</html>", devStub), 1)
+		contents = strings.Replace(contents, "</html>", fmt.Sprintf("\t%s\n</html>", devStub), 1)
 	}
 	if err := ioutil.WriteFile(filepath.Join(OUT_DIR, "index.html"), []byte(contents), MODE_FILE); err != nil {
 		return err
@@ -438,6 +448,7 @@ func Run() {
 
 		os.Setenv("CMD", "dev")
 		os.Setenv("ENV", "development")
+		os.Setenv("NODE_ENV", "development")
 		os.Setenv("WWW_DIR", WWW_DIR)
 		os.Setenv("SRC_DIR", SRC_DIR)
 		os.Setenv("OUT_DIR", OUT_DIR)
@@ -479,6 +490,7 @@ func Run() {
 
 		os.Setenv("CMD", "build")
 		os.Setenv("ENV", "production")
+		os.Setenv("NODE_ENV", "production")
 		os.Setenv("WWW_DIR", WWW_DIR)
 		os.Setenv("SRC_DIR", SRC_DIR)
 		os.Setenv("OUT_DIR", OUT_DIR)
@@ -520,6 +532,7 @@ func Run() {
 
 		os.Setenv("CMD", "serve")
 		os.Setenv("ENV", "production")
+		os.Setenv("NODE_ENV", "production")
 		os.Setenv("WWW_DIR", WWW_DIR)
 		os.Setenv("SRC_DIR", SRC_DIR)
 		os.Setenv("OUT_DIR", OUT_DIR)

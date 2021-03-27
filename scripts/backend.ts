@@ -25,9 +25,13 @@ interface Message {
 	Data: any
 }
 
-interface BuildResponse {
-	errors: esbuild.Message[]
-	warnings: esbuild.Message[]
+interface BackendResponse {
+	Metafiles: {
+		Vendor: esbuild.Metafile | null
+		Bundle: esbuild.Metafile | null
+	}
+	Errors: esbuild.Message[]
+	Warnings: esbuild.Message[]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,10 +62,10 @@ const common: esbuild.BuildOptions = {
 	},
 	logLevel: "silent",
 	minify: ENV === "production",
-	sourcemap: true,
+	sourcemap: true, // TODO
 }
 
-async function resolveUserConfig(): Promise<esbuild.BuildOptions> {
+async function resolveConfig(): Promise<esbuild.BuildOptions> {
 	try {
 		await fs.promises.stat("retro.config.js")
 	} catch {
@@ -70,37 +74,49 @@ async function resolveUserConfig(): Promise<esbuild.BuildOptions> {
 	return require(path.join(process.cwd(), "retro.config.js"))
 }
 
-let result: esbuild.BuildResult | esbuild.BuildIncremental | null = null
+let vendorResult: esbuild.BuildResult | null = null
+let bundleResult: esbuild.BuildResult | esbuild.BuildIncremental | null = null
 
-async function build(): Promise<BuildResponse> {
-	const buildRes: BuildResponse = {
-		warnings: [],
-		errors: [],
+async function build(): Promise<BackendResponse> {
+	const buildRes: BackendResponse = {
+		Metafiles: {
+			Vendor: null,
+			Bundle: null,
+		},
+		Warnings: [],
+		Errors: [],
 	}
 
-	const config = await resolveUserConfig()
+	const config = await resolveConfig()
 
 	try {
-		// out/vendor.js
-		await esbuild.build({
+		// React, React DOM
+		vendorResult = await esbuild.build({
 			...common,
+
 			bundle: true,
+			entryNames: "[dir]/[name]-[hash]",
 			entryPoints: ["scripts/shims/vendor.js"],
-			outfile: path.join(OUT_DIR, "vendor.js"),
+			metafile: true,
+			outdir: OUT_DIR,
 		})
 
-		// out/bundle.js
-		result = await esbuild.build({
+		// Attach metafile
+		buildRes.Metafiles.Vendor = vendorResult.metafile!
+
+		// User code
+		bundleResult = await esbuild.build({
 			...config,
 			...common,
 
 			define: { ...config.define, ...common.define },
 			loader: { ...config.loader, ...common.loader },
 
-			// TODO: Add support for ".jsx", ".ts", and ".tsx"
 			bundle: true,
+			entryNames: "[dir]/[name]-[hash]",
 			entryPoints: [path.join(SRC_DIR, "index.js")],
-			outfile: path.join(OUT_DIR, "bundle.js"),
+			metafile: true,
+			outdir: OUT_DIR,
 
 			external: ["react", "react-dom"], // Dedupe React APIs (because of vendor)
 			inject: ["scripts/shims/require.js"], // Add support for vendor
@@ -108,40 +124,48 @@ async function build(): Promise<BuildResponse> {
 
 			incremental: ENV === "development",
 		})
-		if (result.warnings.length > 0) {
-			buildRes.warnings = result.warnings
+
+		// Attach metafile
+		buildRes.Metafiles.Bundle = bundleResult.metafile!
+
+		if (bundleResult.warnings.length > 0) {
+			buildRes.Warnings = bundleResult.warnings
 		}
-	} catch (error) {
-		if (error.errors.length > 0) {
-			buildRes.errors = error.errors
+	} catch (caught) {
+		if (caught.errors.length > 0) {
+			buildRes.Errors = caught.errors
 		}
-		if (error.warnings.length > 0) {
-			buildRes.warnings = error.warnings
+		if (caught.warnings.length > 0) {
+			buildRes.Warnings = caught.warnings
 		}
 	}
 
 	return buildRes
 }
 
-async function rebuild(): Promise<BuildResponse> {
-	if (result?.rebuild === undefined) throw new Error("Internal error")
+async function rebuild(): Promise<BackendResponse> {
+	if (bundleResult?.rebuild === undefined) throw new Error("Internal error")
 
-	const rebuildRes: BuildResponse = {
-		warnings: [],
-		errors: [],
+	const rebuildRes: BackendResponse = {
+		Metafiles: {
+			Vendor: null,
+			Bundle: null,
+		},
+		Warnings: [],
+		Errors: [],
 	}
 
 	try {
-		const result2 = await result.rebuild()
+		const result2 = await bundleResult.rebuild()
 		if (result2.warnings.length > 0) {
-			rebuildRes.warnings = result2.warnings
+			rebuildRes.Warnings = result2.warnings
 		}
-	} catch (error) {
-		if (error.errors.length > 0) {
-			rebuildRes.errors = error.errors
+	} catch (caught) {
+		if (caught.errors.length > 0) {
+			rebuildRes.Errors = caught.errors
 		}
-		if (error.warnings.length > 0) {
-			rebuildRes.warnings = error.warnings
+		if (caught.warnings.length > 0) {
+			rebuildRes.Warnings = caught.warnings
 		}
 	}
 
