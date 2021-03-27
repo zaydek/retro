@@ -2,8 +2,6 @@ package retro
 
 import (
 	_ "embed"
-	"io/ioutil"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -15,8 +13,6 @@ import (
 	"sync"
 	"time"
 
-	render "github.com/buildkite/terminal-to-html/v3"
-	"github.com/evanw/esbuild/pkg/api"
 	"github.com/zaydek/retro/cmd/retro/cli"
 	"github.com/zaydek/retro/cmd/retro/pretty"
 	"github.com/zaydek/retro/pkg/ipc"
@@ -41,91 +37,26 @@ var (
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type BackendResponse struct {
-	Metafile struct {
-		Vendor map[string]interface{}
-		Bundle map[string]interface{}
+type DevOptions struct {
+	Preflight bool
+}
+
+func (r Runner) Dev(opt DevOptions) {
+	var copyHTMLEntryPoint func(string, string, string) error
+	if opt.Preflight {
+		var err error
+		copyHTMLEntryPoint, err = r.preflight()
+		switch err.(type) {
+		case HTMLError:
+			fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
+			os.Exit(1)
+		default:
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
-	Errors   []api.Message
-	Warnings []api.Message
-}
 
-func (r BackendResponse) Dirty() bool {
-	return len(r.Errors) > 0 || len(r.Warnings) > 0
-}
-
-func (r BackendResponse) String() string {
-	e := api.FormatMessages(r.Errors, api.FormatMessagesOptions{
-		Color:         true,
-		Kind:          api.ErrorMessage,
-		TerminalWidth: 80,
-	})
-	w := api.FormatMessages(r.Warnings, api.FormatMessagesOptions{
-		Color:         true,
-		Kind:          api.WarningMessage,
-		TerminalWidth: 80,
-	})
-	return strings.Join(append(e, w...), "")
-}
-
-func (r BackendResponse) HTML() string {
-	str := r.String()
-	str = strings.ReplaceAll(str, "╷", "|")
-	str = strings.ReplaceAll(str, "│", "|")
-	str = strings.ReplaceAll(str, "╵", "|")
-
-	return `<!DOCTYPE html>
-<html>
-	<head>
-		<title>Error</title>
-		<style>
-
-html {
-	color: #c7c7c7;
-	background-color: #000000;
-}
-
-code {
-	font: 16px / 1.4 "Monaco", monospace;
-}
-
-a { color: unset; text-decoration: unset; }
-a:hover { text-decoration: underline; }
-
-.term-fg1 {
-	font-weight: bold;
-	color: #feffff;
-}
-
-.term-fg30 { color: #000000; }
-.term-fg31 { color: #c91b00; }
-.term-fg32 { color: #00c200; }
-.term-fg33 { color: #c7c400; }
-.term-fg34 { color: #0225c7; }
-.term-fg35 { color: #c930c7; }
-.term-fg36 { color: #00c5c7; }
-.term-fg37 { color: #c7c7c7; }
-
-.term-fg1.term-fg30 { color: #676767; }
-.term-fg1.term-fg31 { color: #ff6d67; }
-.term-fg1.term-fg32 { color: #5ff967; }
-.term-fg1.term-fg33 { color: #fefb67; }
-.term-fg1.term-fg34 { color: #6871ff; }
-.term-fg1.term-fg35 { color: #ff76ff; }
-.term-fg1.term-fg36 { color: #5ffdff; }
-.term-fg1.term-fg37 { color: #feffff; }
-
-		</style>
-	</head>
-	<body>
-		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
-	</body>
-	` + devStub + `
-</html>
-`
-}
-
-func (r Runner) Dev() {
 	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
 	if err != nil {
 		panic(err)
@@ -149,11 +80,17 @@ func (r Runner) Dev() {
 		for {
 			select {
 			case out := <-stdout:
-				once.Do(func() { ready <- struct{}{} })
 				var res BackendResponse
 				if err := json.Unmarshal(out.Data, &res); err != nil {
 					panic(err)
 				}
+				once.Do(func() {
+					react_js, index_js, index_css := res.getChunkedNames()
+					if err := copyHTMLEntryPoint(react_js, index_js, index_css); err != nil {
+						panic(err)
+					}
+					ready <- struct{}{}
+				})
 				dev <- res
 			case err := <-stderr:
 				panic(err)
@@ -166,84 +103,46 @@ func (r Runner) Dev() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type lsInfo struct {
-	path string
-	size int64
+type BuildOptions struct {
+	Preflight bool
 }
 
-type lsInfos []lsInfo
-
-var greedyExtRe = regexp.MustCompile(`(\.).*$`)
-
-func greedyExt(path string) string {
-	matches := greedyExtRe.FindAllString(path, -1)
-	if len(matches) == 0 {
-		return ""
-	}
-	return matches[0]
-}
-
-func (a lsInfos) Len() int      { return len(a) }
-func (a lsInfos) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-
-// // Sort by ext
-// func (a lsInfos) Less(i, j int) bool { return greedyExt(a[i].path) < greedyExt(a[j].path) }
-
-// Sort by name
-func (a lsInfos) Less(i, j int) bool { return a[i].path < a[j].path }
-
-func ls(dir string) (lsInfos, error) {
-	var ls lsInfos
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+func (r Runner) Build(opt BuildOptions) {
+	var copyHTMLEntryPoint func(string, string, string) error
+	if opt.Preflight {
+		var err error
+		copyHTMLEntryPoint, err = r.preflight()
+		switch err.(type) {
+		case HTMLError:
+			fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
+			os.Exit(1)
+		default:
+			if err != nil {
+				panic(err)
+			}
 		}
-		if info.IsDir() {
-			return nil
-		}
-		ls = append(ls, lsInfo{
-			path: path,
-			size: info.Size(),
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
-	return ls, nil
-}
 
-// https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format
-func byteCount(b int64) string {
-	const u = 1024
-
-	if b < u {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(u), 0
-	for n := b / u; n >= u; n /= u {
-		div *= u
-		exp++
-	}
-	return fmt.Sprintf("%.0f %cB", float64(b)/float64(div), "KMGTPE"[exp])
-}
-
-func (r Runner) Build() {
 	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
 	if err != nil {
 		panic(err)
 	}
 
 	stdin <- ipc.Request{Kind: "build"}
+
+	var once sync.Once
 	select {
 	case out := <-stdout:
 		var res BackendResponse
 		if err := json.Unmarshal(out.Data, &res); err != nil {
 			panic(err)
 		}
-
-		fmt.Println(string(out.Data))
-
+		once.Do(func() {
+			react_js, index_js, index_css := res.getChunkedNames()
+			if err := copyHTMLEntryPoint(react_js, index_js, index_css); err != nil {
+				panic(err)
+			}
+		})
 		if res.Dirty() {
 			fmt.Fprint(os.Stderr, res)
 			os.Exit(1)
@@ -298,6 +197,8 @@ func (r Runner) Build() {
 ////////////////////////////////////////////////////////////////////////////////
 
 type ServerOptions struct {
+	Preflight bool
+
 	Dev   chan BackendResponse
 	Ready chan struct{}
 }
@@ -321,6 +222,19 @@ func formatServe500(r *http.Request, start time.Time) string {
 }
 
 func (r Runner) Serve(opt ServerOptions) {
+	if opt.Preflight {
+		_, err := r.preflight()
+		switch err.(type) {
+		case HTMLError:
+			fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
+			os.Exit(1)
+		default:
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
 	var res BackendResponse
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
@@ -397,23 +311,8 @@ var pkg struct {
 //go:embed deps.json
 var deps string
 
-// Server-sent events and localStorage events
+// Server-sent events stub
 const devStub = `<script type="module">const dev = new EventSource("/~dev"); dev.addEventListener("reload", () => { localStorage.setItem("/~dev", "" + Date.now()); window.location.reload() }); dev.addEventListener("error", e => { try { console.error(JSON.parse(e.data)) } catch {} }); window.addEventListener("storage", e => { if (e.key === "/~dev") { window.location.reload() } })</script>`
-
-func copyEntryPoint() error {
-	bstr, err := ioutil.ReadFile(filepath.Join(WWW_DIR, "index.html"))
-	if err != nil {
-		return err
-	}
-	contents := string(bstr)
-	if os.Getenv("ENV") == "development" {
-		contents = strings.Replace(contents, "</html>", fmt.Sprintf("\t%s\n</html>", devStub), 1)
-	}
-	if err := ioutil.WriteFile(filepath.Join(OUT_DIR, "index.html"), []byte(contents), MODE_FILE); err != nil {
-		return err
-	}
-	return nil
-}
 
 func Run() {
 	if err := json.Unmarshal([]byte(deps), &pkg); err != nil {
@@ -445,98 +344,10 @@ func Run() {
 	run := Runner{Command: cmd}
 	switch cmd.(type) {
 	case cli.DevCommand:
-
-		os.Setenv("CMD", "dev")
-		os.Setenv("ENV", "development")
-		os.Setenv("NODE_ENV", "development")
-		os.Setenv("WWW_DIR", WWW_DIR)
-		os.Setenv("SRC_DIR", SRC_DIR)
-		os.Setenv("OUT_DIR", OUT_DIR)
-
-		rmdirs := []string{OUT_DIR}
-		for _, rmdir := range rmdirs {
-			if err := os.RemoveAll(rmdir); err != nil {
-				panic(err)
-			}
-		}
-
-		mkdirs := []string{WWW_DIR, SRC_DIR, OUT_DIR}
-		for _, mkdir := range mkdirs {
-			if err := os.MkdirAll(mkdir, MODE_DIR); err != nil {
-				panic(err)
-			}
-		}
-
-		guardErr := entryPointGuards()
-		switch guardErr.(type) {
-		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guardErr.Error())))
-			os.Exit(1)
-		default:
-			if guardErr != nil {
-				panic(guardErr)
-			}
-		}
-
-		if err := copyAll(WWW_DIR, filepath.Join(OUT_DIR, WWW_DIR), []string{"index.html"}); err != nil {
-			panic(err)
-		}
-		if err := copyEntryPoint(); err != nil {
-			panic(err)
-		}
-
-		run.Dev()
+		run.Dev(DevOptions{Preflight: true})
 	case cli.BuildCommand:
-
-		os.Setenv("CMD", "build")
-		os.Setenv("ENV", "production")
-		os.Setenv("NODE_ENV", "production")
-		os.Setenv("WWW_DIR", WWW_DIR)
-		os.Setenv("SRC_DIR", SRC_DIR)
-		os.Setenv("OUT_DIR", OUT_DIR)
-
-		rmdirs := []string{OUT_DIR}
-		for _, rmdir := range rmdirs {
-			if err := os.RemoveAll(rmdir); err != nil {
-				panic(err)
-			}
-		}
-
-		mkdirs := []string{WWW_DIR, SRC_DIR, OUT_DIR}
-		for _, mkdir := range mkdirs {
-			if err := os.MkdirAll(mkdir, MODE_DIR); err != nil {
-				panic(err)
-			}
-		}
-
-		guardErr := entryPointGuards()
-		switch guardErr.(type) {
-		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(magenta(guardErr.Error())))
-			os.Exit(1)
-		default:
-			if guardErr != nil {
-				panic(guardErr)
-			}
-		}
-
-		if err := copyAll(WWW_DIR, filepath.Join(OUT_DIR, WWW_DIR), []string{filepath.Join(WWW_DIR, "index.html")}); err != nil {
-			panic(err)
-		}
-		if err := copyEntryPoint(); err != nil {
-			panic(err)
-		}
-
-		run.Build()
+		run.Build(BuildOptions{Preflight: true})
 	case cli.ServeCommand:
-
-		os.Setenv("CMD", "serve")
-		os.Setenv("ENV", "production")
-		os.Setenv("NODE_ENV", "production")
-		os.Setenv("WWW_DIR", WWW_DIR)
-		os.Setenv("SRC_DIR", SRC_DIR)
-		os.Setenv("OUT_DIR", OUT_DIR)
-
-		run.Serve(ServerOptions{})
+		run.Serve(ServerOptions{Preflight: true})
 	}
 }

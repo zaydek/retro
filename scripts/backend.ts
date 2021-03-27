@@ -26,7 +26,7 @@ interface Message {
 }
 
 interface BackendResponse {
-	Metafiles: {
+	Metafile: {
 		Vendor: esbuild.Metafile | null
 		Bundle: esbuild.Metafile | null
 	}
@@ -74,12 +74,12 @@ async function resolveConfig(): Promise<esbuild.BuildOptions> {
 	return require(path.join(process.cwd(), "retro.config.js"))
 }
 
-let vendorResult: esbuild.BuildResult | null = null
-let bundleResult: esbuild.BuildResult | esbuild.BuildIncremental | null = null
+let reactResult: esbuild.BuildResult | null = null
+let indexResult: esbuild.BuildResult | esbuild.BuildIncremental | null = null
 
 async function build(): Promise<BackendResponse> {
 	const buildRes: BackendResponse = {
-		Metafiles: {
+		Metafile: {
 			Vendor: null,
 			Bundle: null,
 		},
@@ -91,21 +91,21 @@ async function build(): Promise<BackendResponse> {
 
 	try {
 		// React, React DOM
-		vendorResult = await esbuild.build({
+		reactResult = await esbuild.build({
 			...common,
 
 			bundle: true,
 			entryNames: "[dir]/[name]-[hash]",
-			entryPoints: ["scripts/shims/vendor.js"],
+			entryPoints: ["scripts/react.js"],
 			metafile: true,
 			outdir: OUT_DIR,
 		})
 
 		// Attach metafile
-		buildRes.Metafiles.Vendor = vendorResult.metafile!
+		buildRes.Metafile.Vendor = reactResult.metafile!
 
 		// User code
-		bundleResult = await esbuild.build({
+		indexResult = await esbuild.build({
 			...config,
 			...common,
 
@@ -126,10 +126,10 @@ async function build(): Promise<BackendResponse> {
 		})
 
 		// Attach metafile
-		buildRes.Metafiles.Bundle = bundleResult.metafile!
+		buildRes.Metafile.Bundle = indexResult.metafile!
 
-		if (bundleResult.warnings.length > 0) {
-			buildRes.Warnings = bundleResult.warnings
+		if (indexResult.warnings.length > 0) {
+			buildRes.Warnings = indexResult.warnings
 		}
 	} catch (caught) {
 		if (caught.errors.length > 0) {
@@ -144,10 +144,10 @@ async function build(): Promise<BackendResponse> {
 }
 
 async function rebuild(): Promise<BackendResponse> {
-	if (bundleResult?.rebuild === undefined) throw new Error("Internal error")
+	if (indexResult?.rebuild === undefined) throw new Error("Internal error")
 
 	const rebuildRes: BackendResponse = {
-		Metafiles: {
+		Metafile: {
 			Vendor: null,
 			Bundle: null,
 		},
@@ -156,7 +156,7 @@ async function rebuild(): Promise<BackendResponse> {
 	}
 
 	try {
-		const result2 = await bundleResult.rebuild()
+		const result2 = await indexResult.rebuild()
 		if (result2.warnings.length > 0) {
 			rebuildRes.Warnings = result2.warnings
 		}

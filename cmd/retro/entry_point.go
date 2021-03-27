@@ -1,12 +1,12 @@
 package retro
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/zaydek/retro/pkg/terminal"
 )
@@ -23,7 +23,7 @@ func (t HTMLError) Error() string {
 	return t.err.Error()
 }
 
-func entryPointGuards() error {
+func guardHTMLEntryPoint() error {
 	path := filepath.Join(WWW_DIR, "index.html")
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -37,11 +37,11 @@ func entryPointGuards() error {
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Hello, world!</title>
-		<link rel="stylesheet" href="/bundle.css" />
+		<link rel="stylesheet" href="/index.css" />
 	</head>
 	<body>
 		<div id="root"></div>
-		<script src="/vendor.js"></script>
+		<script src="/react.js"></script>
 		script src="/bundle.js"></script>
 	</body>
 </html>
@@ -51,15 +51,16 @@ func entryPointGuards() error {
 		}
 	}
 
-	html, err := ioutil.ReadFile(path)
+	bstr, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	if !bytes.Contains(html, []byte(`<link rel="stylesheet" href="/bundle.css" />`)) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<link rel="stylesheet" href="/bundle.css" />'`), terminal.Magenta("'<head>'")) + `
+	contents := string(bstr)
+	if !strings.Contains(contents, `<link rel="stylesheet" href="/index.css" />`) {
+		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<link rel="stylesheet" href="/index.css" />'`), terminal.Magenta("'<head>'")) + `
 
 For example:
 
@@ -68,7 +69,7 @@ For example:
 	<head lang="en">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		` + terminal.Green(`<link rel="stylesheet" href="/bundle.css" />`) + `
+		` + terminal.Green(`<link rel="stylesheet" href="/index.css" />`) + `
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
@@ -79,7 +80,7 @@ For example:
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	if !bytes.Contains(html, []byte(`<div id="root"></div>`)) {
+	if !strings.Contains(contents, `<div id="root"></div>`) {
 		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<div id="root"></div>'`), terminal.Magenta("'<body>'")) + `
 
 For example:
@@ -100,8 +101,8 @@ For example:
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	if !bytes.Contains(html, []byte(`<script src="/vendor.js"></script>`)) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/vendor.js"></script>'`), terminal.Magenta("'<body>'")) + `
+	if !strings.Contains(contents, `<script src="/react.js"></script>`) {
+		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/react.js"></script>'`), terminal.Magenta("'<body>'")) + `
 
 For example:
 
@@ -114,15 +115,15 @@ For example:
 	</head>
 	<body>
 		` + terminal.Dim("...") + `
-		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
+		` + terminal.Green(`<script src="/react.js"></script>`) + `
 	</body>
 </html>`)
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	if !bytes.Contains(html, []byte(`<script src="/bundle.js"></script>`)) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/bundle.js"></script>'`), terminal.Magenta("'<body>'")) + `
+	if !strings.Contains(contents, `<script src="/index.js"></script>`) {
+		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/index.js"></script>'`), terminal.Magenta("'<body>'")) + `
 
 For example:
 
@@ -135,10 +136,56 @@ For example:
 	</head>
 	<body>
 		` + terminal.Dim("...") + `
-		` + terminal.Green(`<script src="/bundle.js"></script>`) + `
+		` + terminal.Green(`<script src="/index.js"></script>`) + `
 	</body>
 </html>`)
 	}
 
+	return nil
+}
+
+func copyHTMLEntryPoint(react_js, index_js, index_css string) error {
+	bstr, err := ioutil.ReadFile(filepath.Join(WWW_DIR, "index.html"))
+	if err != nil {
+		return err
+	}
+
+	// Swap cache busted paths
+	contents := string(bstr)
+	contents = strings.Replace(
+		contents,
+		`<script src="/react.js"></script>`,
+		fmt.Sprintf(`<script src="/%s"></script>`,
+			react_js,
+		),
+		1,
+	)
+
+	contents = strings.Replace(
+		contents,
+		`<script src="/index.js"></script>`,
+		fmt.Sprintf(`<script src="/%s"></script>`,
+			index_js,
+		),
+		1,
+	)
+
+	contents = strings.Replace(
+		contents,
+		`<link rel="stylesheet" href="/index.css" />`,
+		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`,
+			index_css,
+		),
+		1,
+	)
+
+	// Add the dev stub
+	if os.Getenv("ENV") == "development" {
+		contents = strings.Replace(contents, "</html>", fmt.Sprintf("\t%s\n</html>", devStub), 1)
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(OUT_DIR, "index.html"), []byte(contents), MODE_FILE); err != nil {
+		return err
+	}
 	return nil
 }

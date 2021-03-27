@@ -57,12 +57,6 @@ func NewCommand(args ...string) (stdin chan Request, stdout chan Response, stder
 		buf := make([]byte, 1024*1024)
 		scanner.Buffer(buf, len(buf))
 		for scanner.Scan() {
-			// var res Response
-			// if err := json.Unmarshal(scanner.Bytes(), &res); err != nil {
-			// 	panic(err)
-			// }
-			// stdout <- res
-
 			if bstr := scanner.Bytes(); len(bstr) > 0 {
 				var res Response
 				if err := json.Unmarshal(bstr, &res); err != nil {
