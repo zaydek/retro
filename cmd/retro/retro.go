@@ -319,7 +319,7 @@ func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Println(shared.Package.Retro)
+		fmt.Println(shared.Deps.RetroVersion)
 		return
 	case cli.UsageError:
 		fallthrough

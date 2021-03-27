@@ -57,7 +57,6 @@ func ParseCommand(args ...string) (Command, error) {
 			if len(arg) <= len("--template=") {
 				return Command{}, err
 			}
-			fmt.Printf("%q\n", arg[len("--template="):])
 			switch strings.ToLower(arg[len("--template="):]) {
 			case "js":
 				fallthrough

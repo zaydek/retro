@@ -5,11 +5,6 @@ import (
 	"text/template"
 )
 
-type PackageDot struct {
-	APP_NAME      string
-	RETRO_VERSION string
-}
-
 //go:embed package.javascript.json
 var javaScriptPackage string
 

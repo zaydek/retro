@@ -1,18 +1,16 @@
 {
-	"name": "{{ .APP_NAME }}",
 	"scripts": {
 		"dev": "retro dev",
 		"build": "retro build",
 		"serve": "retro serve"
 	},
 	"dependencies": {
-		"@zaydek/retro": "^{{ .RETRO_VERSION }}",
-		"react": "^17.0.1",
-		"react-dom": "^17.0.1"
+		"react": "{{ .ReactVersion }}",
+		"react-dom": "{{ .ReactDOMVersion }}"
 	},
 	"devDependencies": {
-		"@types/react": "^17.0.0",
-		"@types/react-dom": "^17.0.0",
-		"esbuild": "^0.8.46"
+		"@types/react": "{{ .TypesReactVersion }}",
+		"@types/react-dom": "{{ .TypesReactDOMVersion }}",
+		"esbuild": "{{ .EsbuildVersion }}"
 	}
 }

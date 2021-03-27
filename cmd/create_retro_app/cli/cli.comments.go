@@ -1,4 +1,4 @@
-package create_retro_app
+package cli
 
 // import (
 // 	"flag"

@@ -1,7 +1,10 @@
 {
-	"react": "v0.17.1",
-	"react-dom": "v0.17.1",
-	"@zaydek/retro": "v0.0.0",
-	"@zaydek/retro-store": "v0.0.0",
-	"@zaydek/retro-browser-router": "v0.0.0"
+	"react": "v0.17.2",
+	"react-dom": "v0.17.2",
+	"@types/react": "v0.17.2",
+	"@types/react-dom": "v0.17.2",
+	"@zaydek/retro": "v0.1.0",
+	"@zaydek/retro-store": "v0.1.0",
+	"@zaydek/retro-browser-router": "v0.1.0",
+	"esbuild": "v0.10.2"
 }

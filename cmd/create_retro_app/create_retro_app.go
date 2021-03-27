@@ -21,12 +21,12 @@ var (
 	magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
 )
 
-////////////////////////////////////////////////////////////////////////////////
-
 func report(str string) {
 	fmt.Fprintln(os.Stderr, pretty.Error(magenta(str)))
 	os.Exit(1)
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 func (r Runner) CreateApp() {
 	fsys := embeds.JavaScriptFS
@@ -39,32 +39,15 @@ func (r Runner) CreateApp() {
 		tmpl = embeds.TypeScriptPackageTemplate
 	}
 
-	appName := r.Command.Directory
+	dir := r.Command.Directory
 	if r.Command.Directory == "." {
 		cwd, _ := os.Getwd()
-		appName = filepath.Base(cwd)
+		dir = filepath.Base(cwd)
 	}
 
 	if r.Command.Directory != "." {
-		if info, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
-			var typ string
-			if !info.IsDir() {
-				typ = "file"
-			} else {
-				typ = "directory"
-			}
-			report(
-				fmt.Sprintf("Aborted. "+
-					"A %[1]s named %[3]s already exists. "+
-					"Here’s what you can do:\n\n"+
-					"- create-retro-app %[2]s\n\n"+
-					"Or\n\n"+
-					"- rm -r %[3]s && create-retro-app %[3]s",
-					typ,
-					increment(r.Command.Directory),
-					r.Command.Directory,
-				),
-			)
+		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
+			report(fmt.Sprintf("Aborted. Cannot overwrite '%s'.", r.Command.Directory))
 			os.Exit(1)
 		}
 		if err := os.MkdirAll(r.Command.Directory, MODE_DIR); err != nil {
@@ -91,41 +74,39 @@ func (r Runner) CreateApp() {
 	}
 
 	var badPaths []string
-	for _, each := range paths {
-		if _, err := os.Stat(each); !os.IsNotExist(err) {
-			badPaths = append(badPaths, each)
+	for _, v := range paths {
+		if _, err := os.Stat(v); !os.IsNotExist(err) {
+			badPaths = append(badPaths, v)
 		}
 	}
 
 	if len(badPaths) > 0 {
 		var badPathsStr string
-		for x, each := range badPaths {
+		for x, v := range badPaths {
 			var sep string
 			if x > 0 {
 				sep = "\n"
 			}
-			badPathsStr += sep + "- " + terminal.Bold(each)
+			badPathsStr += sep + "- " + v
 		}
 		report(
-			"Aborted. " +
-				"These paths must be removed or renamed. " +
-				"Use rm -r [paths] to remove them or mv [src] [dst] to rename them.\n\n" +
+			"Aborted. Cannot overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n" +
 				badPathsStr,
 		)
 		os.Exit(1)
 	}
 
-	for _, each := range paths {
-		if dir := filepath.Dir(each); dir != "." {
+	for _, v := range paths {
+		if dir := filepath.Dir(v); dir != "." {
 			if err := os.MkdirAll(dir, MODE_DIR); err != nil {
 				panic(err)
 			}
 		}
-		src, err := fsys.Open(each)
+		src, err := fsys.Open(v)
 		if err != nil {
 			panic(err)
 		}
-		dst, err := os.Create(each)
+		dst, err := os.Create(v)
 		if err != nil {
 			panic(err)
 		}
@@ -136,13 +117,8 @@ func (r Runner) CreateApp() {
 		dst.Close()
 	}
 
-	dot := embeds.PackageDot{
-		APP_NAME:      appName,
-		RETRO_VERSION: os.Getenv("RETRO_VERSION"),
-	}
-
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, dot); err != nil {
+	if err := tmpl.Execute(&buf, shared.Deps); err != nil {
 		panic(err)
 	}
 
@@ -151,9 +127,9 @@ func (r Runner) CreateApp() {
 	}
 
 	if r.Command.Directory == "." {
-		fmt.Println(fmt.Sprintf(successFormat, appName))
+		fmt.Println(successFormat)
 	} else {
-		fmt.Println(fmt.Sprintf(successDirectoryFormat, appName))
+		fmt.Println(fmt.Sprintf(successDirectoryFormat, dir))
 	}
 }
 
@@ -164,15 +140,10 @@ type Runner struct {
 }
 
 func Run() {
-	if len(os.Args) < 2 {
-		fmt.Println(usage)
-		return
-	}
-
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Println(shared.Package.Retro)
+		fmt.Println(shared.Deps.RetroVersion)
 		return
 	case cli.UsageError:
 		fallthrough
