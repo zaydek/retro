@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/zaydek/retro/cmd/pretty"
 	"github.com/zaydek/retro/cmd/retro/cli"
-	"github.com/zaydek/retro/cmd/retro/pretty"
 	"github.com/zaydek/retro/cmd/shared"
 	"github.com/zaydek/retro/pkg/ipc"
 	"github.com/zaydek/retro/pkg/stdio_logger"
@@ -44,7 +44,7 @@ func (r Runner) Dev(opt DevOptions) {
 		copyHTMLEntryPoint, err = r.preflight()
 		switch err.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
+			fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
 			os.Exit(1)
 		default:
 			if err != nil {
@@ -109,7 +109,7 @@ func (r Runner) Build(opt BuildOptions) {
 		copyHTMLEntryPoint, err = r.preflight()
 		switch err.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
+			fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
 			os.Exit(1)
 		default:
 			if err != nil {
@@ -221,7 +221,7 @@ func (r Runner) Serve(opt ServerOptions) {
 		_, err := r.preflight()
 		switch err.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
+			fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
 			os.Exit(1)
 		default:
 			if err != nil {
@@ -330,7 +330,7 @@ func Run() {
 
 	switch err.(type) {
 	case cli.CommandError:
-		fmt.Fprintln(os.Stderr, pretty.Error(magenta(err.Error())))
+		fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
 		os.Exit(1)
 	default:
 		if err != nil {

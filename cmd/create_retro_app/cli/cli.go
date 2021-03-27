@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -33,10 +34,10 @@ func (e CommandError) Error() string {
 	case BadArgument:
 		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
 	case BadTemplateValue:
-		return fmt.Sprintf("'--template' must be a 'js', 'javascript', 'ts', or 'typescript' (default 'javascript').")
+		return fmt.Sprintf("'--template' must be a 'javascript' or 'typescript' (default 'javascript').")
 	case BadDirectoryValue:
 		cwd, _ := os.Getwd()
-		return fmt.Sprintf("Use '.' to use the cwd '%s'.", cwd)
+		return fmt.Sprintf("Use '.' explicitly to use '%s'.", filepath.Join("..", filepath.Base(cwd)))
 	}
 	panic("Internal error")
 }
@@ -48,14 +49,14 @@ func (e CommandError) Unwrap() error {
 func ParseCommand(args ...string) (Command, error) {
 	cmd := Command{
 		Template:  "javascript",
-		Directory: ".",
+		Directory: "",
 	}
 	var once sync.Once
 	for _, arg := range args {
 		err := CommandError{Kind: BadArgument, BadArgument: arg}
 		if strings.HasPrefix(arg, "--template") {
 			if len(arg) <= len("--template=") {
-				return Command{}, err
+				return Command{}, CommandError{Kind: BadTemplateValue}
 			}
 			switch strings.ToLower(arg[len("--template="):]) {
 			case "js":
@@ -71,7 +72,7 @@ func ParseCommand(args ...string) (Command, error) {
 			case "typescript":
 				cmd.Template = "typescript"
 			default:
-				return Command{}, err
+				return Command{}, CommandError{Kind: BadTemplateValue}
 			}
 		} else if !strings.HasPrefix(arg, "--") {
 			once.Do(func() {
@@ -80,6 +81,9 @@ func ParseCommand(args ...string) (Command, error) {
 		} else {
 			return Command{}, err
 		}
+	}
+	if cmd.Directory == "" {
+		return Command{}, CommandError{Kind: BadDirectoryValue}
 	}
 	return cmd, nil
 }

@@ -11,7 +11,7 @@ import (
 
 	"github.com/zaydek/retro/cmd/create_retro_app/cli"
 	"github.com/zaydek/retro/cmd/create_retro_app/embeds"
-	"github.com/zaydek/retro/cmd/retro/pretty"
+	"github.com/zaydek/retro/cmd/pretty"
 	"github.com/zaydek/retro/cmd/shared"
 	"github.com/zaydek/retro/pkg/terminal"
 )
@@ -20,11 +20,6 @@ var (
 	cyan    = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
 	magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
 )
-
-func report(str string) {
-	fmt.Fprintln(os.Stderr, pretty.Error(magenta(str)))
-	os.Exit(1)
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,7 +42,15 @@ func (r Runner) CreateApp() {
 
 	if r.Command.Directory != "." {
 		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
-			report(fmt.Sprintf("Aborted. Cannot overwrite '%s'.", r.Command.Directory))
+			fmt.Fprintln(
+				os.Stderr,
+				pretty.Error(
+					fmt.Sprintf(
+						"Aborted. Cannot overwrite '%s'.",
+						r.Command.Directory,
+					),
+				),
+			)
 			os.Exit(1)
 		}
 		if err := os.MkdirAll(r.Command.Directory, MODE_DIR); err != nil {
@@ -89,9 +92,12 @@ func (r Runner) CreateApp() {
 			}
 			badPathsStr += sep + "- " + v
 		}
-		report(
-			"Aborted. Cannot overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n" +
-				badPathsStr,
+		fmt.Fprintln(
+			os.Stderr,
+			fmt.Sprintf(
+				"Aborted. Cannot overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n"+
+					badPathsStr,
+			),
 		)
 		os.Exit(1)
 	}
@@ -150,6 +156,16 @@ func Run() {
 	case cli.HelpError:
 		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))
 		return
+	}
+
+	switch err.(type) {
+	case cli.CommandError:
+		fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
+		os.Exit(1)
+	default:
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	runner := Runner{Command: cmd}
