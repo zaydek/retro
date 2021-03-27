@@ -54,7 +54,6 @@ func (l *StdioLogger) TransformStdout(args ...interface{}) string {
 	var tstr string
 	if l.fmt != "" {
 		tstr += terminal.Dim(time.Now().Format(l.fmt))
-		// tstr += " "
 	}
 	arr := strings.Split(strings.TrimRight(fmt.Sprint(args...), "\n"), "\n")
 	for x, v := range arr {
@@ -67,7 +66,7 @@ func (l *StdioLogger) TransformStderr(args ...interface{}) string {
 	var tstr string
 	if l.fmt != "" {
 		tstr += terminal.Dim(time.Now().Format(l.fmt))
-		tstr += " "
+		tstr += " " // Add space for 'stderr'
 	}
 	arr := strings.Split(strings.TrimRight(fmt.Sprint(args...), "\n"), "\n")
 	for x, v := range arr {
