@@ -9,61 +9,75 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zaydek/retro/cmd/create-retro-app/embeds"
 	"github.com/zaydek/retro/cmd/create_retro_app/cli"
+	"github.com/zaydek/retro/cmd/create_retro_app/embeds"
 	"github.com/zaydek/retro/cmd/retro/pretty"
 	"github.com/zaydek/retro/cmd/shared"
-	"github.com/zaydek/retro/pkg/loggers"
-	"github.com/zaydek/retro/pkg/perm"
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
+var (
+	cyan    = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
+	magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
+)
+
+////////////////////////////////////////////////////////////////////////////////
+
+func report(str string) {
+	fmt.Fprintln(os.Stderr, pretty.Error(magenta(str)))
+	os.Exit(1)
+}
+
 func (r Runner) CreateApp() {
 	fsys := embeds.JavaScriptFS
-	if cmd.Template == "typescript" {
+	if r.Command.Template == "typescript" {
 		fsys = embeds.TypeScriptFS
 	}
 
 	tmpl := embeds.JavaScriptPackageTemplate
-	if cmd.Template == "typescript" {
+	if r.Command.Template == "typescript" {
 		tmpl = embeds.TypeScriptPackageTemplate
 	}
 
-	appName := cmd.Directory
-	if cmd.Directory == "." {
+	appName := r.Command.Directory
+	if r.Command.Directory == "." {
 		cwd, _ := os.Getwd()
 		appName = filepath.Base(cwd)
 	}
 
-	if cmd.Directory != "." {
-		if info, err := os.Stat(cmd.Directory); !os.IsNotExist(err) {
+	if r.Command.Directory != "." {
+		if info, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
 			var typ string
 			if !info.IsDir() {
 				typ = "file"
 			} else {
 				typ = "directory"
 			}
-			loggers.ErrorAndEnd(fmt.Sprintf("Aborted. "+
-				"A %[1]s named %[3]s already exists. "+
-				"Here’s what you can do:\n\n"+
-				"- create-retro-app %[2]s\n\n"+
-				"Or\n\n"+
-				"- rm -r %[3]s && create-retro-app %[3]s",
-				typ, increment(cmd.Directory), cmd.Directory))
+			report(
+				fmt.Sprintf("Aborted. "+
+					"A %[1]s named %[3]s already exists. "+
+					"Here’s what you can do:\n\n"+
+					"- create-retro-app %[2]s\n\n"+
+					"Or\n\n"+
+					"- rm -r %[3]s && create-retro-app %[3]s",
+					typ,
+					increment(r.Command.Directory),
+					r.Command.Directory,
+				),
+			)
+			os.Exit(1)
 		}
-		if err := os.MkdirAll(cmd.Directory, perm.Directory); err != nil {
-			loggers.ErrorAndEnd("Aborted.\n\n" +
-				err.Error())
+		if err := os.MkdirAll(r.Command.Directory, MODE_DIR); err != nil {
+			panic(err)
 		}
-		if err := os.Chdir(cmd.Directory); err != nil {
-			loggers.ErrorAndEnd("Aborted.\n\n" +
-				err.Error())
+		if err := os.Chdir(r.Command.Directory); err != nil {
+			panic(err)
 		}
 		defer os.Chdir("..")
 	}
 
 	var paths []string
-	if err := fs.WalkDir(fsys, ".", func(path string, dirEntry fs.DirEntry, err error) error {
+	err := fs.WalkDir(fsys, ".", func(path string, dirEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -71,9 +85,9 @@ func (r Runner) CreateApp() {
 			paths = append(paths, path)
 		}
 		return nil
-	}); err != nil {
-		loggers.ErrorAndEnd("Aborted.\n\n" +
-			err.Error())
+	})
+	if err != nil {
+		panic(err)
 	}
 
 	var badPaths []string
@@ -92,32 +106,31 @@ func (r Runner) CreateApp() {
 			}
 			badPathsStr += sep + "- " + terminal.Bold(each)
 		}
-		loggers.ErrorAndEnd("Aborted. " +
-			"These paths must be removed or renamed. " +
-			"Use rm -r [paths] to remove them or mv [src] [dst] to rename them.\n\n" +
-			badPathsStr)
+		report(
+			"Aborted. " +
+				"These paths must be removed or renamed. " +
+				"Use rm -r [paths] to remove them or mv [src] [dst] to rename them.\n\n" +
+				badPathsStr,
+		)
+		os.Exit(1)
 	}
 
 	for _, each := range paths {
 		if dir := filepath.Dir(each); dir != "." {
-			if err := os.MkdirAll(dir, perm.Directory); err != nil {
-				loggers.ErrorAndEnd("An unexpected error occurred.\n\n" +
-					err.Error())
+			if err := os.MkdirAll(dir, MODE_DIR); err != nil {
+				panic(err)
 			}
 		}
 		src, err := fsys.Open(each)
 		if err != nil {
-			loggers.ErrorAndEnd("An unexpected error occurred.\n\n" +
-				err.Error())
+			panic(err)
 		}
 		dst, err := os.Create(each)
 		if err != nil {
-			loggers.ErrorAndEnd("An unexpected error occurred.\n\n" +
-				err.Error())
+			panic(err)
 		}
 		if _, err := io.Copy(dst, src); err != nil {
-			loggers.ErrorAndEnd("An unexpected error occurred.\n\n" +
-				err.Error())
+			panic(err)
 		}
 		src.Close()
 		dst.Close()
@@ -130,21 +143,21 @@ func (r Runner) CreateApp() {
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, dot); err != nil {
-		loggers.ErrorAndEnd("An unexpected error occurred.\n\n" +
-			err.Error())
+		panic(err)
 	}
 
-	if err := ioutil.WriteFile("package.json", buf.Bytes(), perm.File); err != nil {
-		loggers.ErrorAndEnd("An unexpected error occurred.\n\n" +
-			err.Error())
+	if err := ioutil.WriteFile("package.json", buf.Bytes(), MODE_FILE); err != nil {
+		panic(err)
 	}
 
-	if cmd.Directory == "." {
-		loggers.OK(fmt.Sprintf(successFormat, appName))
+	if r.Command.Directory == "." {
+		fmt.Println(fmt.Sprintf(successFormat, appName))
 	} else {
-		loggers.OK(fmt.Sprintf(successDirectoryFormat, appName))
+		fmt.Println(fmt.Sprintf(successDirectoryFormat, appName))
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 type Runner struct {
 	Command cli.Command

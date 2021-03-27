@@ -1,4 +1,4 @@
-package retro
+package create_retro_app
 
 const (
 	MODE_DIR  = 0755

@@ -80,22 +80,22 @@ func ParseCommand(args ...string) (Command, error) {
 	return cmd, nil
 }
 
-func ParseCLIArguments() (interface{}, error) {
+func ParseCLIArguments() (Command, error) {
 	if len(os.Args) < 2 {
-		return nil, UsageError
+		return Command{}, UsageError
 	}
 
 	var (
-		cmd interface{}
+		cmd Command
 		err error
 	)
 
 	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
-		return nil, VersionError
+		return Command{}, VersionError
 	} else if cmdArg == "usage" || cmdArg == "--usage" {
-		return nil, UsageError
+		return Command{}, UsageError
 	} else if cmdArg == "help" || cmdArg == "--help" {
-		return nil, HelpError
+		return Command{}, HelpError
 	} else {
 		cmd, err = ParseCommand(os.Args[1:]...)
 	}

@@ -23,12 +23,6 @@ import (
 	"github.com/zaydek/retro/pkg/watch"
 )
 
-const (
-	WWW_DIR = "www"
-	SRC_DIR = "src"
-	OUT_DIR = "out"
-)
-
 var EPOCH = time.Now()
 
 var (
@@ -320,9 +314,6 @@ func (r Runner) Serve(opt ServerOptions) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-// Server-sent events stub
-const devStub = `const dev=new EventSource("/~dev");dev.addEventListener("reload",()=>{localStorage.setItem("/~dev",""+Date.now()),window.location.reload()}),dev.addEventListener("error",e=>{try{console.error(JSON.parse(e.data))}catch{}}),window.addEventListener("storage",e=>{e.key==="/~dev"&&window.location.reload()});`
 
 func Run() {
 	cmd, err := cli.ParseCLIArguments()
