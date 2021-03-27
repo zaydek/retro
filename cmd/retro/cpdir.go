@@ -2,6 +2,7 @@ package retro
 
 import (
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -11,15 +12,33 @@ type copyInfo struct {
 	target string
 }
 
-// NOTE: This implementation uses Go 1.15. For Go 1.16, use package io/fs.
+// err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if info.IsDir() {
+// 		return nil
+// 	}
+// 	for _, exclude := range excludes {
+// 		if path == exclude {
+// 			return nil
+// 		}
+// 	}
+// 	cpInfos = append(cpInfos, copyInfo{
+// 		source: path,
+// 		target: filepath.Join(dst, filepath.Base(path)),
+// 	})
+// 	return nil
+// })
+
 func cpdir(src, dst string, excludes []string) error {
 	// Sweep for sources and targets
 	var cpInfos []copyInfo
-	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
 		for _, exclude := range excludes {
