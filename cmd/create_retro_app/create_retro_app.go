@@ -10,12 +10,15 @@ import (
 	"path/filepath"
 
 	"github.com/zaydek/retro/cmd/create-retro-app/embeds"
+	"github.com/zaydek/retro/cmd/create_retro_app/cli"
+	"github.com/zaydek/retro/cmd/retro/pretty"
+	"github.com/zaydek/retro/cmd/shared"
 	"github.com/zaydek/retro/pkg/loggers"
 	"github.com/zaydek/retro/pkg/perm"
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
-func (cmd Command) CreateApp() {
+func (r Runner) CreateApp() {
 	fsys := embeds.JavaScriptFS
 	if cmd.Template == "typescript" {
 		fsys = embeds.TypeScriptFS
@@ -141,4 +144,30 @@ func (cmd Command) CreateApp() {
 	} else {
 		loggers.OK(fmt.Sprintf(successDirectoryFormat, appName))
 	}
+}
+
+type Runner struct {
+	Command cli.Command
+}
+
+func Run() {
+	if len(os.Args) < 2 {
+		fmt.Println(usage)
+		return
+	}
+
+	cmd, err := cli.ParseCLIArguments()
+	switch err {
+	case cli.VersionError:
+		fmt.Println(shared.Package.Retro)
+		return
+	case cli.UsageError:
+		fallthrough
+	case cli.HelpError:
+		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))
+		return
+	}
+
+	runner := Runner{Command: cmd}
+	runner.CreateApp()
 }

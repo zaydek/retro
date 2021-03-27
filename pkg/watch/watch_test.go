@@ -11,8 +11,6 @@ import (
 	"github.com/zaydek/retro/pkg/expect"
 )
 
-type Test struct{ got, want int }
-
 func check(t *testing.T, err error) {
 	if err == nil {
 		return

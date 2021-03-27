@@ -37,14 +37,14 @@ type CommandError struct {
 
 func (e CommandError) Error() string {
 	switch e.Kind {
-	case BadPortValue:
-		return fmt.Sprintf("'--port' must be a number (default '8000').")
-	case BadSourcemapValue:
-		return fmt.Sprintf("'--sourcemap' must be a 'true' or 'false' or empty (default 'true').")
 	case BadCommandArgument:
 		return fmt.Sprintf("Unsupported command argument '%s'.", e.BadCmdArgument)
 	case BadArgument:
 		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
+	case BadPortValue:
+		return fmt.Sprintf("'--port' must be a number (default '8000').")
+	case BadSourcemapValue:
+		return fmt.Sprintf("'--sourcemap' must be a 'true' or 'false' or empty (default 'true').")
 	case BadPortRange:
 		return fmt.Sprintf("'--port' must be between '1000' and '10_000' (you may use '_' as a separator); used '%d'.", e.BadPort)
 	}
@@ -139,7 +139,7 @@ func ParseServeCommand(args ...string) (ServeCommand, error) {
 }
 
 func ParseCLIArguments() (interface{}, error) {
-	if len(os.Args) == 1 {
+	if len(os.Args) < 2 {
 		return nil, UsageError
 	}
 

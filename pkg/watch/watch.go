@@ -7,7 +7,7 @@ import (
 )
 
 type WatchResult struct {
-	Error error
+	Err error
 }
 
 // Directory creates a new watcher for directory dir.

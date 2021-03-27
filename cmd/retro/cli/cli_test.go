@@ -6,54 +6,56 @@ import (
 	"github.com/zaydek/retro/pkg/expect"
 )
 
-func must(t *testing.T, err error) {
+func check(t *testing.T, err error) {
 	if err == nil {
 		return
 	}
-	t.Fatal(err)
+	t.Fatalf("check: %s", err)
 }
 
 func TestDevCommand(t *testing.T) {
-	var cmd DevCommand
-	var err error
+	var (
+		cmd DevCommand
+		err error
+	)
 
 	cmd, err = ParseDevCommand()
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseDevCommand("--port=8000")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseDevCommand("--port=3000")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, DevCommand{
 		Port:      3000,
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseDevCommand("--sourcemap")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseDevCommand("--sourcemap=true")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseDevCommand("--sourcemap=false")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, DevCommand{
 		Port:      8000,
 		Sourcemap: false,
@@ -65,25 +67,25 @@ func TestBuildCommand(t *testing.T) {
 	var err error
 
 	cmd, err = ParseBuildCommand()
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseBuildCommand("--sourcemap")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseBuildCommand("--sourcemap=true")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: true,
 	})
 
 	cmd, err = ParseBuildCommand("--sourcemap=false")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, BuildCommand{
 		Sourcemap: false,
 	})
@@ -94,19 +96,19 @@ func TestServeCommand(t *testing.T) {
 	var err error
 
 	cmd, err = ParseServeCommand()
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, ServeCommand{
 		Port: 8000,
 	})
 
 	cmd, err = ParseServeCommand("--port=8000")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, ServeCommand{
 		Port: 8000,
 	})
 
 	cmd, err = ParseServeCommand("--port=3000")
-	must(t, err)
+	check(t, err)
 	expect.DeepEqual(t, cmd, ServeCommand{
 		Port: 3000,
 	})

@@ -16,6 +16,7 @@ import (
 
 	"github.com/zaydek/retro/cmd/retro/cli"
 	"github.com/zaydek/retro/cmd/retro/pretty"
+	"github.com/zaydek/retro/cmd/shared"
 	"github.com/zaydek/retro/pkg/ipc"
 	"github.com/zaydek/retro/pkg/stdio_logger"
 	"github.com/zaydek/retro/pkg/terminal"
@@ -68,8 +69,8 @@ func (r Runner) Dev(opt DevOptions) {
 
 	go func() {
 		for result := range watch.Directory(SRC_DIR, 100*time.Millisecond) {
-			if result.Error != nil {
-				panic(result.Error)
+			if result.Err != nil {
+				panic(result.Err)
 			}
 			stdin <- ipc.Request{Kind: "rebuild"}
 		}
@@ -320,29 +321,14 @@ func (r Runner) Serve(opt ServerOptions) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//go:embed deps.json
-var deps string
-
-var pkg struct {
-	React              string `json:"react"`
-	ReactDOM           string `json:"react-dom"`
-	Retro              string `json:"@zaydek/retro"`
-	RetroStore         string `json:"@zaydek/retro-store"`
-	RetroBrowserRouter string `json:"@zaydek/retro-browser-router"`
-}
-
 // Server-sent events stub
 const devStub = `const dev=new EventSource("/~dev");dev.addEventListener("reload",()=>{localStorage.setItem("/~dev",""+Date.now()),window.location.reload()}),dev.addEventListener("error",e=>{try{console.error(JSON.parse(e.data))}catch{}}),window.addEventListener("storage",e=>{e.key==="/~dev"&&window.location.reload()});`
 
 func Run() {
-	if err := json.Unmarshal([]byte(deps), &pkg); err != nil {
-		panic(err)
-	}
-
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Println(pkg.Retro)
+		fmt.Println(shared.Package.Retro)
 		return
 	case cli.UsageError:
 		fallthrough
