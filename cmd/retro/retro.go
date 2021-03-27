@@ -85,8 +85,7 @@ func (r Runner) Dev(opt DevOptions) {
 					panic(err)
 				}
 				once.Do(func() {
-					react_js, index_js, index_css := res.getChunkedNames()
-					if err := copyHTMLEntryPoint(react_js, index_js, index_css); err != nil {
+					if err := copyHTMLEntryPoint("react.js", "index.js", "index.css"); err != nil {
 						panic(err)
 					}
 					ready <- struct{}{}

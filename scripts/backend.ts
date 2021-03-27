@@ -95,7 +95,7 @@ async function build(): Promise<BackendResponse> {
 			...common,
 
 			bundle: true,
-			entryNames: "[dir]/[name]-[hash]",
+			entryNames: ENV !== "production" ? undefined : "[dir]/[name]__[hash]",
 			entryPoints: ["scripts/react.js"],
 			metafile: true,
 			outdir: OUT_DIR,
@@ -113,7 +113,7 @@ async function build(): Promise<BackendResponse> {
 			loader: { ...config.loader, ...common.loader },
 
 			bundle: true,
-			entryNames: "[dir]/[name]-[hash]",
+			entryNames: ENV !== "production" ? undefined : "[dir]/[name]__[hash]",
 			entryPoints: [path.join(SRC_DIR, "index.js")],
 			metafile: true,
 			outdir: OUT_DIR,

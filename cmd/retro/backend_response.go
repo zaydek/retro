@@ -93,14 +93,12 @@ a:hover { text-decoration: underline; }
 }
 
 func (r BackendResponse) getChunkedNames() (react_js, index_js, index_css string) {
-	// react_js
 	for k := range r.Metafile.Vendor["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(k, ".js") {
 			react_js, _ = filepath.Rel(OUT_DIR, k)
 			break
 		}
 	}
-	// index_js, index_css
 	for k := range r.Metafile.Bundle["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(k, ".js") {
 			index_js, _ = filepath.Rel(OUT_DIR, k)
