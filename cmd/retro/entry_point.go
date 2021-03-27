@@ -179,11 +179,6 @@ func copyHTMLEntryPoint(react_js, index_js, index_css string) error {
 		1,
 	)
 
-	// Add the dev stub
-	if os.Getenv("ENV") == "development" {
-		contents = strings.Replace(contents, "</html>", fmt.Sprintf("\t%s\n</html>", devStub), 1)
-	}
-
 	if err := ioutil.WriteFile(filepath.Join(OUT_DIR, "index.html"), []byte(contents), MODE_FILE); err != nil {
 		return err
 	}

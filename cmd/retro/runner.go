@@ -59,7 +59,7 @@ func (r Runner) preflight() (copyHTML func(string, string, string) error, err er
 	if err := os.MkdirAll(OUT_DIR, MODE_DIR); err != nil {
 		return nil, err
 	}
-	if err := cpdir(WWW_DIR, filepath.Join(OUT_DIR, WWW_DIR), []string{"index.html"}); err != nil {
+	if err := cpdir(WWW_DIR, filepath.Join(OUT_DIR, WWW_DIR), []string{filepath.Join(WWW_DIR, "index.html")}); err != nil {
 		return nil, err
 	}
 	copyHTML = copyHTMLEntryPoint

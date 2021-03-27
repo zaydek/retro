@@ -2,6 +2,7 @@ package retro
 
 import (
 	_ "embed"
+	"io/ioutil"
 	"sort"
 	"strings"
 
@@ -234,7 +235,27 @@ func (r Runner) Serve(opt ServerOptions) {
 		}
 	}
 
+	if opt.Ready != nil {
+		<-opt.Ready
+	}
+
 	var res BackendResponse
+
+	// Add the dev stub
+	var contents string
+	if os.Getenv("ENV") == "development" {
+		bstr, err := ioutil.ReadFile(filepath.Join(OUT_DIR, "index.html"))
+		if err != nil {
+			panic(err)
+		}
+		contents = string(bstr)
+		contents = strings.Replace(
+			contents,
+			"</body>",
+			fmt.Sprintf("\t%s\n\t</body>", fmt.Sprintf(`<script type="module">%s</script>`, devStub)),
+			1,
+		)
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/~dev" {
@@ -248,14 +269,18 @@ func (r Runner) Serve(opt ServerOptions) {
 			stdio_logger.Stdout(formatServe500(req, start))
 			return
 		}
-		// 200 OK - Serve any (not index.html)
+		// 200 OK - Serve any
 		path := getFSPath(req.URL.Path)
 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
 			http.ServeFile(w, req, filepath.Join(OUT_DIR, path))
 			return
 		}
 		// 200 OK - Serve index.html
-		http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
+		if os.Getenv("ENV") == "development" {
+			fmt.Fprint(w, contents)
+		} else {
+			http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
+		}
 		stdio_logger.Stdout(formatServe200(req, start))
 	})
 
@@ -281,10 +306,6 @@ func (r Runner) Serve(opt ServerOptions) {
 		})
 	}
 
-	if opt.Ready != nil {
-		<-opt.Ready
-	}
-
 	var durStr string
 	if dur := time.Since(EPOCH); dur >= time.Millisecond {
 		durStr += " "
@@ -299,6 +320,9 @@ func (r Runner) Serve(opt ServerOptions) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//go:embed deps.json
+var deps string
+
 var pkg struct {
 	React              string `json:"react"`
 	ReactDOM           string `json:"react-dom"`
@@ -307,11 +331,8 @@ var pkg struct {
 	RetroBrowserRouter string `json:"@zaydek/retro-browser-router"`
 }
 
-//go:embed deps.json
-var deps string
-
 // Server-sent events stub
-const devStub = `<script type="module">const dev = new EventSource("/~dev"); dev.addEventListener("reload", () => { localStorage.setItem("/~dev", "" + Date.now()); window.location.reload() }); dev.addEventListener("error", e => { try { console.error(JSON.parse(e.data)) } catch {} }); window.addEventListener("storage", e => { if (e.key === "/~dev") { window.location.reload() } })</script>`
+const devStub = `const dev=new EventSource("/~dev");dev.addEventListener("reload",()=>{localStorage.setItem("/~dev",""+Date.now()),window.location.reload()}),dev.addEventListener("error",e=>{try{console.error(JSON.parse(e.data))}catch{}}),window.addEventListener("storage",e=>{e.key==="/~dev"&&window.location.reload()});`
 
 func Run() {
 	if err := json.Unmarshal([]byte(deps), &pkg); err != nil {
