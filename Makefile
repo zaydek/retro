@@ -73,5 +73,8 @@ release:
 ################################################################################
 
 clean:
-	rm -rf npm/create-retro-app/bin npm/create-retro-app/dist
-	rm -rf npm/retro/bin npm/retro/dist
+	rm -rf scripts/backend.esbuild.js
+	rm -rf npm/create-retro-app/postinstall.esbuild.js
+	rm -rf npm/create-retro-app/bin
+	rm -rf npm/retro/postinstall.esbuild.js
+	rm -rf npm/retro/bin
