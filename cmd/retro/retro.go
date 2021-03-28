@@ -16,7 +16,6 @@ import (
 
 	"github.com/zaydek/retro/cmd/pretty"
 	"github.com/zaydek/retro/cmd/retro/cli"
-	"github.com/zaydek/retro/cmd/shared"
 	"github.com/zaydek/retro/pkg/ipc"
 	"github.com/zaydek/retro/pkg/stdio_logger"
 	"github.com/zaydek/retro/pkg/terminal"
@@ -319,7 +318,7 @@ func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Println(shared.Deps.RetroVersion)
+		fmt.Println(os.Getenv("RETRO_VERSION"))
 		return
 	case cli.UsageError:
 		fallthrough

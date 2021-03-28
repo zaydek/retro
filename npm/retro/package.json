@@ -1,0 +1,20 @@
+{
+	"name": "@zaydek/retro",
+	"version": "0.0.19",
+	"description": "Back to the future web apps. 👾",
+	"repository": "https://github.com/zaydek/retro",
+	"license": "MIT",
+	"bin": {
+		"retro": "bin/retro"
+	},
+	"files": [
+		"bin",
+		"postinstall.esbuild.js"
+	],
+	"scripts": {
+		"postinstall": "node postinstall.esbuild.js"
+	},
+	"engines": {
+		"node": ">=14.14.0"
+	}
+}

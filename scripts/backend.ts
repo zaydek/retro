@@ -49,13 +49,18 @@ const OUT_DIR = process.env["OUT_DIR"] ?? InternalError("")
 
 const common: esbuild.BuildOptions = {
 	color: true,
+
+	// Propagate env vars
 	define: {
+		// React, React DOM
 		"process.env.NODE_ENV": JSON.stringify(ENV),
-		CMD: JSON.stringify(CMD),
-		ENV: JSON.stringify(ENV),
-		WWW_DIR: JSON.stringify(WWW_DIR),
-		SRC_DIR: JSON.stringify(SRC_DIR),
-		OUT_DIR: JSON.stringify(OUT_DIR),
+
+		// Retro
+		"process.env.CMD": JSON.stringify(CMD),
+		"process.env.ENV": JSON.stringify(ENV),
+		"process.env.WWW_DIR": JSON.stringify(WWW_DIR),
+		"process.env.SRC_DIR": JSON.stringify(SRC_DIR),
+		"process.env.OUT_DIR": JSON.stringify(OUT_DIR),
 	},
 	loader: {
 		".js": "jsx",

@@ -34,10 +34,10 @@ func (r Runner) CreateApp() {
 		tmpl = embeds.TypeScriptPackageTemplate
 	}
 
-	dir := r.Command.Directory
+	appName := r.Command.Directory
 	if r.Command.Directory == "." {
 		cwd, _ := os.Getwd()
-		dir = filepath.Base(cwd)
+		appName = filepath.Base(cwd)
 	}
 
 	if r.Command.Directory != "." {
@@ -135,7 +135,7 @@ func (r Runner) CreateApp() {
 	if r.Command.Directory == "." {
 		fmt.Println(successFormat)
 	} else {
-		fmt.Println(fmt.Sprintf(successDirectoryFormat, dir))
+		fmt.Println(fmt.Sprintf(successDirectoryFormat, appName))
 	}
 }
 
@@ -149,7 +149,7 @@ func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.VersionError:
-		fmt.Println(shared.Deps.RetroVersion)
+		fmt.Println(os.Getenv("RETRO_VERSION"))
 		return
 	case cli.UsageError:
 		fallthrough

@@ -11,11 +11,11 @@ export default function App() {
 				<pre>
 					{/* prettier-ignore */}
 					<code>
-					CMD: {CMD}<br />
-					ENV: {ENV}<br />
-					WWW_DIR: {WWW_DIR}<br />
-					SRC_DIR: {SRC_DIR}<br />
-					OUT_DIR: {OUT_DIR}<br />
+					CMD: {process.env.CMD}<br />
+					ENV: {process.env.ENV}<br />
+					WWW_DIR: {process.env.WWW_DIR}<br />
+					SRC_DIR: {process.env.SRC_DIR}<br />
+					OUT_DIR: {process.env.OUT_DIR}<br />
 				</code>
 				</pre>
 			</div>
