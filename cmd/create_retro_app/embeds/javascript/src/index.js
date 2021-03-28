@@ -1,7 +1,7 @@
 import App from "./App"
 import ReactDOM from "react-dom"
 
-import "./modern-reset.css"
+import "./reset.css"
 
 ReactDOM.render(
 	<React.StrictMode>

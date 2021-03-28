@@ -1,6 +1,10 @@
 VERSION = $(shell cat version.txt)
 
+
 ################################################################################
+
+all:
+	make bin
 
 bin-create-retro-app:
 	go build -o=create-retro-app main_create_retro_app.go && mv create-retro-app /usr/local/bin
@@ -33,21 +37,33 @@ build-create-retro-app:
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/darwin-64 main_create_retro_app.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/linux-64 main_create_retro_app.go
 	GOOS=windows GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/windows-64.exe main_create_retro_app.go
+
 	./node_modules/.bin/esbuild \
 		npm/create-retro-app/postinstall.ts \
+			--format=cjs \
 			--log-level=warning \
 			--outfile=npm/create-retro-app/postinstall.esbuild.js
 	touch npm/create-retro-app/bin/create-retro-app
 
 build-retro:
+	./node_modules/.bin/esbuild \
+		scripts/backend.ts \
+			--format=cjs \
+			--log-level=warning \
+			--outfile=scripts/backend.esbuild.js
+
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/darwin-64 main_retro.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64 main_retro.go
 	GOOS=windows GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/windows-64.exe main_retro.go
+
 	./node_modules/.bin/esbuild \
 		npm/retro/postinstall.ts \
+			--format=cjs \
 			--log-level=warning \
 			--outfile=npm/retro/postinstall.esbuild.js
 	touch npm/retro/bin/retro
+
+	cp -r scripts npm/retro/bin && rm npm/retro/bin/scripts/backend.ts
 
 build:
 	make -j2 \

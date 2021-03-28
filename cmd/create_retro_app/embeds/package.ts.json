@@ -9,6 +9,9 @@
 		"react-dom": "{{ .ReactDOMVersion }}"
 	},
 	"devDependencies": {
+		"@types/react": "{{ .TypesReactVersion }}",
+		"@types/react-dom": "{{ .TypesReactDOMVersion }}",
+		"@zaydek/retro": "{{ .RetroVersion }}",
 		"esbuild": "{{ .EsbuildVersion }}"
 	}
 }

@@ -20,27 +20,27 @@ var successFormat = terminal.Cyan("Success!") + `
 npm:
 
 	1. npm
-	2. npm run start
+	2. npm run dev
 
 yarn:
 
 	1. yarn
-	2. yarn start
+	2. yarn dev
 
 Happy hacking!`
 
-var successDirectoryFormat = terminal.Cyan("Success!") + `
+var successDirFormat = terminal.Cyan("Success!") + `
 
 npm:
 
 	1. cd %[1]s
 	2. npm
-	3. npm run start
+	3. npm run dev
 
 yarn:
 
 	1. cd %[1]s
 	2. yarn
-	3. yarn start
+	3. yarn dev
 
 Happy hacking!`

@@ -1,4 +1,4 @@
-package shared
+package deps
 
 import (
 	_ "embed"
@@ -10,6 +10,9 @@ import (
 var deps string
 
 type PackageDeps struct {
+	// NOTE: Defer to create_retro_app because 'deps.init' runs before 'main.init'
+	RetroVersion string
+
 	ReactVersion         string `json:"react"`
 	ReactDOMVersion      string `json:"react-dom"`
 	TypesReactVersion    string `json:"@types/react"`

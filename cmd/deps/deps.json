@@ -1,0 +1,7 @@
+{
+	"react": "v17.0.2",
+	"react-dom": "v17.0.2",
+	"@types/react": "v17.0.2",
+	"@types/react-dom": "v17.0.2",
+	"esbuild": "v0.10.2"
+}

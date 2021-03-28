@@ -11,8 +11,8 @@ import (
 
 	"github.com/zaydek/retro/cmd/create_retro_app/cli"
 	"github.com/zaydek/retro/cmd/create_retro_app/embeds"
+	"github.com/zaydek/retro/cmd/deps"
 	"github.com/zaydek/retro/cmd/pretty"
-	"github.com/zaydek/retro/cmd/shared"
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
@@ -124,7 +124,8 @@ func (r Runner) CreateApp() {
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, shared.Deps); err != nil {
+	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
+	if err := tmpl.Execute(&buf, deps.Deps); err != nil {
 		panic(err)
 	}
 
@@ -133,9 +134,9 @@ func (r Runner) CreateApp() {
 	}
 
 	if r.Command.Directory == "." {
-		fmt.Println(successFormat)
+		fmt.Println(pretty.Spaces(successFormat))
 	} else {
-		fmt.Println(fmt.Sprintf(successDirectoryFormat, appName))
+		fmt.Println(pretty.Spaces(fmt.Sprintf(successDirFormat, appName)))
 	}
 }
 

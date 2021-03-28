@@ -52,7 +52,17 @@ func (r Runner) Dev(opt DevOptions) {
 		}
 	}
 
-	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
+	// Get 'node_modules/.bin/@zaydek/bin/retro' not 'node_modules/.bin/retro'
+	exec, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exec2, err := filepath.EvalSymlinks(exec)
+	if err != nil {
+		panic(err)
+	}
+
+	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(exec2), "scripts/backend.esbuild.js"))
 	if err != nil {
 		panic(err)
 	}
@@ -117,7 +127,17 @@ func (r Runner) Build(opt BuildOptions) {
 		}
 	}
 
-	stdin, stdout, stderr, err := ipc.NewCommand("node", "scripts/backend.esbuild.js")
+	// Get 'node_modules/.bin/@zaydek/bin/retro' not 'node_modules/.bin/retro'
+	exec, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exec2, err := filepath.EvalSymlinks(exec)
+	if err != nil {
+		panic(err)
+	}
+
+	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(exec2), "scripts/backend.esbuild.js"))
 	if err != nil {
 		panic(err)
 	}
@@ -243,15 +263,11 @@ func (r Runner) Serve(opt ServerOptions) {
 			panic(err)
 		}
 		contents = string(bstr)
-		contents = strings.Replace(
-			contents,
-			"</body>",
-			fmt.Sprintf("\t%s\n\t</body>", fmt.Sprintf(`<script type="module">%s</script>`, devStub)),
-			1,
-		)
+		contents = strings.Replace(contents, "</body>", fmt.Sprintf("\t%s\n\t</body>", devStub), 1)
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		// No-op '/~dev' (for CMD=serve, etc.); defer to 'http.HandleFunc("/~dev", ...)'
 		if req.URL.Path == "/~dev" {
 			return
 		}

@@ -101,7 +101,7 @@ async function build(): Promise<BackendResponse> {
 
 			bundle: true,
 			entryNames: ENV !== "production" ? undefined : "[dir]/[name]__[hash]",
-			entryPoints: ["scripts/react.js"],
+			entryPoints: [path.join(__dirname, "react.js")],
 			metafile: true,
 			outdir: OUT_DIR,
 		})
@@ -124,7 +124,7 @@ async function build(): Promise<BackendResponse> {
 			outdir: OUT_DIR,
 
 			external: ["react", "react-dom"], // Dedupe React APIs (because of vendor)
-			inject: ["scripts/shims/require.js"], // Add support for vendor
+			inject: [path.join(__dirname, "shims/require.js")], // Add support for vendor
 			plugins: config?.plugins,
 
 			incremental: ENV === "development",

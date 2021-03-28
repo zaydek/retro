@@ -26,98 +26,96 @@ func TestParseCommand(t *testing.T) {
 		Directory: ".",
 	})
 
+	cmd, err = ParseCommand(".", "--template=js")
+	check(t, err)
+	expect.DeepEqual(t, cmd, Command{
+		Template:  "javascript",
+		Directory: ".",
+	})
+
+	cmd, err = ParseCommand(".", "--template=jsx")
+	check(t, err)
+	expect.DeepEqual(t, cmd, Command{
+		Template:  "javascript",
+		Directory: ".",
+	})
+
+	cmd, err = ParseCommand(".", "--template=javascript")
+	check(t, err)
+	expect.DeepEqual(t, cmd, Command{
+		Template:  "javascript",
+		Directory: ".",
+	})
+
+	cmd, err = ParseCommand(".", "--template=ts")
+	check(t, err)
+	expect.DeepEqual(t, cmd, Command{
+		Template:  "typescript",
+		Directory: ".",
+	})
+
+	cmd, err = ParseCommand(".", "--template=tsx")
+	check(t, err)
+	expect.DeepEqual(t, cmd, Command{
+		Template:  "typescript",
+		Directory: ".",
+	})
+
+	cmd, err = ParseCommand(".", "--template=typescript")
+	check(t, err)
+	expect.DeepEqual(t, cmd, Command{
+		Template:  "typescript",
+		Directory: ".",
+	})
+
 	//////////////////////////////////////////////////////////////////////////////
 
-	cmd, err = ParseCommand("--template=js")
+	cmd, err = ParseCommand("app")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
 		Template:  "javascript",
-		Directory: ".",
+		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("--template=jsx")
+	cmd, err = ParseCommand("app", "--template=js")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
 		Template:  "javascript",
-		Directory: ".",
+		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("--template=javascript")
+	cmd, err = ParseCommand("app", "--template=jsx")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
 		Template:  "javascript",
-		Directory: ".",
+		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("--template=ts")
+	cmd, err = ParseCommand("app", "--template=javascript")
+	check(t, err)
+	expect.DeepEqual(t, cmd, Command{
+		Template:  "javascript",
+		Directory: "app",
+	})
+
+	cmd, err = ParseCommand("app", "--template=ts")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
 		Template:  "typescript",
-		Directory: ".",
+		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("--template=tsx")
+	cmd, err = ParseCommand("app", "--template=tsx")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
 		Template:  "typescript",
-		Directory: ".",
+		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("--template=typescript")
+	cmd, err = ParseCommand("app", "--template=typescript")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
 		Template:  "typescript",
-		Directory: ".",
-	})
-
-	//////////////////////////////////////////////////////////////////////////////
-
-	cmd, err = ParseCommand("dir")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
-		Directory: "dir",
-	})
-
-	cmd, err = ParseCommand("dir", "--template=js")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
-		Directory: "dir",
-	})
-
-	cmd, err = ParseCommand("dir", "--template=jsx")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
-		Directory: "dir",
-	})
-
-	cmd, err = ParseCommand("dir", "--template=javascript")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
-		Directory: "dir",
-	})
-
-	cmd, err = ParseCommand("dir", "--template=ts")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
-		Directory: "dir",
-	})
-
-	cmd, err = ParseCommand("dir", "--template=tsx")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
-		Directory: "dir",
-	})
-
-	cmd, err = ParseCommand("dir", "--template=typescript")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
-		Directory: "dir",
+		Directory: "app",
 	})
 }

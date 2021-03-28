@@ -3,7 +3,7 @@ import * as ReactDOM from "react-dom"
 
 import App from "./App"
 
-import "./modern-reset.css"
+import "./reset.css"
 
 ReactDOM.render(
 	<React.StrictMode>

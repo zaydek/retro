@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"strings"
 
 	"os"
 
@@ -11,7 +12,10 @@ import (
 //go:embed version.txt
 var RETRO_VERSION string
 
+func init() {
+	os.Setenv("RETRO_VERSION", strings.TrimSpace(RETRO_VERSION))
+}
+
 func main() {
-	os.Setenv("RETRO_VERSION", RETRO_VERSION)
 	retro.Run()
 }
