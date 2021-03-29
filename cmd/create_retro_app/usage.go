@@ -34,7 +34,7 @@ var successDirFormat = terminal.Cyan("Success!") + `
 npm:
 
 	1. cd %[1]s
-	2. npm
+	2. npm i
 	3. npm run dev
 
 yarn:
