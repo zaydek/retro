@@ -95,7 +95,6 @@ async function build(): Promise<BackendResponse> {
 	const config = await resolveConfig()
 
 	try {
-		// React, React DOM
 		reactResult = await esbuild.build({
 			...common,
 
@@ -105,11 +104,8 @@ async function build(): Promise<BackendResponse> {
 			metafile: true,
 			outdir: OUT_DIR,
 		})
-
-		// Attach metafile
 		buildRes.Metafile.Vendor = reactResult.metafile!
 
-		// User code
 		indexResult = await esbuild.build({
 			...config,
 			...common,
@@ -129,8 +125,6 @@ async function build(): Promise<BackendResponse> {
 
 			incremental: ENV === "development",
 		})
-
-		// Attach metafile
 		buildRes.Metafile.Bundle = indexResult.metafile!
 
 		if (indexResult.warnings.length > 0) {
@@ -149,7 +143,9 @@ async function build(): Promise<BackendResponse> {
 }
 
 async function rebuild(): Promise<BackendResponse> {
-	if (indexResult?.rebuild === undefined) throw new Error("Internal error")
+	if (indexResult?.rebuild === undefined) {
+		return await build()
+	}
 
 	const rebuildRes: BackendResponse = {
 		Metafile: {
