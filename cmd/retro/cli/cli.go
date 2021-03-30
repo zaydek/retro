@@ -148,6 +148,8 @@ func ParseCLIArguments() (interface{}, error) {
 		err error
 	)
 
+	// TODO: Previously --port was not passed as an option to the dev server. It’s
+	// not clear whether this is because of os.Args[2:] or something else.
 	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
 		return nil, VersionError
 	} else if cmdArg == "usage" || cmdArg == "--usage" {
