@@ -2,7 +2,7 @@ import * as fs from "fs"
 import * as os from "os"
 import * as path from "path"
 
-const CANONICAL_NAME = Object.keys(require("./package.json").bin)[0]!
+const CANON_BIN_NAME = Object.keys(require("./package.json").bin)[0]! + (process.platform === "win32" ? ".exe" : "")
 
 const supported: { [key: string]: string } = {
 	"darwin arm64 LE": "darwin-64",
@@ -14,7 +14,7 @@ const supported: { [key: string]: string } = {
 async function main(): Promise<void> {
 	const name = supported[`${process.platform} ${os.arch()} ${os.endianness()}`]!
 	const p1 = path.join(__dirname, "bin", name)
-	const p2 = path.join(__dirname, "bin", CANONICAL_NAME)
+	const p2 = path.join(__dirname, "bin", CANON_BIN_NAME)
 	await fs.promises.copyFile(p1, p2)
 	await fs.promises.chmod(p2, 0o755)
 }
