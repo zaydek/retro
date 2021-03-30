@@ -44,7 +44,7 @@ func (r BackendResponse) HTML() string {
 	return `<!DOCTYPE html>
 <html>
 	<head>
-		<title>Error</title>
+		<title>Build Error</title>
 		<style>
 
 html {
