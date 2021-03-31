@@ -97,7 +97,8 @@ func (r Runner) Dev(opt DevOptions) {
 				})
 				dev <- res
 			case err := <-stderr:
-				panic(err)
+				// panic(err)
+				fmt.Fprint(os.Stderr, err)
 			}
 		}
 	}()
@@ -162,7 +163,8 @@ func (r Runner) Build(opt BuildOptions) {
 			os.Exit(1)
 		}
 	case err := <-stderr:
-		panic(err)
+		// panic(err)
+		fmt.Fprint(os.Stderr, err)
 	}
 
 	infos, err := ls(OUT_DIR)
