@@ -46,7 +46,7 @@ func (r Runner) CreateApp() {
 				os.Stderr,
 				pretty.Error(
 					fmt.Sprintf(
-						"Aborted. Cannot overwrite '%s'.",
+						"Aborted. Refusing to overwrite '%s'.",
 						r.Command.Directory,
 					),
 				),
@@ -95,7 +95,7 @@ func (r Runner) CreateApp() {
 		fmt.Fprintln(
 			os.Stderr,
 			fmt.Sprintf(
-				"Aborted. Cannot overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n"+
+				"Aborted. Refusing to overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n"+
 					badPathsStr,
 			),
 		)
