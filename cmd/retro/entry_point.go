@@ -42,7 +42,7 @@ func guardHTMLEntryPoint() error {
 	<body>
 		<div id="root"></div>
 		<script src="/react.js"></script>
-		script src="/bundle.js"></script>
+		<script src="/index.js"></script>
 	</body>
 </html>
 ` /* EOF */), MODE_FILE)

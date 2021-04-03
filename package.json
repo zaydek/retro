@@ -1,7 +1,7 @@
 {
 	"scripts": {
-		"release-dry-run": "make test && make version && make build && make release-dry-run",
-		"release": "make test && make version && make build && make release"
+		"publish-dry-run": "make test && make version && make build && make release-dry-run",
+		"publish": "make test && make version && make build && make release"
 	},
 	"devDependencies": {
 		"@types/react": "^17.0.3",

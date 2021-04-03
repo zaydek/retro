@@ -99,7 +99,7 @@ async function build(): Promise<BackendResponse> {
 			...common,
 
 			// Add support for target
-			target: { ...config?.target },
+			target: config.target,
 
 			bundle: true,
 			entryNames: ENV !== "production" ? undefined : "[dir]/[name]__[hash]",
