@@ -98,6 +98,9 @@ async function build(): Promise<BackendResponse> {
 		reactResult = await esbuild.build({
 			...common,
 
+			// Add support for target
+			target: { ...config?.target },
+
 			bundle: true,
 			entryNames: ENV !== "production" ? undefined : "[dir]/[name]__[hash]",
 			entryPoints: [path.join(__dirname, "react.js")],
@@ -119,8 +122,8 @@ async function build(): Promise<BackendResponse> {
 			metafile: true,
 			outdir: OUT_DIR,
 
-			external: ["react", "react-dom"], // Dedupe React APIs (because of vendor)
-			inject: [path.join(__dirname, "shims/require.js")], // Add support for vendor
+			external: ["react", "react-dom"], // Dedupe React APIs
+			inject: [path.join(__dirname, "shims/require.js")], // Add React APIs
 			plugins: config?.plugins,
 
 			incremental: ENV === "development",

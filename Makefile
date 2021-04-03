@@ -1,6 +1,5 @@
 VERSION = $(shell cat version.txt)
 
-
 ################################################################################
 
 all:
@@ -29,7 +28,9 @@ test-pkg:
 	go test ./pkg/...
 
 test:
-	go test ./...
+	make test-create-retro-app
+	make test-retro
+	make test-pkg
 
 ################################################################################
 
