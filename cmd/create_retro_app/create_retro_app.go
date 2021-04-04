@@ -94,9 +94,11 @@ func (r Runner) CreateApp() {
 		}
 		fmt.Fprintln(
 			os.Stderr,
-			fmt.Sprintf(
-				"Aborted. Refusing to overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n"+
-					badPathsStr,
+			pretty.Error(
+				fmt.Sprintf(
+					"Aborted. Refusing to overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n"+
+						badPathsStr,
+				),
 			),
 		)
 		os.Exit(1)
