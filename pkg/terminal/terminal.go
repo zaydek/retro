@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	ResetCode     = "\x1b[0m"
 	NormalCode    = "\x1b[0m"
 	BoldCode      = "\x1b[1m"
 	DimCode       = "\x1b[2m"
@@ -158,7 +157,7 @@ func (f Formatter) Sprintf(format string, args ...interface{}) string {
 	if f.code == "" || (format == "" && len(args) == 0) {
 		return ""
 	}
-	str = f.code + strings.ReplaceAll(str, ResetCode, ResetCode+f.code) + ResetCode
+	str = f.code + strings.ReplaceAll(str, NormalCode, NormalCode+f.code) + NormalCode
 	return str
 }
 
@@ -168,8 +167,13 @@ func (f Formatter) Sprint(args ...interface{}) string {
 	if f.code == "" || str == "" {
 		return ""
 	}
-	str = f.code + strings.ReplaceAll(str, ResetCode, ResetCode+f.code) + ResetCode
+	str = f.code + strings.ReplaceAll(str, NormalCode, NormalCode+f.code) + NormalCode
 	return str
+}
+
+// https://stackoverflow.com/a/22892171
+func Clear(w io.Writer) (n int, err error) {
+	return fmt.Print("\033[H\033[2J")
 }
 
 func Revert(w io.Writer) (n int, err error) {

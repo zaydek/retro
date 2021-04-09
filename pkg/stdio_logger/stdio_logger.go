@@ -53,11 +53,11 @@ func (l *StdioLogger) Set(opt LoggerOptions) {
 func (l *StdioLogger) TransformStdout(args ...interface{}) string {
 	var tstr string
 	if l.fmt != "" {
-		tstr += terminal.Dim(time.Now().Format(l.fmt))
+		tstr = terminal.Dim(time.Now().Format(l.fmt))
 	}
 	arr := strings.Split(strings.TrimRight(fmt.Sprint(args...), "\n"), "\n")
 	for x, v := range arr {
-		arr[x] = fmt.Sprintf("%s  %s\x1b[0m", tstr, v)
+		arr[x] = fmt.Sprintf("%s  %s  %s\x1b[0m", tstr, terminal.BoldCyan("stdout"), v)
 	}
 	return strings.Join(arr, "\n")
 }
@@ -65,12 +65,11 @@ func (l *StdioLogger) TransformStdout(args ...interface{}) string {
 func (l *StdioLogger) TransformStderr(args ...interface{}) string {
 	var tstr string
 	if l.fmt != "" {
-		tstr += terminal.Dim(time.Now().Format(l.fmt))
-		tstr += " " // Add space for 'stderr'
+		tstr = terminal.Dim(time.Now().Format(l.fmt))
 	}
 	arr := strings.Split(strings.TrimRight(fmt.Sprint(args...), "\n"), "\n")
 	for x, v := range arr {
-		arr[x] = fmt.Sprintf("%s%s  %s\x1b[0m", tstr, terminal.BoldRed("stderr"), v)
+		arr[x] = fmt.Sprintf("%s  %s  %s\x1b[0m", tstr, terminal.BoldRed("stderr"), v)
 	}
 	return strings.Join(arr, "\n")
 }

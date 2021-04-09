@@ -1,6 +1,9 @@
 package cli
 
 type Command struct {
-	Template  string
+	// Flags
+	Template string
+
+	// Arguments
 	Directory string
 }

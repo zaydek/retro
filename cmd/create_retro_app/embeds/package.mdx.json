@@ -5,12 +5,12 @@
 		"serve": "retro serve"
 	},
 	"dependencies": {
+		"@mdx-js/react": "{{ .MDXVersion }}",
 		"react": "{{ .ReactVersion }}",
-		"react-dom": "{{ .ReactDOMVersion }}"
+		"react-dom": "{{ .ReactVersion }}"
 	},
 	"devDependencies": {
-		"@types/react": "{{ .TypesReactVersion }}",
-		"@types/react-dom": "{{ .TypesReactDOMVersion }}",
+		"@mdx-js/mdx": "{{ .MDXVersion }}",
 		"@zaydek/retro": "{{ .RetroVersion }}",
 		"esbuild": "{{ .EsbuildVersion }}"
 	}

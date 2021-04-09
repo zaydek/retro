@@ -3,6 +3,8 @@ package retro
 import (
 	_ "embed"
 	"io/ioutil"
+	"log"
+	"net"
 	"sort"
 	"strings"
 
@@ -14,21 +16,30 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zaydek/retro/cmd/pretty"
+	"github.com/zaydek/retro/cmd/format"
 	"github.com/zaydek/retro/cmd/retro/cli"
 	"github.com/zaydek/retro/pkg/ipc"
-	"github.com/zaydek/retro/pkg/stdio_logger"
 	"github.com/zaydek/retro/pkg/terminal"
 	"github.com/zaydek/retro/pkg/watch"
 )
 
 var EPOCH = time.Now()
 
-var (
-	cyan    = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
-	magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
-	red     = func(str string) string { return pretty.Accent(str, terminal.Red) }
-)
+var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
+
+// getBase gets the executable directory name (basename). This directory
+// changes depending on development or production.
+func getBase() (string, error) {
+	exec, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	if strings.HasPrefix(filepath.Base(exec), "main") {
+		return os.Getwd()
+	}
+	// Get 'node_modules/.bin/@zaydek/bin/retro' not 'node_modules/.bin/retro'.
+	return filepath.EvalSymlinks(exec)
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -43,7 +54,7 @@ func (r Runner) Dev(opt DevOptions) {
 		copyHTMLEntryPoint, err = r.preflight()
 		switch err.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
+			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 			os.Exit(1)
 		default:
 			if err != nil {
@@ -52,17 +63,12 @@ func (r Runner) Dev(opt DevOptions) {
 		}
 	}
 
-	// Get 'node_modules/.bin/@zaydek/bin/retro' not 'node_modules/.bin/retro'
-	exec, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	exec2, err := filepath.EvalSymlinks(exec)
+	root, err := getBase()
 	if err != nil {
 		panic(err)
 	}
 
-	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(exec2), "scripts/backend.esbuild.js"))
+	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(root), "scripts/backend.esbuild.js"))
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +109,7 @@ func (r Runner) Dev(opt DevOptions) {
 		}
 	}()
 
-	r.Serve(ServerOptions{Dev: dev, Ready: ready})
+	r.Serve(ServeOptions{Dev: dev, Ready: ready})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +125,7 @@ func (r Runner) Build(opt BuildOptions) {
 		copyHTMLEntryPoint, err = r.preflight()
 		switch err.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
+			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 			os.Exit(1)
 		default:
 			if err != nil {
@@ -148,6 +154,12 @@ func (r Runner) Build(opt BuildOptions) {
 	var once sync.Once
 	select {
 	case out := <-stdout:
+		// FIXME: stdout messages e.g. 'console.log' from retro.config.js should not
+		// be treated as errors if they fail to unmarshal. The problem is that
+		// ipc.Message needs to be more blunt and simply provide a plaintext
+		// interface for interacting with stdout and stderr.
+		//
+		// See https://github.com/zaydek/retro/issues/8.
 		var res BackendResponse
 		if err := json.Unmarshal(out.Data, &res); err != nil {
 			panic(err)
@@ -163,7 +175,6 @@ func (r Runner) Build(opt BuildOptions) {
 			os.Exit(1)
 		}
 	case err := <-stderr:
-		// panic(err)
 		fmt.Fprint(os.Stderr, err)
 	}
 
@@ -199,50 +210,63 @@ func (r Runner) Build(opt BuildOptions) {
 		sumMap += v.size
 	}
 
-	// TODO: Wrap w/ 'if r.Sourcemap { ... }'
+	// TODO: Add source map support
 	fmt.Println(strings.Repeat(" ", 32) + terminal.Dimf("(%s sum)", byteCount(sum)))
 	fmt.Println(strings.Repeat(" ", 32) + terminal.Dimf("(%s sum w/ sourcemaps)", byteCount(sumMap)))
 
-	durStr := terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
-
-	fmt.Println()
-	fmt.Println(fmt.Sprintf("%s", durStr))
-
+	fmt.Println(terminal.Dimf("(%s)", time.Since(EPOCH)))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type ServerOptions struct {
+type ServeOptions struct {
 	Preflight bool
 
 	Dev   chan BackendResponse
 	Ready chan struct{}
 }
 
-func formatServe200(r *http.Request, start time.Time) string {
-	var durStr string
-	if dur := time.Since(start); dur >= time.Millisecond {
-		durStr += " "
-		durStr += terminal.Dimf("(%s)", pretty.Duration(dur))
+// https://stackoverflow.com/a/37382208
+func getIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
 	}
-	return cyan(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr))
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP
 }
 
-func formatServe500(r *http.Request, start time.Time) string {
-	var durStr string
-	if dur := time.Since(start); dur >= time.Millisecond {
-		durStr += " "
-		durStr += terminal.Dimf("(%s)", pretty.Duration(dur))
+func buildSuccess(port int) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
 	}
-	return red(fmt.Sprintf("'%s %s'%s", r.Method, r.URL.Path, durStr))
+
+	var (
+		base = filepath.Base(cwd)
+		ip   = getIP()
+	)
+
+	terminal.Clear(os.Stdout)
+	fmt.Println(terminal.Green("Compiled successfully!") + `
+
+You can now view ` + terminal.Bold(base) + ` in the browser.
+
+  ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
+  ` + terminal.Bold("On Your Network:") + `  ` + fmt.Sprintf("http://%s:%s", ip, terminal.Bold(port)) + `
+
+Note that the development build is not optimized.
+To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
+`) // Add EOF
 }
 
-func (r Runner) Serve(opt ServerOptions) {
+func (r Runner) Serve(opt ServeOptions) {
 	if opt.Preflight {
 		_, err := r.preflight()
 		switch err.(type) {
 		case HTMLError:
-			fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
+			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 			os.Exit(1)
 		default:
 			if err != nil {
@@ -269,35 +293,34 @@ func (r Runner) Serve(opt ServerOptions) {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		// No-op '/~dev' (for CMD=serve, etc.); defer to 'http.HandleFunc("/~dev", ...)'
 		if req.URL.Path == "/~dev" {
 			return
 		}
 
 		// 500 Server error
-		start := time.Now()
 		if res.Dirty() {
+			terminal.Clear(os.Stderr)
 			fmt.Fprint(w, res.HTML())
-			stdio_logger.Stdout(formatServe500(req, start))
+			fmt.Fprint(os.Stderr, res)
 			return
 		}
-		// 200 OK - Serve any
+		// 200 OK - Serve non-index.html
 		path := getFSPath(req.URL.Path)
 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
 			http.ServeFile(w, req, filepath.Join(OUT_DIR, path))
 			return
 		}
 		// 200 OK - Serve index.html
-		if os.Getenv("ENV") == "development" {
+		if r.getCommandKind() == KindDevCommand {
 			fmt.Fprint(w, contents)
+			buildSuccess(r.getPort())
 		} else {
 			http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
+			buildSuccess(r.getPort())
 		}
-		stdio_logger.Stdout(formatServe200(req, start))
 	})
 
-	if opt.Dev != nil {
-		// Set server-sent event headers
+	if r.getCommandKind() != KindServeCommand {
 		http.HandleFunc("/~dev", func(w http.ResponseWriter, req *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-cache")
@@ -318,15 +341,27 @@ func (r Runner) Serve(opt ServerOptions) {
 		})
 	}
 
-	var durStr string
-	if dur := time.Since(EPOCH); dur >= time.Millisecond {
-		durStr += " "
-		durStr += terminal.Dimf("(%s)", pretty.Duration(time.Since(EPOCH)))
-	}
+	var (
+		port    = r.getPort()
+		getPort = func() int { return port }
+	)
 
-	stdio_logger.Stdout(cyan(fmt.Sprintf("Ready on port '%d'%s", r.getPort(), durStr)))
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", r.getPort()), nil); err != nil {
-		panic(err)
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		buildSuccess(getPort())
+	}()
+
+	for {
+		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+		if err != nil {
+			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {
+				// stdio_logger.Stderr(cyan(fmt.Sprintf("Port '%d' taken", port)))
+				port++
+				continue
+			}
+			panic(err)
+		}
+		break
 	}
 }
 
@@ -335,19 +370,19 @@ func (r Runner) Serve(opt ServerOptions) {
 func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
-	case cli.VersionError:
+	case cli.ErrVersion:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
 		return
-	case cli.UsageError:
+	case cli.ErrUsage:
 		fallthrough
-	case cli.HelpError:
-		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))
+	case cli.ErrHelp:
+		fmt.Println(format.SpaceInset(format.TabsToSpaces(cyan(usage))))
 		return
 	}
 
 	switch err.(type) {
 	case cli.CommandError:
-		fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
+		fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 		os.Exit(1)
 	default:
 		if err != nil {
@@ -362,6 +397,6 @@ func Run() {
 	case cli.BuildCommand:
 		run.Build(BuildOptions{Preflight: true})
 	case cli.ServeCommand:
-		run.Serve(ServerOptions{Preflight: true})
+		run.Serve(ServeOptions{})
 	}
 }

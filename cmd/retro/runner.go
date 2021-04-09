@@ -8,23 +8,23 @@ import (
 )
 
 const (
-	DevCommand CmdKind = iota
-	BuildCommand
-	ServeCommand
+	KindDevCommand CommandKind = iota
+	KindBuildCommand
+	KindServeCommand
 )
 
 type Runner struct {
 	Command interface{}
 }
 
-type CmdKind uint8
+type CommandKind uint8
 
 func (r Runner) preflight() (copyHTML func(string, string, string) error, err error) {
 	cmd := r.getCommandKind()
 
 	// Set env vars
 	switch cmd {
-	case DevCommand:
+	case KindDevCommand:
 		os.Setenv("CMD", "dev")
 		os.Setenv("ENV", "development")
 		os.Setenv("NODE_ENV", "development")
@@ -32,7 +32,7 @@ func (r Runner) preflight() (copyHTML func(string, string, string) error, err er
 		os.Setenv("SRC_DIR", SRC_DIR)
 		os.Setenv("OUT_DIR", OUT_DIR)
 
-	case BuildCommand:
+	case KindBuildCommand:
 		os.Setenv("CMD", "build")
 		os.Setenv("ENV", "production")
 		os.Setenv("NODE_ENV", "production")
@@ -40,7 +40,7 @@ func (r Runner) preflight() (copyHTML func(string, string, string) error, err er
 		os.Setenv("SRC_DIR", SRC_DIR)
 		os.Setenv("OUT_DIR", OUT_DIR)
 
-	case ServeCommand:
+	case KindServeCommand:
 		os.Setenv("CMD", "serve")
 		os.Setenv("ENV", "production")
 		os.Setenv("NODE_ENV", "production")
@@ -67,25 +67,25 @@ func (r Runner) preflight() (copyHTML func(string, string, string) error, err er
 	return
 }
 
-func (r Runner) getCommandKind() (out CmdKind) {
+func (r Runner) getCommandKind() (out CommandKind) {
 	switch r.Command.(type) {
 	// % retro dev
 	case cli.DevCommand:
-		return DevCommand
+		return KindDevCommand
 	// % retro build
 	case cli.BuildCommand:
-		return BuildCommand
+		return KindBuildCommand
 	// % retro serve
 	case cli.ServeCommand:
-		return ServeCommand
+		return KindServeCommand
 	}
 	return
 }
 
 func (r Runner) getPort() (out int) {
-	if cmd := r.getCommandKind(); cmd == DevCommand {
+	if cmd := r.getCommandKind(); cmd == KindDevCommand {
 		return r.Command.(cli.DevCommand).Port
-	} else if cmd == ServeCommand {
+	} else if cmd == KindServeCommand {
 		return r.Command.(cli.ServeCommand).Port
 	}
 	return

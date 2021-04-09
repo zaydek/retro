@@ -6,10 +6,11 @@
 	},
 	"dependencies": {
 		"react": "{{ .ReactVersion }}",
-		"react-dom": "{{ .ReactDOMVersion }}"
+		"react-dom": "{{ .ReactVersion }}"
 	},
 	"devDependencies": {
 		"@zaydek/retro": "{{ .RetroVersion }}",
-		"esbuild": "{{ .EsbuildVersion }}"
+		"esbuild": "{{ .EsbuildVersion }}",
+		"sass": "{{ .SassVersion }}"
 	}
 }

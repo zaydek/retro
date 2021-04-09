@@ -3,7 +3,4 @@
 .DS_Store
 /node_modules
 
-*.esbuild.*
-/npm/*/bin
-/npm/*/dist
-/test
+/out

@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	VersionError = errors.New("cli: version error")
-	UsageError   = errors.New("cli: usage error")
-	HelpError    = errors.New("cli: help error")
+	ErrVersion = errors.New("cli: version error")
+	ErrUsage   = errors.New("cli: usage error")
+	ErrHelp    = errors.New("cli: help error")
 )
 
 type ErrorKind int
@@ -42,11 +42,11 @@ func (e CommandError) Error() string {
 	case BadArgument:
 		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
 	case BadPortValue:
-		return fmt.Sprintf("'--port' must be a number (default '8000').")
+		return "'--port' must be a number (default '8000')."
 	case BadSourcemapValue:
-		return fmt.Sprintf("'--sourcemap' must be a 'true' or 'false' or empty (default 'true').")
+		return "'--sourcemap' must be a 'true' or 'false' or empty (default 'true')."
 	case BadPortRange:
-		return fmt.Sprintf("'--port' must be between '1000' and '10_000' (you may use '_' as a separator); used '%d'.", e.BadPort)
+		return fmt.Sprintf("'--port' must be between '1000' and '10_000'; used '%d'.", e.BadPort)
 	}
 	panic("Internal error")
 }
@@ -140,7 +140,7 @@ func ParseServeCommand(args ...string) (ServeCommand, error) {
 
 func ParseCLIArguments() (interface{}, error) {
 	if len(os.Args) < 2 {
-		return nil, UsageError
+		return nil, ErrUsage
 	}
 
 	var (
@@ -151,11 +151,11 @@ func ParseCLIArguments() (interface{}, error) {
 	// TODO: Previously --port was not passed as an option to the dev server. It’s
 	// not clear whether this is because of os.Args[2:] or something else.
 	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
-		return nil, VersionError
+		return nil, ErrVersion
 	} else if cmdArg == "usage" || cmdArg == "--usage" {
-		return nil, UsageError
+		return nil, ErrUsage
 	} else if cmdArg == "help" || cmdArg == "--help" {
-		return nil, HelpError
+		return nil, ErrHelp
 	} else if cmdArg == "dev" {
 		cmd, err = ParseDevCommand(os.Args[2:]...)
 	} else if cmdArg == "build" {

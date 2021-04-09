@@ -42,7 +42,7 @@ func (r BackendResponse) HTML() string {
 	str = strings.ReplaceAll(str, "╵", "|")
 
 	return `<!DOCTYPE html>
-<html>
+<html lang="en">
 	<head>
 		<title>Build Error</title>
 		<style>

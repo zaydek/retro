@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 )
 
 type lsInfo struct {
@@ -14,15 +13,15 @@ type lsInfo struct {
 
 type lsInfos []lsInfo
 
-var greedyExtRe = regexp.MustCompile(`(\.).*$`)
-
-func greedyExt(path string) string {
-	matches := greedyExtRe.FindAllString(path, -1)
-	if len(matches) == 0 {
-		return ""
-	}
-	return matches[0]
-}
+// var greedyExtRe = regexp.MustCompile(`(\.).*$`)
+//
+// func greedyExt(path string) string {
+// 	matches := greedyExtRe.FindAllString(path, -1)
+// 	if len(matches) == 0 {
+// 		return ""
+// 	}
+// 	return matches[0]
+// }
 
 func (a lsInfos) Len() int      { return len(a) }
 func (a lsInfos) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -66,5 +65,5 @@ func byteCount(b int64) string {
 		div *= u
 		exp++
 	}
-	return fmt.Sprintf("%.0f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+	return fmt.Sprintf("%.0f %cB", float64(b)/float64(div), "KMG"[exp])
 }

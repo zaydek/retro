@@ -7,7 +7,7 @@ var usage = `
 
 	Create a new app at directory app
 
-		--template=...  'javascript' or 'typescript' (default 'javascript')
+		--template=...  'starter', 'sass', or 'mdx' (default 'starter')
 
 ` + terminal.Bold("Repositories") + `
 
@@ -15,32 +15,32 @@ var usage = `
 	` + terminal.Underline("https://github.com/evanw/esbuild") + `
 `
 
-var successFormat = terminal.Cyan("Success!") + `
+var successFmt = terminal.Cyan("Success!") + `
 
-npm:
+  npm:
 
-	1. npm
-	2. npm run dev
+	  1. npm
+	  2. npm run dev
 
-yarn:
+  yarn:
 
-	1. yarn
-	2. yarn dev
+	  1. yarn
+	  2. yarn dev
 
 Happy hacking!`
 
-var successDirFormat = terminal.Cyan("Success!") + `
+var successDirFmt = terminal.Cyan("Success!") + `
 
-npm:
+  npm:
 
-	1. cd %[1]s
-	2. npm i
-	3. npm run dev
+	  1. cd %[1]s
+	  2. npm i
+	  3. npm run dev
 
-yarn:
+  yarn:
 
-	1. cd %[1]s
-	2. yarn
-	3. yarn dev
+	  1. cd %[1]s
+	  2. yarn
+	  3. yarn dev
 
 Happy hacking!`

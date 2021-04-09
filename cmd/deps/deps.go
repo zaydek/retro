@@ -2,25 +2,10 @@ package deps
 
 import (
 	_ "embed"
+	"regexp"
 
 	"encoding/json"
 )
-
-//go:embed deps.json
-var deps string
-
-type PackageDeps struct {
-	// NOTE: Defer to create_retro_app because 'deps.init' runs before 'main.init'
-	RetroVersion string
-
-	ReactVersion         string `json:"react"`
-	ReactDOMVersion      string `json:"react-dom"`
-	TypesReactVersion    string `json:"@types/react"`
-	TypesReactDOMVersion string `json:"@types/react-dom"`
-	EsbuildVersion       string `json:"esbuild"`
-}
-
-var Deps PackageDeps
 
 func must(err error) {
 	if err == nil {
@@ -29,7 +14,27 @@ func must(err error) {
 	panic(err)
 }
 
+var (
+	//go:embed deps.jsonc
+	deps string
+
+	Deps PackageDeps
+)
+
+type PackageDeps struct {
+	RetroVersion string
+
+	EsbuildVersion string `json:"esbuild"`
+	MDXVersion     string `json:"mdx"`
+	ReactVersion   string `json:"react"`
+	SassVersion    string `json:"sass"`
+}
+
+var re = regexp.MustCompile(`\/\/.*`)
+
 func init() {
+	// Remove comments
+	deps = re.ReplaceAllString(deps, "")
 	err := json.Unmarshal([]byte(deps), &Deps)
 	must(err)
 }

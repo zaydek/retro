@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	VersionError = errors.New("cli: version error")
-	UsageError   = errors.New("cli: usage error")
-	HelpError    = errors.New("cli: help error")
+	ErrVersion = errors.New("cli: version error")
+	ErrUsage   = errors.New("cli: usage error")
+	ErrHelp    = errors.New("cli: help error")
 )
 
 type ErrorKind int
@@ -34,7 +34,7 @@ func (e CommandError) Error() string {
 	case BadArgument:
 		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
 	case BadTemplateValue:
-		return fmt.Sprintf("'--template' must be a 'javascript' or 'typescript' (default 'javascript').")
+		return "'--template' must be a 'starter', 'sass', or 'mdx' (default 'starter')."
 	case BadDirectoryValue:
 		cwd, _ := os.Getwd()
 		return fmt.Sprintf("Use '.' explicitly to use '%s'.", filepath.Join("..", filepath.Base(cwd)))
@@ -48,7 +48,7 @@ func (e CommandError) Unwrap() error {
 
 func ParseCommand(args ...string) (Command, error) {
 	cmd := Command{
-		Template:  "javascript",
+		Template:  "starter",
 		Directory: "",
 	}
 	var once sync.Once
@@ -59,18 +59,12 @@ func ParseCommand(args ...string) (Command, error) {
 				return Command{}, CommandError{Kind: BadTemplateValue}
 			}
 			switch strings.ToLower(arg[len("--template="):]) {
-			case "js":
-				fallthrough
-			case "jsx":
-				fallthrough
-			case "javascript":
-				cmd.Template = "javascript"
-			case "ts":
-				fallthrough
-			case "tsx":
-				fallthrough
-			case "typescript":
-				cmd.Template = "typescript"
+			case "starter":
+				cmd.Template = "starter"
+			case "sass":
+				cmd.Template = "sass"
+			case "mdx":
+				cmd.Template = "mdx"
 			default:
 				return Command{}, CommandError{Kind: BadTemplateValue}
 			}
@@ -90,7 +84,7 @@ func ParseCommand(args ...string) (Command, error) {
 
 func ParseCLIArguments() (Command, error) {
 	if len(os.Args) < 2 {
-		return Command{}, UsageError
+		return Command{}, ErrUsage
 	}
 
 	var (
@@ -101,11 +95,11 @@ func ParseCLIArguments() (Command, error) {
 	// TODO: Previously --port was not passed as an option to the dev server. It’s
 	// not clear whether this is because of os.Args[2:] or something else.
 	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
-		return Command{}, VersionError
+		return Command{}, ErrVersion
 	} else if cmdArg == "usage" || cmdArg == "--usage" {
-		return Command{}, UsageError
+		return Command{}, ErrUsage
 	} else if cmdArg == "help" || cmdArg == "--help" {
-		return Command{}, HelpError
+		return Command{}, ErrHelp
 	} else {
 		cmd, err = ParseCommand(os.Args[1:]...)
 	}

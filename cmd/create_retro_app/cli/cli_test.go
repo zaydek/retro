@@ -22,49 +22,28 @@ func TestParseCommand(t *testing.T) {
 	cmd, err = ParseCommand(".")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
+		Template:  "starter",
 		Directory: ".",
 	})
 
-	cmd, err = ParseCommand(".", "--template=js")
+	cmd, err = ParseCommand(".", "--template=starter")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
+		Template:  "starter",
 		Directory: ".",
 	})
 
-	cmd, err = ParseCommand(".", "--template=jsx")
+	cmd, err = ParseCommand(".", "--template=sass")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
+		Template:  "sass",
 		Directory: ".",
 	})
 
-	cmd, err = ParseCommand(".", "--template=javascript")
+	cmd, err = ParseCommand(".", "--template=mdx")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
-		Directory: ".",
-	})
-
-	cmd, err = ParseCommand(".", "--template=ts")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
-		Directory: ".",
-	})
-
-	cmd, err = ParseCommand(".", "--template=tsx")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
-		Directory: ".",
-	})
-
-	cmd, err = ParseCommand(".", "--template=typescript")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
+		Template:  "mdx",
 		Directory: ".",
 	})
 
@@ -73,49 +52,28 @@ func TestParseCommand(t *testing.T) {
 	cmd, err = ParseCommand("app")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
+		Template:  "starter",
 		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("app", "--template=js")
+	cmd, err = ParseCommand("app", "--template=starter")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
+		Template:  "starter",
 		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("app", "--template=jsx")
+	cmd, err = ParseCommand("app", "--template=sass")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
+		Template:  "sass",
 		Directory: "app",
 	})
 
-	cmd, err = ParseCommand("app", "--template=javascript")
+	cmd, err = ParseCommand("app", "--template=mdx")
 	check(t, err)
 	expect.DeepEqual(t, cmd, Command{
-		Template:  "javascript",
-		Directory: "app",
-	})
-
-	cmd, err = ParseCommand("app", "--template=ts")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
-		Directory: "app",
-	})
-
-	cmd, err = ParseCommand("app", "--template=tsx")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
-		Directory: "app",
-	})
-
-	cmd, err = ParseCommand("app", "--template=typescript")
-	check(t, err)
-	expect.DeepEqual(t, cmd, Command{
-		Template:  "typescript",
+		Template:  "mdx",
 		Directory: "app",
 	})
 }

@@ -8,31 +8,33 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/zaydek/retro/cmd/create_retro_app/cli"
 	"github.com/zaydek/retro/cmd/create_retro_app/embeds"
 	"github.com/zaydek/retro/cmd/deps"
-	"github.com/zaydek/retro/cmd/pretty"
+	"github.com/zaydek/retro/cmd/format"
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
-var (
-	cyan    = func(str string) string { return pretty.Accent(str, terminal.Cyan) }
-	magenta = func(str string) string { return pretty.Accent(str, terminal.Magenta) }
-)
+var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func (r Runner) CreateApp() {
-	fsys := embeds.JavaScriptFS
-	if r.Command.Template == "typescript" {
-		fsys = embeds.TypeScriptFS
+func (r Runner) getFSAndPkg() (fs.FS, *template.Template) {
+	switch r.Command.Template {
+	case "starter":
+		return embeds.StarterFS, embeds.StarterPackage
+	case "sass":
+		return embeds.SassFS, embeds.SassPackage
+	case "mdx":
+		return embeds.MDXFS, embeds.MDXPackage
 	}
+	panic("Internal error")
+}
 
-	tmpl := embeds.JavaScriptPackageTemplate
-	if r.Command.Template == "typescript" {
-		tmpl = embeds.TypeScriptPackageTemplate
-	}
+func (r Runner) CreateApp() {
+	fsys, pkg := r.getFSAndPkg()
 
 	appName := r.Command.Directory
 	if r.Command.Directory == "." {
@@ -44,9 +46,9 @@ func (r Runner) CreateApp() {
 		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
 			fmt.Fprintln(
 				os.Stderr,
-				pretty.Error(
+				format.Error(
 					fmt.Sprintf(
-						"Aborted. Refusing to overwrite '%s'.",
+						"Aborted. Refusing to overwrite directory '%s'.",
 						r.Command.Directory,
 					),
 				),
@@ -62,7 +64,7 @@ func (r Runner) CreateApp() {
 		defer os.Chdir("..")
 	}
 
-	var paths []string
+	paths := []string{"package.json"} // Add 'pacakge.json'
 	err := fs.WalkDir(fsys, ".", func(path string, dirEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -94,7 +96,7 @@ func (r Runner) CreateApp() {
 		}
 		fmt.Fprintln(
 			os.Stderr,
-			pretty.Error(
+			format.Error(
 				fmt.Sprintf(
 					"Aborted. Refusing to overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n"+
 						badPathsStr,
@@ -104,6 +106,7 @@ func (r Runner) CreateApp() {
 		os.Exit(1)
 	}
 
+	paths = paths[1:] // Remove 'package.json'
 	for _, v := range paths {
 		if dir := filepath.Dir(v); dir != "." {
 			if err := os.MkdirAll(dir, MODE_DIR); err != nil {
@@ -126,8 +129,8 @@ func (r Runner) CreateApp() {
 	}
 
 	var buf bytes.Buffer
-	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
-	if err := tmpl.Execute(&buf, deps.Deps); err != nil {
+	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add '@zaydek/retro'
+	if err := pkg.Execute(&buf, deps.Deps); err != nil {
 		panic(err)
 	}
 
@@ -136,9 +139,9 @@ func (r Runner) CreateApp() {
 	}
 
 	if r.Command.Directory == "." {
-		fmt.Println(pretty.Spaces(successFormat))
+		fmt.Println(format.TabsToSpaces(successFmt))
 	} else {
-		fmt.Println(pretty.Spaces(fmt.Sprintf(successDirFormat, appName)))
+		fmt.Println(format.TabsToSpaces(fmt.Sprintf(successDirFmt, appName)))
 	}
 }
 
@@ -151,19 +154,19 @@ type Runner struct {
 func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
-	case cli.VersionError:
+	case cli.ErrorVersion:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
 		return
-	case cli.UsageError:
+	case cli.ErrorUsage:
 		fallthrough
-	case cli.HelpError:
-		fmt.Println(pretty.Inset(pretty.Spaces(cyan(usage))))
+	case cli.ErrorHelp:
+		fmt.Println(format.SpaceInset(format.TabsToSpaces(cyan(usage))))
 		return
 	}
 
 	switch err.(type) {
 	case cli.CommandError:
-		fmt.Fprintln(os.Stderr, pretty.Error(err.Error()))
+		fmt.Fprintln(os.Stderr, format.Error(err))
 		os.Exit(1)
 	default:
 		if err != nil {
