@@ -3,9 +3,9 @@ package create_retro_app
 import "github.com/zaydek/retro/pkg/terminal"
 
 var usage = `
-` + terminal.Bold("create-retro-app [app]") + `
+` + terminal.Bold("create-retro-app [app-name]") + `
 
-	Create a new app at directory app
+	Create a new Retro app at directory ` + terminal.Bold("[app-name]") + `
 
 		--template=...  ` + terminal.Cyan("starter") + `, ` + terminal.Cyan("sass") + `, or ` + terminal.Cyan("mdx") + ` (default ` + terminal.Cyan("starter") + `)
 

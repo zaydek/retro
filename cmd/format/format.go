@@ -7,7 +7,7 @@ import (
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
-func SpaceInset(str string) string {
+func Pad(str string) string {
 	arr := strings.Split(str, "\n")
 	for x, v := range arr {
 		arr[x] = " " + v
@@ -15,7 +15,7 @@ func SpaceInset(str string) string {
 	return strings.Join(arr, "\n")
 }
 
-func TabsToSpaces(str string) string {
+func Tabs(str string) string {
 	arr := strings.Split(str, "\n")
 	for x := range arr {
 		if arr[x] == "" {

@@ -362,7 +362,7 @@ func Run() {
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
-		fmt.Println(format.SpaceInset(format.TabsToSpaces(cyan(usage))))
+		fmt.Println(format.Pad(format.Tabs(cyan(usage))))
 		return
 	}
 

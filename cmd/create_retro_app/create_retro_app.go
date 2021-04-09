@@ -141,9 +141,9 @@ func (r Runner) CreateApp() {
 	}
 
 	if r.Command.Directory == "." {
-		fmt.Println(format.TabsToSpaces(successFmt))
+		fmt.Println(format.Tabs(successFmt))
 	} else {
-		fmt.Println(format.TabsToSpaces(fmt.Sprintf(successDirFmt, appName)))
+		fmt.Println(format.Tabs(fmt.Sprintf(successDirFmt, appName)))
 	}
 }
 
@@ -162,7 +162,7 @@ func Run() {
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
-		fmt.Println(format.SpaceInset(format.TabsToSpaces(cyan(usage))))
+		fmt.Println(format.Pad(format.Tabs(cyan(usage))))
 		return
 	}
 
