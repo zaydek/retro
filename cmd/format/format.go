@@ -26,7 +26,7 @@ func TabsToSpaces(str string) string {
 	return strings.Join(arr, "\n")
 }
 
-var accentRe = regexp.MustCompile(`'([^']+)'`)
+var accentRe = regexp.MustCompile("`([^`]+)`")
 
 func Accent(str string, accent func(args ...interface{}) string) string {
 	arr := strings.Split(str, "\n")
@@ -34,7 +34,7 @@ func Accent(str string, accent func(args ...interface{}) string) string {
 		if arr[x] == "" {
 			continue
 		}
-		arr[x] = accentRe.ReplaceAllString(arr[x], accent("'$1'"))
+		arr[x] = accentRe.ReplaceAllString(arr[x], accent("`$1`"))
 	}
 	return strings.Join(arr, "\n")
 }

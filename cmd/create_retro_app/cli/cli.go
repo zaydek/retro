@@ -32,12 +32,12 @@ type CommandError struct {
 func (e CommandError) Error() string {
 	switch e.Kind {
 	case BadArgument:
-		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
+		return fmt.Sprintf("Unsupported argument `%s`.", e.BadArgument)
 	case BadTemplateValue:
-		return "'--template' must be a 'starter', 'sass', or 'mdx' (default 'starter')."
+		return "`--template` must be a `starter`, `sass`, or `mdx` (default `starter`)."
 	case BadDirectoryValue:
 		cwd, _ := os.Getwd()
-		return fmt.Sprintf("Use '.' explicitly to use '%s'.", filepath.Join("..", filepath.Base(cwd)))
+		return fmt.Sprintf("Use `.` explicitly to use `%s`.", filepath.Join("..", filepath.Base(cwd)))
 	}
 	panic("Internal error")
 }

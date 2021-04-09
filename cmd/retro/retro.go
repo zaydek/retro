@@ -37,7 +37,7 @@ func getBase() (string, error) {
 	if strings.HasPrefix(filepath.Base(exec), "main") {
 		return os.Getwd()
 	}
-	// Get 'node_modules/.bin/@zaydek/bin/retro' not 'node_modules/.bin/retro'.
+	// Get node_modules/.bin/@zaydek/bin/retro not node_modules/.bin/retro.
 	return filepath.EvalSymlinks(exec)
 }
 
@@ -147,7 +147,7 @@ func (r Runner) Build(opt BuildOptions) {
 
 	select {
 	case out := <-stdout:
-		// FIXME: stdout messages e.g. 'console.log' from retro.config.js should not
+		// FIXME: stdout messages e.g. `console.log` from retro.config.js should not
 		// be treated as errors if they fail to unmarshal. The problem is that
 		// ipc.Message needs to be more blunt and simply provide a plaintext
 		// interface for interacting with stdout and stderr.
@@ -245,7 +245,7 @@ You can now view ` + terminal.Bold(base) + ` in the browser.
 
 Note that the development build is not optimized.
 To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
-`) // Add EOF
+` /* EOF */)
 }
 
 func (r Runner) Serve(opt ServeOptions) {

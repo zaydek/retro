@@ -48,7 +48,7 @@ func (r Runner) CreateApp() {
 				os.Stderr,
 				format.Error(
 					fmt.Sprintf(
-						"Aborted. Refusing to overwrite directory '%s'.",
+						"Aborted. Refusing to overwrite directory `%s`.",
 						r.Command.Directory,
 					),
 				),
@@ -99,7 +99,7 @@ func (r Runner) CreateApp() {
 			os.Stderr,
 			format.Error(
 				fmt.Sprintf(
-					"Aborted. Refusing to overwrite paths. Use 'rm -r [...paths]' to remove them or 'mv [src] [dst]' to rename them.\n\n"+
+					"Aborted. Refusing to overwrite paths. Use `rm -r [...paths]` to remove them or `mv [src] [dst]` to rename them.\n\n"+
 						badPathsStr,
 				),
 			),
@@ -131,7 +131,7 @@ func (r Runner) CreateApp() {
 	}
 
 	var buf bytes.Buffer
-	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add '@zaydek/retro'
+	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
 	if err := pkg.Execute(&buf, deps.Deps); err != nil {
 		panic(err)
 	}

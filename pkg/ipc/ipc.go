@@ -41,7 +41,7 @@ func NewCommand(args ...string) (stdin chan Request, stdout chan Response, stder
 			if err != nil {
 				panic(err)
 			}
-			// Add an EOF so 'await stdin()' can process
+			// Add an EOF so `await stdin()` can process
 			stdinPipe.Write(append(bstr, '\n'))
 		}
 	}()

@@ -60,11 +60,11 @@ func guardHTMLEntryPoint() error {
 
 	contents := string(bstr)
 	if !strings.Contains(contents, `<link rel="stylesheet" href="/bundle.css" />`) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<link rel="stylesheet" href="/bundle.css" />'`), terminal.Magenta("'<head>'")) + `
+		return newHTMLError(fmt.Sprintf("Add %s somewhere to %s.", terminal.Magenta("`"+`<link rel="stylesheet" href="/bundle.css" />`+"`"), terminal.Magenta("`<head>`")) + `
 
 For example:
 
-` + terminal.Dimf(`// %s`, path) + `
+` + terminal.Dimf("// %s", path) + `
 <!DOCTYPE html>
 	<head lang="en">
 		<meta charset="utf-8" />
@@ -81,11 +81,11 @@ For example:
 	//////////////////////////////////////////////////////////////////////////////
 
 	if !strings.Contains(contents, `<div id="root"></div>`) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<div id="root"></div>'`), terminal.Magenta("'<body>'")) + `
+		return newHTMLError(fmt.Sprintf("Add %s somewhere to %s.", terminal.Magenta("`"+`<div id="root"></div>`+"`"), terminal.Magenta("`<body>`")) + `
 
 For example:
 
-` + terminal.Dimf(`// %s`, path) + `
+` + terminal.Dimf("// %s", path) + `
 <!DOCTYPE html>
 	<head lang="en">
 		<meta charset="utf-8" />
@@ -102,11 +102,11 @@ For example:
 	//////////////////////////////////////////////////////////////////////////////
 
 	if !strings.Contains(contents, `<script src="/vendor.js"></script>`) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/vendor.js"></script>'`), terminal.Magenta("'<body>'")) + `
+		return newHTMLError(fmt.Sprintf("Add %s somewhere to %s.", terminal.Magenta("`"+`<script src="/vendor.js"></script>`+"`"), terminal.Magenta("`<body>`")) + `
 
 For example:
 
-` + terminal.Dimf(`// %s`, path) + `
+` + terminal.Dimf("// %s", path) + `
 <!DOCTYPE html>
 	<head lang="en">
 		<meta charset="utf-8" />
@@ -123,11 +123,11 @@ For example:
 	//////////////////////////////////////////////////////////////////////////////
 
 	if !strings.Contains(contents, `<script src="/bundle.js"></script>`) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/bundle.js"></script>'`), terminal.Magenta("'<body>'")) + `
+		return newHTMLError(fmt.Sprintf("Add %s somewhere to %s.", terminal.Magenta("`"+`<script src="/bundle.js"></script>`+"`"), terminal.Magenta("`<body>`")) + `
 
 For example:
 
-` + terminal.Dimf(`// %s`, path) + `
+` + terminal.Dimf("// %s", path) + `
 <!DOCTYPE html>
 	<head lang="en">
 		<meta charset="utf-8" />
