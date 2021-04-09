@@ -1,3 +1,7 @@
+## v0.0.42
+
+- Normalized use of single-quotes `'` to backticks ``` ` ```.
+
 ## v0.0.39 to v0.0.41 migration guide
 
 Upgrading to v0.0.41 from v0.0.39 can be done in a few steps.
