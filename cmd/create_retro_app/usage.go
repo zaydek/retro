@@ -7,7 +7,7 @@ var usage = `
 
 	Create a new app at directory app
 
-		--template=...  starter, sass, or mdx (default starter)
+		--template=...  ` + terminal.Cyan("starter") + `, ` + terminal.Cyan("sass") + `, or ` + terminal.Cyan("mdx") + ` (default ` + terminal.Cyan("starter") + `)
 
 ` + terminal.Bold("Repositories") + `
 
