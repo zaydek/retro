@@ -145,7 +145,6 @@ func (r Runner) Build(opt BuildOptions) {
 
 	stdin <- ipc.Request{Kind: "build"}
 
-	var once sync.Once
 	select {
 	case out := <-stdout:
 		// FIXME: stdout messages e.g. 'console.log' from retro.config.js should not
@@ -158,15 +157,13 @@ func (r Runner) Build(opt BuildOptions) {
 		if err := json.Unmarshal(out.Data, &res); err != nil {
 			panic(err)
 		}
-		once.Do(func() {
-			react_js, index_js, index_css := res.getChunkedNames()
-			if err := copyHTMLEntryPoint(react_js, index_js, index_css); err != nil {
-				panic(err)
-			}
-		})
 		if res.Dirty() {
 			fmt.Fprint(os.Stderr, res)
 			os.Exit(1)
+		}
+		vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
+		if err := copyHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
+			panic(err)
 		}
 	case err := <-stderr:
 		fmt.Fprint(os.Stderr, err)

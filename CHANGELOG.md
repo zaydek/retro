@@ -1,3 +1,7 @@
+## v0.0.41 (April 9, 2021)
+
+- Fixed a bug that lead the `build` command to panic.
+
 ## v0.0.40 (April 9, 2021)
 
 - Added Sass and MDX templates.

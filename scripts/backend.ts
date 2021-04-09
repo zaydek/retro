@@ -79,8 +79,8 @@ async function resolveConfig(): Promise<esbuild.BuildOptions> {
 	return require(path.join(process.cwd(), "retro.config.js"))
 }
 
-let reactResult: esbuild.BuildResult | null = null
-let indexResult: esbuild.BuildResult | esbuild.BuildIncremental | null = null
+let vendorResult: esbuild.BuildResult | null = null
+let bundleResult: esbuild.BuildResult | esbuild.BuildIncremental | null = null
 
 async function build(): Promise<BackendResponse> {
 	const buildRes: BackendResponse = {
@@ -95,7 +95,7 @@ async function build(): Promise<BackendResponse> {
 	const config = await resolveConfig()
 
 	try {
-		reactResult = await esbuild.build({
+		vendorResult = await esbuild.build({
 			...common,
 
 			// Add support for target
@@ -109,9 +109,9 @@ async function build(): Promise<BackendResponse> {
 			metafile: true,
 			outdir: OUT_DIR,
 		})
-		buildRes.Metafile.Vendor = reactResult.metafile!
+		buildRes.Metafile.Vendor = vendorResult.metafile!
 
-		indexResult = await esbuild.build({
+		bundleResult = await esbuild.build({
 			...config,
 			...common,
 
@@ -132,10 +132,10 @@ async function build(): Promise<BackendResponse> {
 
 			incremental: ENV === "development",
 		})
-		buildRes.Metafile.Bundle = indexResult.metafile!
+		buildRes.Metafile.Bundle = bundleResult.metafile!
 
-		if (indexResult.warnings.length > 0) {
-			buildRes.Warnings = indexResult.warnings
+		if (bundleResult.warnings.length > 0) {
+			buildRes.Warnings = bundleResult.warnings
 		}
 	} catch (caught) {
 		if (caught.errors.length > 0) {
@@ -150,7 +150,7 @@ async function build(): Promise<BackendResponse> {
 }
 
 async function rebuild(): Promise<BackendResponse> {
-	if (indexResult?.rebuild === undefined) {
+	if (bundleResult?.rebuild === undefined) {
 		return await build()
 	}
 
@@ -164,7 +164,7 @@ async function rebuild(): Promise<BackendResponse> {
 	}
 
 	try {
-		const result2 = await indexResult.rebuild()
+		const result2 = await bundleResult.rebuild()
 		if (result2.warnings.length > 0) {
 			rebuildRes.Warnings = result2.warnings
 		}
