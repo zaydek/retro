@@ -4,12 +4,8 @@
 		"publish": "make test && make version && make build && make release"
 	},
 	"devDependencies": {
-		"@types/react": "^17.0.3",
-		"@types/react-dom": "^17.0.3",
-		"esbuild": "^0.10.1",
+		"esbuild": "^0.11.6",
 		"react": "^17.0.2",
-		"react-dom": "^17.0.2",
-		"sass": "^1.32.8",
-		"typescript": "^4.2.3"
+		"react-dom": "^17.0.2"
 	}
 }

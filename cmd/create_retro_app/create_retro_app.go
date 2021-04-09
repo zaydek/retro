@@ -64,7 +64,8 @@ func (r Runner) CreateApp() {
 		defer os.Chdir("..")
 	}
 
-	paths := []string{"package.json"} // Add 'pacakge.json'
+	// Add package.json
+	paths := []string{"package.json"}
 	err := fs.WalkDir(fsys, ".", func(path string, dirEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -106,7 +107,8 @@ func (r Runner) CreateApp() {
 		os.Exit(1)
 	}
 
-	paths = paths[1:] // Remove 'package.json'
+	// Remove package.json
+	paths = paths[1:]
 	for _, v := range paths {
 		if dir := filepath.Dir(v); dir != "." {
 			if err := os.MkdirAll(dir, MODE_DIR); err != nil {
@@ -154,12 +156,12 @@ type Runner struct {
 func Run() {
 	cmd, err := cli.ParseCLIArguments()
 	switch err {
-	case cli.ErrorVersion:
+	case cli.ErrVersion:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
 		return
-	case cli.ErrorUsage:
+	case cli.ErrUsage:
 		fallthrough
-	case cli.ErrorHelp:
+	case cli.ErrHelp:
 		fmt.Println(format.SpaceInset(format.TabsToSpaces(cyan(usage))))
 		return
 	}

@@ -96,14 +96,13 @@ func (r Runner) Dev(opt DevOptions) {
 					panic(err)
 				}
 				once.Do(func() {
-					if err := copyHTMLEntryPoint("react.js", "index.js", "index.css"); err != nil {
+					if err := copyHTMLEntryPoint("vendor.js", "bundle.js", "bundle.css"); err != nil {
 						panic(err)
 					}
 					ready <- struct{}{}
 				})
 				dev <- res
 			case err := <-stderr:
-				// panic(err)
 				fmt.Fprint(os.Stderr, err)
 			}
 		}
@@ -134,17 +133,12 @@ func (r Runner) Build(opt BuildOptions) {
 		}
 	}
 
-	// Get 'node_modules/.bin/@zaydek/bin/retro' not 'node_modules/.bin/retro'
-	exec, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	exec2, err := filepath.EvalSymlinks(exec)
+	root, err := getBase()
 	if err != nil {
 		panic(err)
 	}
 
-	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(exec2), "scripts/backend.esbuild.js"))
+	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(root), "scripts/backend.esbuild.js"))
 	if err != nil {
 		panic(err)
 	}
@@ -182,10 +176,9 @@ func (r Runner) Build(opt BuildOptions) {
 	if err != nil {
 		panic(err)
 	}
-
 	sort.Sort(infos)
 
-	var sum, sumMap int64
+	var sum int64
 	for _, v := range infos {
 		var color = terminal.Normal
 		if strings.HasSuffix(v.path, ".html") {
@@ -200,20 +193,17 @@ func (r Runner) Build(opt BuildOptions) {
 
 		fmt.Printf("%v%s%v\n",
 			color(v.path),
-			strings.Repeat(" ", 32-len(v.path)),
+			strings.Repeat(" ", 40-len(v.path)),
 			terminal.Dimf("(%s)", byteCount(v.size)),
 		)
 
 		if !strings.HasSuffix(v.path, ".map") {
 			sum += v.size
 		}
-		sumMap += v.size
 	}
 
-	// TODO: Add source map support
-	fmt.Println(strings.Repeat(" ", 32) + terminal.Dimf("(%s sum)", byteCount(sum)))
-	fmt.Println(strings.Repeat(" ", 32) + terminal.Dimf("(%s sum w/ sourcemaps)", byteCount(sumMap)))
-
+	fmt.Println(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", byteCount(sum)))
+	fmt.Println()
 	fmt.Println(terminal.Dimf("(%s)", time.Since(EPOCH)))
 }
 
@@ -355,7 +345,6 @@ func (r Runner) Serve(opt ServeOptions) {
 		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 		if err != nil {
 			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {
-				// stdio_logger.Stderr(cyan(fmt.Sprintf("Port '%d' taken", port)))
 				port++
 				continue
 			}

@@ -37,12 +37,12 @@ func guardHTMLEntryPoint() error {
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Hello, world!</title>
-		<link rel="stylesheet" href="/index.css" />
+		<link rel="stylesheet" href="/bundle.css" />
 	</head>
 	<body>
 		<div id="root"></div>
-		<script src="/react.js"></script>
-		<script src="/index.js"></script>
+		<script src="/vendor.js"></script>
+		<script src="/bundle.js"></script>
 	</body>
 </html>
 ` /* EOF */), MODE_FILE)
@@ -59,8 +59,8 @@ func guardHTMLEntryPoint() error {
 	//////////////////////////////////////////////////////////////////////////////
 
 	contents := string(bstr)
-	if !strings.Contains(contents, `<link rel="stylesheet" href="/index.css" />`) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<link rel="stylesheet" href="/index.css" />'`), terminal.Magenta("'<head>'")) + `
+	if !strings.Contains(contents, `<link rel="stylesheet" href="/bundle.css" />`) {
+		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<link rel="stylesheet" href="/bundle.css" />'`), terminal.Magenta("'<head>'")) + `
 
 For example:
 
@@ -69,7 +69,7 @@ For example:
 	<head lang="en">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		` + terminal.Green(`<link rel="stylesheet" href="/index.css" />`) + `
+		` + terminal.Green(`<link rel="stylesheet" href="/bundle.css" />`) + `
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
@@ -101,8 +101,8 @@ For example:
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	if !strings.Contains(contents, `<script src="/react.js"></script>`) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/react.js"></script>'`), terminal.Magenta("'<body>'")) + `
+	if !strings.Contains(contents, `<script src="/vendor.js"></script>`) {
+		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/vendor.js"></script>'`), terminal.Magenta("'<body>'")) + `
 
 For example:
 
@@ -115,15 +115,15 @@ For example:
 	</head>
 	<body>
 		` + terminal.Dim("...") + `
-		` + terminal.Green(`<script src="/react.js"></script>`) + `
+		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
 	</body>
 </html>`)
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	if !strings.Contains(contents, `<script src="/index.js"></script>`) {
-		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/index.js"></script>'`), terminal.Magenta("'<body>'")) + `
+	if !strings.Contains(contents, `<script src="/bundle.js"></script>`) {
+		return newHTMLError(fmt.Sprintf(`Add %s somewhere to %s.`, terminal.Magenta(`'<script src="/bundle.js"></script>'`), terminal.Magenta("'<body>'")) + `
 
 For example:
 
@@ -136,7 +136,7 @@ For example:
 	</head>
 	<body>
 		` + terminal.Dim("...") + `
-		` + terminal.Green(`<script src="/index.js"></script>`) + `
+		` + terminal.Green(`<script src="/bundle.js"></script>`) + `
 	</body>
 </html>`)
 	}
@@ -144,7 +144,7 @@ For example:
 	return nil
 }
 
-func copyHTMLEntryPoint(react_js, index_js, index_css string) error {
+func copyHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS string) error {
 	bstr, err := ioutil.ReadFile(filepath.Join(WWW_DIR, "index.html"))
 	if err != nil {
 		return err
@@ -154,27 +154,27 @@ func copyHTMLEntryPoint(react_js, index_js, index_css string) error {
 	contents := string(bstr)
 	contents = strings.Replace(
 		contents,
-		`<script src="/react.js"></script>`,
+		`<script src="/vendor.js"></script>`,
 		fmt.Sprintf(`<script src="/%s"></script>`,
-			react_js,
+			vendorDotJS,
 		),
 		1,
 	)
 
 	contents = strings.Replace(
 		contents,
-		`<script src="/index.js"></script>`,
+		`<script src="/bundle.js"></script>`,
 		fmt.Sprintf(`<script src="/%s"></script>`,
-			index_js,
+			bundleDotJS,
 		),
 		1,
 	)
 
 	contents = strings.Replace(
 		contents,
-		`<link rel="stylesheet" href="/index.css" />`,
+		`<link rel="stylesheet" href="/bundle.css" />`,
 		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`,
-			index_css,
+			bundleDotCSS,
 		),
 		1,
 	)

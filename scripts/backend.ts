@@ -52,10 +52,10 @@ const common: esbuild.BuildOptions = {
 
 	// Propagate env vars
 	define: {
-		// React, React DOM
+		// For React and React DOM
 		"process.env.NODE_ENV": JSON.stringify(ENV),
 
-		// Retro
+		// For Retro
 		"process.env.CMD": JSON.stringify(CMD),
 		"process.env.ENV": JSON.stringify(ENV),
 		"process.env.WWW_DIR": JSON.stringify(WWW_DIR),
@@ -103,7 +103,9 @@ async function build(): Promise<BackendResponse> {
 
 			bundle: true,
 			entryNames: ENV !== "production" ? undefined : "[dir]/[name]__[hash]",
-			entryPoints: [path.join(__dirname, "react.js")],
+			entryPoints: {
+				"vendor": path.join(__dirname, "react.js"),
+			},
 			metafile: true,
 			outdir: OUT_DIR,
 		})
@@ -118,7 +120,9 @@ async function build(): Promise<BackendResponse> {
 
 			bundle: true,
 			entryNames: ENV !== "production" ? undefined : "[dir]/[name]__[hash]",
-			entryPoints: [path.join(SRC_DIR, "index.js")],
+			entryPoints: {
+				"bundle": path.join(SRC_DIR, "index.js"),
+			},
 			metafile: true,
 			outdir: OUT_DIR,
 

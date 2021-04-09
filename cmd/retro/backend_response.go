@@ -92,22 +92,22 @@ a:hover { text-decoration: underline; }
 `
 }
 
-func (r BackendResponse) getChunkedNames() (react_js, index_js, index_css string) {
+func (r BackendResponse) getChunkedNames() (vendorDotJS, bundleDotJS, bundleDotCSS string) {
 	for k := range r.Metafile.Vendor["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(k, ".js") {
-			react_js, _ = filepath.Rel(OUT_DIR, k)
+			vendorDotJS, _ = filepath.Rel(OUT_DIR, k)
 			break
 		}
 	}
 	for k := range r.Metafile.Bundle["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(k, ".js") {
-			index_js, _ = filepath.Rel(OUT_DIR, k)
-			if index_css != "" { // Check other
+			bundleDotJS, _ = filepath.Rel(OUT_DIR, k)
+			if bundleDotCSS != "" { // Check other
 				break
 			}
 		} else if strings.HasSuffix(k, ".css") {
-			index_css, _ = filepath.Rel(OUT_DIR, k)
-			if index_js != "" { // Check other
+			bundleDotCSS, _ = filepath.Rel(OUT_DIR, k)
+			if bundleDotJS != "" { // Check other
 				break
 			}
 		}

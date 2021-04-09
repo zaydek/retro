@@ -22,7 +22,7 @@ var usage = `
 
 		--port=...       Use port (default '8000')
 
-` + terminal.Bold("Repository") + `
+` + terminal.Bold("Repositories") + `
 
 	` + terminal.Underline("https://github.com/zaydek/retro") + `
 	` + terminal.Underline("https://github.com/evanw/esbuild") + `
