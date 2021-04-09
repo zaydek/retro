@@ -26,7 +26,7 @@
 	}
 	```
 
-- Deprecated the TypeScript template.
+- Deprecated the TypeScript template. (#6)
 
 	The TypeScript template was deprecated because esbuild can parse TypeScript, therefore a TypeScript template is largely not needed because JavaScript is preferred as the base template. You can still use TypeScript of course, but you don’t need to convert every component to be typed in order to do so. You can simply rename a file from `Component.js` to `Component.tsx`. The referring import statement does not need to be changed because ES Modules imports do not use extensions.
 
@@ -38,7 +38,7 @@
 
 	Previously Retro logged serve events and build errors to the terminal. This behavior has been changed to build success messages and build errors. Build errors are still propagated to the browser build success and build errors. a singular build success message.
 
-- Upgraded esbuild to `0.11.6` and added support bundle aliasing.
+- Upgraded esbuild to `0.11.6` and added support bundle aliasing. (#1)
 
 	`src/index.js` now aliases to `out/bundle.js`, `src/index.css` now aliases to `out/bundle.css`, and `React` and `ReactDOM` now alias to `out/vendor.js`.
 
