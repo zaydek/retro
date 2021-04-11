@@ -1,4 +1,9 @@
-## v0.0.42
+## v0.0.43 (April 11, 2021)
+
+- Lowered esbuild artifacts from `esnext` to `es2018` for better backwards compatibility.
+  In the future this will likely be further lowered to `es2017`.
+
+## v0.0.42 (April 10, 2021)
 
 - Normalized use of single-quotes `'` to backticks ``` ` ```.
 

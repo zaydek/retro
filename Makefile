@@ -43,7 +43,8 @@ build-create-retro-app:
 		npm/create-retro-app/postinstall.ts \
 			--format=cjs \
 			--log-level=warning \
-			--outfile=npm/create-retro-app/postinstall.esbuild.js
+			--outfile=npm/create-retro-app/postinstall.esbuild.js \
+			--target=es2018
 	touch npm/create-retro-app/bin/create-retro-app
 
 build-retro:
@@ -51,7 +52,8 @@ build-retro:
 		scripts/backend.ts \
 			--format=cjs \
 			--log-level=warning \
-			--outfile=scripts/backend.esbuild.js
+			--outfile=scripts/backend.esbuild.js \
+			--target=es2018
 
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/darwin-64 main_retro.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64 main_retro.go
@@ -61,7 +63,8 @@ build-retro:
 		npm/retro/postinstall.ts \
 			--format=cjs \
 			--log-level=warning \
-			--outfile=npm/retro/postinstall.esbuild.js
+			--outfile=npm/retro/postinstall.esbuild.js \
+			--target=es2018
 	touch npm/retro/bin/retro
 
 	cp -r scripts npm/retro/bin && rm npm/retro/bin/scripts/backend.ts
