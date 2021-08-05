@@ -1,3 +1,7 @@
+## v0.0.44 (August 5, 2021)
+
+- Added `ReactDOMServer` as a top-level API. `react`, `react-dom`, and `react-dom/server` are now globally available as `React`, `ReactDOM`, and `ReactDOMServer` respectively.
+
 ## v0.0.43 (April 11, 2021)
 
 - Lowered esbuild artifacts from `esnext` to `es2018` for better backwards compatibility.

@@ -126,7 +126,7 @@ async function build(): Promise<BackendResponse> {
 			metafile: true,
 			outdir: OUT_DIR,
 
-			external: ["react", "react-dom"], // Dedupe React APIs
+			external: ["react", "react-dom", "react-dom/server"], // Dedupe React APIs
 			inject: [path.join(__dirname, "shims/require.js")], // Add React APIs
 			plugins: config?.plugins,
 
