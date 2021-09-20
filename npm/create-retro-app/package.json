@@ -1,7 +1,7 @@
 {
 	"name": "@zaydek/create-retro-app",
 	"version": "0.0.44",
-	"description": "Back to the future web apps. 👾",
+	"description": "Back to the future web apps 👾",
 	"repository": "https://github.com/zaydek/retro",
 	"license": "MIT",
 	"bin": {
@@ -9,10 +9,10 @@
 	},
 	"files": [
 		"bin",
-		"postinstall.esbuild.js"
+		"postinstall.js"
 	],
 	"scripts": {
-		"postinstall": "node postinstall.esbuild.js"
+		"postinstall": "node postinstall.js"
 	},
 	"engines": {
 		"node": ">=14.14.0"

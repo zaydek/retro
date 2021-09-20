@@ -55,28 +55,17 @@ test:
 
 ################################################################################
 
-# Builds Go binaries for platforms `darwin-64`, `linux-64`, `windows-64` and
-# then transpiles `postinstall.ts` from TypeScript to JavaScript. Finally, a
-# placeholder file is created so executables  `postinstall.js` and creates a
-# placeholder file for `create-retro-app`.
+# Builds Go binaries and creates a placeholder executable for the post-
+# installation script
 build-create-retro-app:
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/darwin-64 main_create_retro_app.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/linux-64 main_create_retro_app.go
 	GOOS=windows GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/windows-64.exe main_create_retro_app.go
 
-	./node_modules/.bin/esbuild \
-		npm/create-retro-app/postinstall.ts \
-			--format=cjs \
-			--log-level=warning \
-			--outfile=npm/create-retro-app/postinstall.esbuild.js \
-			--target=es2018
-
 	touch npm/create-retro-app/bin/create-retro-app
 
-# Builds Go binaries for platforms `darwin-64`, `linux-64`, `windows-64` and
-# then transpiles `postinstall.ts` from TypeScript to JavaScript. Finally, a
-# placeholder file is created so executables  `postinstall.js` and creates a
-# placeholder file for `retro`.
+# Builds Go binaries and creates a placeholder executable for the post-
+# installation script
 build-retro:
 	./node_modules/.bin/esbuild \
 		scripts/backend.ts \
@@ -88,13 +77,6 @@ build-retro:
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/darwin-64 main_retro.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64 main_retro.go
 	GOOS=windows GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/windows-64.exe main_retro.go
-
-	./node_modules/.bin/esbuild \
-		npm/retro/postinstall.ts \
-			--format=cjs \
-			--log-level=warning \
-			--outfile=npm/retro/postinstall.esbuild.js \
-			--target=es2018
 
 	touch npm/retro/bin/retro
 
@@ -129,7 +111,5 @@ release:
 
 clean:
 	rm -rf scripts/backend.esbuild.js
-	rm -rf npm/create-retro-app/postinstall.esbuild.js
 	rm -rf npm/create-retro-app/bin
-	rm -rf npm/retro/postinstall.esbuild.js
 	rm -rf npm/retro/bin
