@@ -1,3 +1,9 @@
+// TODO: There's not really any benefit having this file be TypeScript
+// considering it makes the Makefile and build process considerably more
+// complicated. If this file were more complicated it would be warranted but
+// it's not. Finally, we should mention that the postinstaller is based on
+// esbuild.
+
 import * as fs from "fs"
 import * as os from "os"
 import * as path from "path"
