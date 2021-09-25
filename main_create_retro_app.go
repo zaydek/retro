@@ -2,9 +2,8 @@ package main
 
 import (
 	_ "embed"
-	"strings"
-
 	"os"
+	"strings"
 
 	"github.com/zaydek/retro/cmd/create_retro_app"
 )

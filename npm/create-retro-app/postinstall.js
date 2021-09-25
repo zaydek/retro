@@ -1,4 +1,5 @@
 // This is a post-installation script that resolves the canonical binary
+
 const fs = require("fs")
 const os = require("os")
 const path = require("path")
