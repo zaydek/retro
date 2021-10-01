@@ -2,15 +2,15 @@ package retro
 
 import (
 	_ "embed"
-	"log"
-	"net"
-	"strings"
 
 	"encoding/json"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -356,7 +356,8 @@ func (r Runner) Serve(opt ServeOptions) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func Run() {
-	cmd, err := cli.ParseCLIArguments()
+	// Parse the CLI arguments and guard sentinel errors
+	command, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.ErrVersion:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
@@ -364,12 +365,14 @@ func Run() {
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
+		// TODO: Clean this up; too many expressions, etc.
 		fmt.Println(format.Pad(format.Tabs(cyan(usage))))
 		return
 	}
 
 	switch err.(type) {
 	case cli.CommandError:
+		// TODO: Clean this up; too many expressions, etc.
 		fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 		os.Exit(1)
 	default:
@@ -378,13 +381,13 @@ func Run() {
 		}
 	}
 
-	run := Runner{Command: cmd}
-	switch cmd.(type) {
+	app := &App{Command: command}
+	switch app.Command.(type) {
 	case cli.DevCommand:
-		run.Dev(DevOptions{Preflight: true})
-	case cli.BuildCommand:
-		run.Build(BuildOptions{Preflight: true})
+		app.Dev(DevOptions{Preflight: true})
+	// case cli.BuildCommand:
+	// 	app.Build(BuildOptions{Preflight: true})
 	case cli.ServeCommand:
-		run.Serve(ServeOptions{})
+		app.Serve(ServeOptions{})
 	}
 }

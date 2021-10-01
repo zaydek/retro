@@ -32,8 +32,6 @@ To build your app for production:
 retro build
 ```
 
-T
-
 ## esbuild-style Configuration
 
 Retro leverages esbuild to bundle apps for both development and production. Retro's build process can be configured using esbuild-style configuration. Simply add `retro.config.js` at the root directory of your project. This makes Retro apps extensible and can be customizable on a per-app basis.

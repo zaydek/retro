@@ -1,16 +1,28 @@
 package retro
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/zaydek/retro/cmd/format"
 	"github.com/zaydek/retro/cmd/perm"
 	"github.com/zaydek/retro/pkg/terminal"
 )
+
+type EntryPointError struct {
+	err error
+}
+
+func newEntryPointError(str string) EntryPointError {
+	return EntryPointError{err: errors.New(str)}
+}
+
+func (e EntryPointError) Error() string {
+	return e.err.Error()
+}
 
 // TODO: In theory we can also access default values from
 // `create_retro_app/embeds`. However, this is more self-contained.
@@ -59,7 +71,7 @@ func copyDefaultAppJSEntryPoint() error {
 // - <script src="/client.js"></script>
 //
 func guardIndexHTMLEntryPoint() error {
-	// Guard `index.html`
+	// Guard `www/index.html`
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexHTMLEntryPoint(); err != nil {
@@ -67,7 +79,7 @@ func guardIndexHTMLEntryPoint() error {
 		}
 	}
 
-	// Read contents of `index.html`
+	// Read contents of `www/index.html`
 	byteStr, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -76,109 +88,93 @@ func guardIndexHTMLEntryPoint() error {
 
 	// <link rel="stylesheet" href="/client.css" />
 	if !strings.Contains(contents, `<link rel="stylesheet" href="/client.css" />`) {
-		fmt.Fprintln(
-			os.Stderr,
-			format.Error(
-				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<link rel="stylesheet" href="/client.css" />`)), terminal.Magenta(backtick(`<head>`)))+`.
+		return newEntryPointError(
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<link rel="stylesheet" href="/client.css" />`)), terminal.Magenta(backtick(`<head>`))) + `.
 
 For example:
 
-`+terminal.Dimf("// %s", filename)+`
+` + terminal.Dimf("// %s", filename) + `
 <!DOCTYPE html>
-  <head lang="en">
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    `+terminal.Green(`<link rel="stylesheet" href="/client.css" />`)+`
-    `+terminal.Dim("...")+`
-  </head>
-  <body>
-    `+terminal.Dim("...")+`
-  </body>
+	<head lang="en">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		` + terminal.Green(`<link rel="stylesheet" href="/client.css" />`) + `
+		` + terminal.Dim("...") + `
+	</head>
+	<body>
+		` + terminal.Dim("...") + `
+	</body>
 </html>`,
-			),
 		)
-		os.Exit(1)
 	}
 
 	// <div id="retro_root"></div>
 	if !strings.Contains(contents, `<div id="rootretro_"></div>`) {
-		fmt.Fprintln(
-			os.Stderr,
-			format.Error(
-				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="rootretro_"></div>`)), terminal.Magenta(backtick(`<body>`)))+`.
+		return newEntryPointError(
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="rootretro_"></div>`)), terminal.Magenta(backtick(`<body>`))) + `.
 
 For example:
 
-`+terminal.Dimf("// %s", filename)+`
+` + terminal.Dimf("// %s", filename) + `
 <!DOCTYPE html>
-  <head lang="en">
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    `+terminal.Dim("...")+`
-  </head>
-  <body>
-    `+terminal.Green(`<div id="rootretro_"></div>`)+`
-    `+terminal.Dim("...")+`
-  </body>
+	<head lang="en">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		` + terminal.Dim("...") + `
+	</head>
+	<body>
+		` + terminal.Green(`<div id="rootretro_"></div>`) + `
+		` + terminal.Dim("...") + `
+	</body>
 </html>`,
-			),
 		)
-		os.Exit(1)
 	}
 
 	// <script src="/vendor.js"></script>
 	if !strings.Contains(contents, `<script src="/vendor.js"></script>`) {
-		fmt.Fprintln(
-			os.Stderr,
-			format.Error(
-				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<script src="/vendor.js"></script>`)), terminal.Magenta(backtick(`<body>`)))+`.
+		return newEntryPointError(
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<script src="/vendor.js"></script>`)), terminal.Magenta(backtick(`<body>`))) + `.
 
 For example:
 
-`+terminal.Dimf("// %s", filename)+`
+` + terminal.Dimf("// %s", filename) + `
 <!DOCTYPE html>
-  <head lang="en">
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    `+terminal.Dim("...")+`
-  </head>
-  <body>
-    <div id="retro_root"></div>
-    `+terminal.Green(`<script src="/vendor.js"></script>`)+`
-    `+terminal.Dim("...")+`
-  </body>
+	<head lang="en">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		` + terminal.Dim("...") + `
+	</head>
+	<body>
+		<div id="retro_root"></div>
+		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
+		` + terminal.Dim("...") + `
+	</body>
 </html>`,
-			),
 		)
-		os.Exit(1)
 	}
 
 	// <script src="/client.js"></script>
 	if !strings.Contains(contents, `<script src="/client.js"></script>`) {
-		fmt.Fprintln(
-			os.Stderr,
-			format.Error(
-				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<script src="/client.js"></script>`)), terminal.Magenta(backtick(`<body>`)))+`.
+		return newEntryPointError(
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<script src="/client.js"></script>`)), terminal.Magenta(backtick(`<body>`))) + `.
 
 For example:
 
-`+terminal.Dimf("// %s", filename)+`
+` + terminal.Dimf("// %s", filename) + `
 <!DOCTYPE html>
-  <head lang="en">
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    `+terminal.Dim("...")+`
-  </head>
-  <body>
-    <div id="retro_root"></div>
-    <script src="/vendor.js"></script>
-    `+terminal.Green(`<script src="/client.js"></script>`)+`
-    `+terminal.Dim("...")+`
-  </body>
+	<head lang="en">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		` + terminal.Dim("...") + `
+	</head>
+	<body>
+		<div id="retro_root"></div>
+		<script src="/vendor.js"></script>
+		` + terminal.Green(`<script src="/client.js"></script>`) + `
+		` + terminal.Dim("...") + `
+	</body>
 </html>`,
-			),
 		)
-		os.Exit(1)
 	}
 
 	return nil
