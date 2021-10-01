@@ -8,24 +8,24 @@ VERSION = $(shell cat version.txt)
 ################################################################################
 
 # Makes all binaries; `create-retro-app` and `retro`. Note that these binaries
-# are moved to `/usr/local/bin` so that they may be tested locally. Aliasing
-# these binaries is recommended for active development.
+# are moved to `~/github/bin` so that they may be tested locally. Aliasing these
+# binaries is recommended for active development.
 #
 # ~/.bash_profile
 #
-# alias create-retro-app=/usr/local/bin/create-retro-app
-# alias retro=/usr/local/bin/retro
+# alias create-retro-app=~/github/bin/create-retro-app
+# alias retro=~/github/bin/retro
 #
 all:
 	make bin
 
 # Makes `create-retro-app`
 bin-create-retro-app:
-	go build -o=create-retro-app main_create_retro_app.go && mv create-retro-app /usr/local/bin
+	go build -o=create-retro-app main_create_retro_app.go && mv create-retro-app ~/github/bin
 
 # Makes `retro`
 bin-retro:
-	go build -o=retro main_retro.go && mv retro /usr/local/bin
+	go build -o=retro main_retro.go && mv retro ~/github/bin
 
 # Makes all binaries in parallel
 bin:

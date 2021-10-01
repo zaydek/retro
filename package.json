@@ -1,8 +1,4 @@
 {
-	"scripts": {
-		"publish-dry-run": "make test && make version && make build && make release-dry-run",
-		"publish": "make test && make version && make build && make release"
-	},
 	"devDependencies": {
 		"esbuild": "^0.11.6",
 		"react": "^17.0.2",
