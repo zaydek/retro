@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -91,11 +93,11 @@ loop:
 	}
 
 	// DEBUG
-	byteStr, err := json.MarshalIndent(done, "", "  ")
+	bstr, err := json.MarshalIndent(done, "", "  ")
 	if err != nil {
 		return fmt.Errorf("json.MarshalIndent: %w", err)
 	}
-	fmt.Println(string(byteStr))
+	fmt.Println(string(bstr))
 
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
@@ -209,43 +211,46 @@ loop:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// // https://stackoverflow.com/a/37382208
-// //
-// // FIXME: This doesn't support the use-case that the user isn't connected to the
-// // internet, which makes Retro unusable for internet-less development
-// func getIP() net.IP {
-// 	conn, err := net.Dial("udp", "8.8.8.8:80")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer conn.Close()
-// 	localAddr := conn.LocalAddr().(*net.UDPAddr)
-// 	return localAddr.IP
-// }
+// https://stackoverflow.com/a/37382208
 //
-// func buildSuccess(port int) {
-// 	cwd, err := os.Getwd()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// 	var (
-// 		base = filepath.Base(cwd)
-// 		ip   = getIP()
-// 	)
-//
-// 	terminal.Clear(os.Stdout)
-// 	fmt.Println(terminal.Green("Compiled successfully!") + `
-//
-// You can now view ` + terminal.Bold(base) + ` in the browser.
-//
-//   ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
-//   ` + terminal.Bold("On Your Network:") + `  ` + fmt.Sprintf("http://%s:%s", ip, terminal.Bold(port)) + `
-//
-// Note that the development build is not optimized.
-// To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
-// ` /* EOF */)
-// }
+// FIXME: This doesn't support the use-case that the user isn't connected to the
+// internet, which makes Retro unusable for internet-less development
+func getIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP
+}
+
+// TODO: Add error-handling
+func buildSuccess(port int) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	var (
+		base = filepath.Base(cwd)
+		ip   = getIP()
+	)
+
+	terminal.Clear(os.Stdout)
+	fmt.Println(terminal.Green("Compiled successfully!") + `
+
+You can now view ` + terminal.Bold(base) + ` in the browser.
+
+  ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
+  ` + terminal.Bold("On Your Network:") + `  ` + fmt.Sprintf("http://%s:%s", ip, terminal.Bold(port)) + `
+
+Note that the development build is not optimized.
+To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
+` /* EOF */)
+
+	return nil
+}
 
 type ServeOptions struct {
 	WarmUpFlag bool
@@ -264,92 +269,95 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 	}
 
-	// www/index.html
-	byteStr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
-	if err != nil {
-		return err
+	// // www/index.html
+	// bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+	// if err != nil {
+	// 	return err
+	// }
+	// // Add the server sent events (SSE) stub
+	// contents := strings.Replace(
+	// 	string(bstr),
+	// 	"</body>",
+	// 	fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
+	// 	1,
+	// )
+
+	// 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	// 		if req.URL.Path == "/__dev__" {
+	// 			return
+	// 		}
+	//
+	// 		// 500 Server error
+	// 		if done.Data.Vendor.IsDirty() || done.Data.Client.IsDirty() {
+	// 			terminal.Clear(os.Stderr) // TODO: Do we really want to clear the terminal?
+	// 			fmt.Fprint(w, done.HTML())
+	// 			fmt.Fprint(os.Stderr, done)
+	// 			return
+	// 		}
+	// 		// 200 OK - Serve non-index.html
+	// 		path := getFilesystemPath(req.URL.Path)
+	// 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
+	// 			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, path))
+	// 			return
+	// 		}
+	// 		// 200 OK - Serve index.html
+	// 		if a.getCommandKind() == KindDevCommand {
+	// 			// Serve HTML + server-sent events (SSE)
+	// 			fmt.Fprint(w, contents)
+	// 			if err := buildSuccess(a.getPort()); err != nil {
+	// 				panic(fmt.Errorf("buildSuccess: %w", err))
+	// 			}
+	// 		} else {
+	// 			// Serve HTML
+	// 			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, "index.html"))
+	// 			if err := buildSuccess(a.getPort()); err != nil {
+	// 				panic(fmt.Errorf("buildSuccess: %w", err))
+	// 			}
+	// 		}
+	// 	})
+
+	// Add handler for dev events
+	if a.getCommandKind() == KindDevCommand {
+		http.HandleFunc("/__dev__", func(w http.ResponseWriter, req *http.Request) {
+			// Add headers for server-sent events (SSE)
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.Header().Set("Cache-Control", "no-cache")
+			w.Header().Set("Connection", "keep-alive")
+			flusher, ok := w.(http.Flusher)
+			if !ok {
+				panic("w.(http.Flusher)")
+			}
+			for {
+				select {
+				case <-options.Dev:
+					fmt.Fprint(w, "event: reload\ndata\n\n")
+					flusher.Flush()
+				case <-req.Context().Done():
+					return
+				}
+			}
+		})
 	}
-	// Add the server sent events (SSE) stub
-	contents := strings.Replace(
-		string(byteStr),
-		"</body>",
-		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
-		1,
-	)
 
-	fmt.Print(contents)
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		buildSuccess(a.getPort())
+	}()
+
+	for {
+		err := http.ListenAndServe(fmt.Sprintf(":%d", a.getPort()), nil)
+		if err != nil {
+			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", a.getPort()) {
+				// Increment the port and try again
+				a.setPort(a.getPort() + 1)
+				continue
+			}
+			panic(err)
+		}
+		break
+	}
+
 	return nil
-
-	//	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-	//		if req.URL.Path == "/__dev__" {
-	//			return
-	//		}
-	//
-	//		// 500 Server error
-	//		if done.Data.Vendor.IsDirty() || done.Data.Client.IsDirty() {
-	//			terminal.Clear(os.Stderr) // TODO: Do we really want to clear the terminal?
-	//			fmt.Fprint(w, done.HTML())
-	//			fmt.Fprint(os.Stderr, done)
-	//			return
-	//		}
-	//		// 200 OK - Serve non-index.html
-	//		path := getFilesystemPath(req.URL.Path)
-	//		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
-	//			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, path))
-	//			return
-	//		}
-	//		// 200 OK - Serve index.html
-	//		if a.getCommandKind() == KindDevCommand {
-	//			fmt.Fprint(w, contents)
-	//			buildSuccess(a.getPort())
-	//		} else {
-	//			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, "index.html"))
-	//			buildSuccess(a.getPort())
-	//		}
-	//	})
-	//
-	//	if a.getCommandKind() != KindServeCommand {
-	//		http.HandleFunc("/__dev__", func(w http.ResponseWriter, req *http.Request) {
-	//			w.Header().Set("Content-Type", "text/event-stream")
-	//			w.Header().Set("Cache-Control", "no-cache")
-	//			w.Header().Set("Connection", "keep-alive")
-	//			flusher, ok := w.(http.Flusher)
-	//			if !ok {
-	//				panic("Internal error")
-	//			}
-	//			for {
-	//				select {
-	//				case done = <-options.Dev:
-	//					fmt.Fprint(w, "event: reload\ndata\n\n")
-	//					flusher.Flush()
-	//				case <-req.Context().Done():
-	//					return
-	//				}
-	//			}
-	//		})
-	//	}
-	//
-	//	var (
-	//		port    = a.getPort()
-	//		getPort = func() int { return port }
-	//	)
-	//
-	//	go func() {
-	//		time.Sleep(10 * time.Millisecond)
-	//		buildSuccess(getPort())
-	//	}()
-	//
-	//	for {
-	//		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	//		if err != nil {
-	//			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {
-	//				port++
-	//				continue
-	//			}
-	//			panic(err)
-	//		}
-	//		break
-	//	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -390,7 +398,7 @@ func Run() {
 
 	app := &App{Command: command}
 	switch app.Command.(type) {
-	case cli.DevCommand:
+	case *cli.DevCommand:
 		if err := app.Dev(DevOptions{WarmUpFlag: true}); err != nil {
 			panic(fmt.Errorf("app.Dev: %w", err))
 		}

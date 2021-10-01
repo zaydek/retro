@@ -58,8 +58,8 @@ func (e CommandError) Unwrap() error {
 // Support _ separators
 var portRegex = regexp.MustCompile(`^--port=([\d_]+)$`)
 
-func ParseDevCommand(args ...string) (DevCommand, error) {
-	cmd := DevCommand{
+func ParseDevCommand(args ...string) (*DevCommand, error) {
+	command := &DevCommand{
 		Sourcemap: true,
 		Port:      8000,
 	}
@@ -68,54 +68,54 @@ func ParseDevCommand(args ...string) (DevCommand, error) {
 		if strings.HasPrefix(arg, "--port") {
 			matches := portRegex.FindStringSubmatch(arg)
 			if len(matches) == 2 {
-				cmd.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
+				command.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
 			} else {
 				err.Kind = BadPortValue
-				return DevCommand{}, err
+				return nil, err
 			}
 		} else if strings.HasPrefix(arg, "--sourcemap") {
 			if arg == "--sourcemap" {
-				cmd.Sourcemap = true
+				command.Sourcemap = true
 			} else if arg == "--sourcemap=true" || arg == "--sourcemap=false" {
-				cmd.Sourcemap = arg == "--sourcemap=true"
+				command.Sourcemap = arg == "--sourcemap=true"
 			} else {
 				err.Kind = BadSourcemapValue
-				return DevCommand{}, err
+				return nil, err
 			}
 		} else {
-			return DevCommand{}, err
+			return nil, err
 		}
 	}
-	if cmd.Port < 1_000 || cmd.Port >= 10_000 {
-		return DevCommand{}, CommandError{Kind: BadPortRange, BadPort: cmd.Port}
+	if command.Port < 1_000 || command.Port >= 10_000 {
+		return nil, CommandError{Kind: BadPortRange, BadPort: command.Port}
 	}
-	return cmd, nil
+	return command, nil
 }
 
-func ParseBuildCommand(args ...string) (BuildCommand, error) {
-	cmd := BuildCommand{
+func ParseBuildCommand(args ...string) (*BuildCommand, error) {
+	command := &BuildCommand{
 		Sourcemap: true,
 	}
 	for _, arg := range args {
 		err := CommandError{Kind: BadArgument, BadArgument: arg}
 		if strings.HasPrefix(arg, "--sourcemap") {
 			if arg == "--sourcemap" {
-				cmd.Sourcemap = true
+				command.Sourcemap = true
 			} else if arg == "--sourcemap=true" || arg == "--sourcemap=false" {
-				cmd.Sourcemap = arg == "--sourcemap=true"
+				command.Sourcemap = arg == "--sourcemap=true"
 			} else {
 				err.Kind = BadSourcemapValue
-				return BuildCommand{}, err
+				return nil, err
 			}
 		} else {
-			return BuildCommand{}, err
+			return nil, err
 		}
 	}
-	return cmd, nil
+	return command, nil
 }
 
-func ParseServeCommand(args ...string) (ServeCommand, error) {
-	cmd := ServeCommand{
+func ParseServeCommand(args ...string) (*ServeCommand, error) {
+	command := &ServeCommand{
 		Port: 8000,
 	}
 	for _, arg := range args {
@@ -123,19 +123,19 @@ func ParseServeCommand(args ...string) (ServeCommand, error) {
 		if strings.HasPrefix(arg, "--port") {
 			matches := portRegex.FindStringSubmatch(arg)
 			if len(matches) == 2 {
-				cmd.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
+				command.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
 			} else {
 				err.Kind = BadPortValue
-				return ServeCommand{}, err
+				return nil, err
 			}
 		} else {
-			return ServeCommand{}, err
+			return nil, err
 		}
 	}
-	if cmd.Port < 1_000 || cmd.Port >= 10_000 {
-		return ServeCommand{}, CommandError{Kind: BadPortRange, BadPort: cmd.Port}
+	if command.Port < 1_000 || command.Port >= 10_000 {
+		return nil, CommandError{Kind: BadPortRange, BadPort: command.Port}
 	}
-	return cmd, nil
+	return command, nil
 }
 
 func ParseCLIArguments() (interface{}, error) {
@@ -144,8 +144,8 @@ func ParseCLIArguments() (interface{}, error) {
 	}
 
 	var (
-		cmd interface{}
-		err error
+		command interface{}
+		err     error
 	)
 
 	// TODO: Previously --port was not passed as an option to the dev server. It’s
@@ -157,13 +157,13 @@ func ParseCLIArguments() (interface{}, error) {
 	} else if cmdArg == "help" || cmdArg == "--help" {
 		return nil, ErrHelp
 	} else if cmdArg == "dev" {
-		cmd, err = ParseDevCommand(os.Args[2:]...)
+		command, err = ParseDevCommand(os.Args[2:]...)
 	} else if cmdArg == "build" {
-		cmd, err = ParseBuildCommand(os.Args[2:]...)
+		command, err = ParseBuildCommand(os.Args[2:]...)
 	} else if cmdArg == "serve" {
-		cmd, err = ParseServeCommand(os.Args[2:]...)
+		command, err = ParseServeCommand(os.Args[2:]...)
 	} else {
 		err = CommandError{Kind: BadCommandArgument, BadCmdArgument: cmdArg}
 	}
-	return cmd, err
+	return command, err
 }

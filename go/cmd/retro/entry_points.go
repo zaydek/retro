@@ -80,11 +80,11 @@ func guardIndexHTMLEntryPoint() error {
 	}
 
 	// www/index.html
-	byteStr, err := os.ReadFile(filename)
+	bstr, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	contents := string(byteStr)
+	contents := string(bstr)
 
 	// <link rel="stylesheet" href="/client.css" />
 	if !strings.Contains(contents, `<link rel="stylesheet" href="/client.css" />`) {
@@ -230,13 +230,13 @@ type entryPoints struct {
 func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	// www/index.html
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
-	byteStr, err := os.ReadFile(filename)
+	bstr, err := os.ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("os.ReadFile: %w", err)
 	}
 
 	// <link rel="stylesheet" href="/client.css" />
-	contents := string(byteStr)
+	contents := string(bstr)
 	contents = strings.Replace(
 		contents,
 		`<link rel="stylesheet" href="/client.css" />`,
