@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zaydek/retro/cmd/create_retro_app"
+	"github.com/zaydek/retro/go/cmd/create_retro_app"
 )
 
 //go:embed version.txt

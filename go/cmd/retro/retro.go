@@ -25,48 +25,32 @@ var EPOCH = time.Now()
 
 var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 
-// getBase gets the executable directory name (basename). This directory
-// changes depending on development or production.
-func getBase() (string, error) {
-	exec, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	if strings.HasPrefix(filepath.Base(exec), "main") {
-		return os.Getwd()
-	}
-	// Get node_modules/.bin/@zaydek/bin/retro not node_modules/.bin/retro.
-	return filepath.EvalSymlinks(exec)
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 type DevOptions struct {
 	Preflight bool
 }
 
-func (r Runner) Dev(opt DevOptions) {
-	var copyHTMLEntryPoint func(string, string, string) error
-	if opt.Preflight {
-		var err error
-		copyHTMLEntryPoint, err = r.warmUp()
-		switch err.(type) {
-		case HTMLError:
+func (a *App) Dev(options DevOptions) {
+	if options.Preflight {
+		switch err := warmUp(a.getCommandKind()); err.(type) {
+		case EntryPointError:
+			// TODO: Clean this up; this is too vague
 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 			os.Exit(1)
 		default:
 			if err != nil {
-				panic(err)
+				panic(fmt.Errorf("warmUp: %w", err))
 			}
 		}
 	}
 
-	root, err := getBase()
+	__dirname, err := getDirname()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("getDirname: %w", err))
 	}
 
-	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(root), "scripts/backend.esbuild.js"))
+	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/scripts/backend.esbuild.js"))
 	if err != nil {
 		panic(err)
 	}
@@ -94,8 +78,7 @@ func (r Runner) Dev(opt DevOptions) {
 					panic(err)
 				}
 				once.Do(func() {
-					// TODO: This needs to be changed from `bundle.js` to `client.js`
-					if err := copyHTMLEntryPoint("vendor.js", "bundle.js", "bundle.css"); err != nil {
+					if err := transformAndCopyIndexHTMLEntryPoint("vendor.js", "client.js", "client.css"); err != nil {
 						panic(err)
 					}
 					ready <- struct{}{}
@@ -107,7 +90,7 @@ func (r Runner) Dev(opt DevOptions) {
 		}
 	}()
 
-	r.Serve(ServeOptions{Dev: dev, Ready: ready})
+	a.Serve(ServeOptions{Dev: dev, Ready: ready})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,11 +99,11 @@ func (r Runner) Dev(opt DevOptions) {
 // 	Preflight bool
 // }
 //
-// func (r Runner) Build(opt BuildOptions) {
-// 	var copyHTMLEntryPoint func(string, string, string) error
+// func (r *App) Build(opt BuildOptions) {
+// 	var transformAndCopyIndexHTMLEntryPoint func(string, string, string) error
 // 	if opt.Preflight {
 // 		var err error
-// 		copyHTMLEntryPoint, err = r.warmUp()
+// 		transformAndCopyIndexHTMLEntryPoint, err = r.warmUp()
 // 		switch err.(type) {
 // 		case HTMLError:
 // 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
@@ -161,7 +144,7 @@ func (r Runner) Dev(opt DevOptions) {
 // 			os.Exit(1)
 // 		}
 // 		vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
-// 		if err := copyHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
+// 		if err := transformAndCopyIndexHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
 // 			panic(err)
 // 		}
 // 	case err := <-stderr:
@@ -250,7 +233,7 @@ To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + 
 ` /* EOF */)
 }
 
-func (r Runner) Serve(opt ServeOptions) {
+func (r *App) Serve(opt ServeOptions) {
 	if opt.Preflight {
 		_, err := r.warmUp()
 		switch err.(type) {
@@ -365,14 +348,14 @@ func Run() {
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
-		// TODO: Clean this up; too many expressions, etc.
+		// TODO: Clean this up; this is too vague
 		fmt.Println(format.Pad(format.Tabs(cyan(usage))))
 		return
 	}
 
 	switch err.(type) {
 	case cli.CommandError:
-		// TODO: Clean this up; too many expressions, etc.
+		// TODO: Clean this up; this is too vague
 		fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 		os.Exit(1)
 	default:

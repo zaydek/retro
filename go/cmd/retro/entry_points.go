@@ -222,11 +222,13 @@ func guardEntryPoints() error {
 }
 
 func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, clientCSSFilename string) error {
+	// Read contents of `www/index.html`
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	byteStr, err := os.ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("os.ReadFile: %w", err)
 	}
+
 	// <link rel="stylesheet" href="/client.css" />
 	contents := string(byteStr)
 	contents = strings.Replace(
@@ -235,6 +237,7 @@ func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, cli
 		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`, clientCSSFilename),
 		1,
 	)
+
 	// <script src="/vendor.js"></script>
 	contents = strings.Replace(
 		contents,
@@ -242,6 +245,7 @@ func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, cli
 		fmt.Sprintf(`<script src="/%s"></script>`, vendorJSFilename),
 		1,
 	)
+
 	// <script src="/client.js"></script>
 	contents = strings.Replace(
 		contents,
@@ -249,6 +253,7 @@ func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, cli
 		fmt.Sprintf(`<script src="/%s"></script>`, clientJSFilename),
 		1,
 	)
+
 	// Copy the transformed `www/index.html` to `out/www/index.html`
 	target := filepath.Join(RETRO_OUT_DIR, "index.html")
 	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
