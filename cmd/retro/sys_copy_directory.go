@@ -5,6 +5,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/zaydek/retro/cmd/perm"
 )
 
 // TODO: In theory this can and should be extracted to a separate package since
@@ -65,7 +67,7 @@ func copyDirectory(src, dst string, excludes []string) error {
 	for _, copyInfo := range copyInfos {
 		// FIXME: It's not obvious what this does
 		if filename := filepath.Dir(copyInfo.target); filename != "." {
-			if err := os.MkdirAll(filename, permBitsDirectory); err != nil {
+			if err := os.MkdirAll(filename, perm.BitsDirectory); err != nil {
 				return err
 			}
 		}

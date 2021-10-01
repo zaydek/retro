@@ -1,14 +1,6 @@
 package retro
 
 const (
-	// Permission bits for writing files
-	permBitsFile = 0644
-
-	// Permission bits for writing directories
-	permBitsDirectory = 0755
-)
-
-const (
 	indexHTML = `<!DOCTYPE html>
 <html lang="en">
   <head>

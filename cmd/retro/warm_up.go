@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/zaydek/retro/cmd/perm"
 )
 
 func warmUp(commandKind CommandKind) error {
@@ -20,7 +22,7 @@ func warmUp(commandKind CommandKind) error {
 		return fmt.Errorf("os.RemoveAll: %w", err)
 	}
 	// Make the out directory so static assets can be copied over
-	if err := os.MkdirAll(RETRO_OUT_DIR, permBitsDirectory); err != nil {
+	if err := os.MkdirAll(RETRO_OUT_DIR, perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
 	// Copy `www` to `out/www`. Note that `www/index.html` is excluded because the

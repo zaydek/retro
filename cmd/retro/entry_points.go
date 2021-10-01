@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/zaydek/retro/cmd/format"
+	"github.com/zaydek/retro/cmd/perm"
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
@@ -15,10 +16,10 @@ import (
 // `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
-	if err := os.MkdirAll(filepath.Dir(filename), permBitsDirectory); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(indexHTML), permBitsFile); err != nil {
+	if err := ioutil.WriteFile(filename, []byte(indexHTML), perm.BitsFile); err != nil {
 		return fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
 	return nil
@@ -28,10 +29,10 @@ func copyDefaultIndexHTMLEntryPoint() error {
 // `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
-	if err := os.MkdirAll(filepath.Dir(filename), permBitsDirectory); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(indexJS), permBitsFile); err != nil {
+	if err := ioutil.WriteFile(filename, []byte(indexJS), perm.BitsFile); err != nil {
 		return fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
 	return nil
@@ -41,10 +42,10 @@ func copyDefaultIndexJSEntryPoint() error {
 // `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
-	if err := os.MkdirAll(filepath.Dir(filename), permBitsDirectory); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(appJS), permBitsFile); err != nil {
+	if err := ioutil.WriteFile(filename, []byte(appJS), perm.BitsFile); err != nil {
 		return fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
 	return nil
@@ -254,10 +255,10 @@ func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, cli
 	)
 	// Copy the transformed `www/index.html` to `out/www/index.html`
 	target := filepath.Join(RETRO_OUT_DIR, "index.html")
-	if err := os.MkdirAll(filepath.Dir(target), permBitsDirectory); err != nil {
+	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := ioutil.WriteFile(target, []byte(contents), permBitsFile); err != nil {
+	if err := ioutil.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
 		return fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
 	return nil

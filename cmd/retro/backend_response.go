@@ -86,27 +86,27 @@ a:hover { text-decoration: underline; }
 	</head>
 	<body>
 		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
-		` + devStub + `
+		` + serverSentEventsStub + `
 	</body>
 </html>
 `
 }
 
 func (r BackendResponse) getChunkedNames() (vendorDotJS, bundleDotJS, bundleDotCSS string) {
-	for k := range r.Metafile.Vendor["outputs"].(map[string]interface{}) {
-		if strings.HasSuffix(k, ".js") {
-			vendorDotJS, _ = filepath.Rel(OUT_DIR, k)
+	for key := range r.Metafile.Vendor["outputs"].(map[string]interface{}) {
+		if strings.HasSuffix(key, ".js") {
+			vendorDotJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
 			break
 		}
 	}
-	for k := range r.Metafile.Bundle["outputs"].(map[string]interface{}) {
-		if strings.HasSuffix(k, ".js") {
-			bundleDotJS, _ = filepath.Rel(OUT_DIR, k)
+	for key := range r.Metafile.Bundle["outputs"].(map[string]interface{}) {
+		if strings.HasSuffix(key, ".js") {
+			bundleDotJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
 			if bundleDotCSS != "" { // Check other
 				break
 			}
-		} else if strings.HasSuffix(k, ".css") {
-			bundleDotCSS, _ = filepath.Rel(OUT_DIR, k)
+		} else if strings.HasSuffix(key, ".css") {
+			bundleDotCSS, _ = filepath.Rel(RETRO_OUT_DIR, key)
 			if bundleDotJS != "" { // Check other
 				break
 			}

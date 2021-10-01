@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"log"
 	"net"
-	"sort"
 	"strings"
 
 	"encoding/json"
@@ -113,96 +112,96 @@ func (r Runner) Dev(opt DevOptions) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type BuildOptions struct {
-	Preflight bool
-}
-
-func (r Runner) Build(opt BuildOptions) {
-	var copyHTMLEntryPoint func(string, string, string) error
-	if opt.Preflight {
-		var err error
-		copyHTMLEntryPoint, err = r.warmUp()
-		switch err.(type) {
-		case HTMLError:
-			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
-			os.Exit(1)
-		default:
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
-	root, err := getBase()
-	if err != nil {
-		panic(err)
-	}
-
-	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(root), "scripts/backend.esbuild.js"))
-	if err != nil {
-		panic(err)
-	}
-
-	stdin <- ipc.Request{Kind: "build"}
-
-	select {
-	case out := <-stdout:
-		// FIXME: stdout messages e.g. `console.log` from retro.config.js should not
-		// be treated as errors if they fail to unmarshal. The problem is that
-		// ipc.Message needs to be more blunt and simply provide a plaintext
-		// interface for interacting with stdout and stderr.
-		//
-		// See https://github.com/zaydek/retro/issues/8.
-		var res BackendResponse
-		if err := json.Unmarshal(out.Data, &res); err != nil {
-			panic(err)
-		}
-		if res.Dirty() {
-			fmt.Fprint(os.Stderr, res)
-			os.Exit(1)
-		}
-		vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
-		if err := copyHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
-			panic(err)
-		}
-	case err := <-stderr:
-		fmt.Fprint(os.Stderr, err)
-	}
-
-	infos, err := ls(RETRO_OUT_DIR)
-	if err != nil {
-		panic(err)
-	}
-	sort.Sort(infos)
-
-	var sum int64
-	for _, v := range infos {
-		var color = terminal.Normal
-		if strings.HasSuffix(v.path, ".html") {
-			color = terminal.Normal
-		} else if strings.HasSuffix(v.path, ".js") || strings.HasSuffix(v.path, ".js.map") {
-			color = terminal.Yellow
-		} else if strings.HasSuffix(v.path, ".css") || strings.HasSuffix(v.path, ".css.map") {
-			color = terminal.Cyan
-		} else {
-			color = terminal.Dim
-		}
-
-		fmt.Printf("%v%s%v\n",
-			color(v.path),
-			strings.Repeat(" ", 40-len(v.path)),
-			terminal.Dimf("(%s)", byteCount(v.size)),
-		)
-
-		if !strings.HasSuffix(v.path, ".map") {
-			sum += v.size
-		}
-	}
-
-	fmt.Println(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", byteCount(sum)))
-	fmt.Println()
-	fmt.Println(terminal.Dimf("(%s)", time.Since(EPOCH)))
-}
+// type BuildOptions struct {
+// 	Preflight bool
+// }
+//
+// func (r Runner) Build(opt BuildOptions) {
+// 	var copyHTMLEntryPoint func(string, string, string) error
+// 	if opt.Preflight {
+// 		var err error
+// 		copyHTMLEntryPoint, err = r.warmUp()
+// 		switch err.(type) {
+// 		case HTMLError:
+// 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
+// 			os.Exit(1)
+// 		default:
+// 			if err != nil {
+// 				panic(err)
+// 			}
+// 		}
+// 	}
+//
+// 	root, err := getBase()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(root), "scripts/backend.esbuild.js"))
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	stdin <- ipc.Request{Kind: "build"}
+//
+// 	select {
+// 	case out := <-stdout:
+// 		// FIXME: stdout messages e.g. `console.log` from retro.config.js should not
+// 		// be treated as errors if they fail to unmarshal. The problem is that
+// 		// ipc.Message needs to be more blunt and simply provide a plaintext
+// 		// interface for interacting with stdout and stderr.
+// 		//
+// 		// See https://github.com/zaydek/retro/issues/8.
+// 		var res BackendResponse
+// 		if err := json.Unmarshal(out.Data, &res); err != nil {
+// 			panic(err)
+// 		}
+// 		if res.Dirty() {
+// 			fmt.Fprint(os.Stderr, res)
+// 			os.Exit(1)
+// 		}
+// 		vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
+// 		if err := copyHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
+// 			panic(err)
+// 		}
+// 	case err := <-stderr:
+// 		fmt.Fprint(os.Stderr, err)
+// 	}
+//
+// 	infos, err := ls(RETRO_OUT_DIR)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	sort.Sort(infos)
+//
+// 	var sum int64
+// 	for _, v := range infos {
+// 		var color = terminal.Normal
+// 		if strings.HasSuffix(v.path, ".html") {
+// 			color = terminal.Normal
+// 		} else if strings.HasSuffix(v.path, ".js") || strings.HasSuffix(v.path, ".js.map") {
+// 			color = terminal.Yellow
+// 		} else if strings.HasSuffix(v.path, ".css") || strings.HasSuffix(v.path, ".css.map") {
+// 			color = terminal.Cyan
+// 		} else {
+// 			color = terminal.Dim
+// 		}
+//
+// 		fmt.Printf("%v%s%v\n",
+// 			color(v.path),
+// 			strings.Repeat(" ", 40-len(v.path)),
+// 			terminal.Dimf("(%s)", byteCount(v.size)),
+// 		)
+//
+// 		if !strings.HasSuffix(v.path, ".map") {
+// 			sum += v.size
+// 		}
+// 	}
+//
+// 	fmt.Println(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", byteCount(sum)))
+// 	fmt.Println()
+// 	fmt.Println(terminal.Dimf("(%s)", time.Since(EPOCH)))
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -214,6 +213,9 @@ type ServeOptions struct {
 }
 
 // https://stackoverflow.com/a/37382208
+//
+// FIXME: This doesn't support the use-case that the user isn't connected to the
+// internet, which makes Retro unusable for internet-less development
 func getIP() net.IP {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
@@ -276,7 +278,7 @@ func (r Runner) Serve(opt ServeOptions) {
 			panic(err)
 		}
 		contents = string(bstr)
-		contents = strings.Replace(contents, "</body>", fmt.Sprintf("\t%s\n\t</body>", devStub), 1)
+		contents = strings.Replace(contents, "</body>", fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub), 1)
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
