@@ -1,32 +1,17 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"os"
+	"time"
+
+	"github.com/zaydek/retro/go/pkg/watch"
 )
 
-type EntryPointError struct {
-	err error
-}
-
-func newEntryPointError(str string) EntryPointError {
-	return EntryPointError{err: errors.New(str)}
-}
-
-func (e EntryPointError) Error() string {
-	return e.err.Error()
-}
-
 func main() {
-	err := newEntryPointError("Oops!")
-	err2 := fmt.Errorf("oops: %w", err)
-
-	entryPointErrPtr := &EntryPointError{}
-	if errors.As(err2, entryPointErrPtr) {
-		fmt.Fprintln(os.Stderr, err2)
-		os.Exit(1)
+	for result := range watch.Directory("lol", 100*time.Millisecond) {
+		if result.Err != nil {
+			panic(fmt.Errorf("watch.Directory: %w", result.Err))
+		}
+		fmt.Println(result)
 	}
-
-	// fmt.Println(errors.As(err2, &EntryPointError{}))
 }

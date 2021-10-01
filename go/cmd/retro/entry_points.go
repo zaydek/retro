@@ -66,7 +66,7 @@ func copyDefaultAppJSEntryPoint() error {
 // Guards for the presence of `www/index.js` and:
 //
 // - <link rel="stylesheet" href="/client.css" />
-// - <div id="retro_root"></div>
+// - <div id="root"></div>
 // - <script src="/vendor.js"></script>
 // - <script src="/client.js"></script>
 //
@@ -79,7 +79,7 @@ func guardIndexHTMLEntryPoint() error {
 		}
 	}
 
-	// Read contents of `www/index.html`
+	// www/index.html
 	byteStr, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -108,10 +108,10 @@ For example:
 		)
 	}
 
-	// <div id="retro_root"></div>
-	if !strings.Contains(contents, `<div id="retro_root"></div>`) {
+	// <div id="root"></div>
+	if !strings.Contains(contents, `<div id="root"></div>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="retro_root"></div>`)), terminal.Magenta(backtick(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="root"></div>`)), terminal.Magenta(backtick(`<body>`))) + `.
 
 For example:
 
@@ -123,7 +123,7 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Green(`<div id="retro_root"></div>`) + `
+		` + terminal.Green(`<div id="root"></div>`) + `
 		` + terminal.Dim("...") + `
 	</body>
 </html>`,
@@ -145,7 +145,7 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		<div id="retro_root"></div>
+		<div id="root"></div>
 		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
 		` + terminal.Dim("...") + `
 	</body>
@@ -168,7 +168,7 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		<div id="retro_root"></div>
+		<div id="root"></div>
 		<script src="/vendor.js"></script>
 		` + terminal.Green(`<script src="/client.js"></script>`) + `
 		` + terminal.Dim("...") + `
@@ -222,13 +222,13 @@ func guardEntryPoints() error {
 }
 
 type entryPoints struct {
-	clientCSS string
-	vendorJS  string
-	clientJS  string
+	clientCSS string // The bundled CSS filename
+	vendorJS  string // The bundled vendor JS filename
+	clientJS  string // The bundled client JS filename
 }
 
 func copyIndexHTMLEntryPoint(entries entryPoints) error {
-	// Read contents of `www/index.html`
+	// www/index.html
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	byteStr, err := os.ReadFile(filename)
 	if err != nil {
@@ -256,7 +256,7 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	contents = strings.Replace(
 		contents,
 		`<script src="/client.js"></script>`,
-		fmt.Sprintf(`<script src="/%s"></script>`, entries.vendorJS),
+		fmt.Sprintf(`<script src="/%s"></script>`, entries.clientJS),
 		1,
 	)
 

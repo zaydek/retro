@@ -2,13 +2,13 @@ import App from "./App"
 
 import "./reset.css"
 
-if (document.getElementById("retro_root").hasChildNodes()) {
+if (document.getElementById("root").hasChildNodes()) {
 	// For static-side generation (SSG) and server-side rendering (SSR)
 	ReactDOM.hydrate(
 		<React.StrictMode>
 			<App />
 		</React.StrictMode>,
-		document.getElementById("retro_root"),
+		document.getElementById("root"),
 	)
 } else {
 	// For client-side rendering (CSR)
@@ -16,6 +16,6 @@ if (document.getElementById("retro_root").hasChildNodes()) {
 		<React.StrictMode>
 			<App />
 		</React.StrictMode>,
-		document.getElementById("retro_root"),
+		document.getElementById("root"),
 	)
 }

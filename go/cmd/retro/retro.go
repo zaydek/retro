@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/zaydek/retro/go/cmd/retro/cli"
 	"github.com/zaydek/retro/go/pkg/ipc"
 	"github.com/zaydek/retro/go/pkg/terminal"
+	"github.com/zaydek/retro/go/pkg/watch"
 )
 
 var EPOCH = time.Now()
@@ -23,43 +25,39 @@ var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 ////////////////////////////////////////////////////////////////////////////////
 
 type DevOptions struct {
-	Preflight bool
+	WarmUpFlag bool
 }
 
-func fatal(err error) {
+func fatalUserError(err error) {
 	// TODO: Clean this up; this is too vague
 	fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 	os.Exit(1)
 }
 
 func (a *App) Dev(options DevOptions) error {
-	if options.Preflight {
-		entryPointErrorPointer := &EntryPointError{}
+	if options.WarmUpFlag {
+		entryPointErrPointer := &EntryPointError{}
 		if err := warmUp(a.getCommandKind()); err != nil {
-			if errors.As(err, entryPointErrorPointer) {
-				fatal(entryPointErrorPointer)
+			if errors.As(err, entryPointErrPointer) {
+				fatalUserError(entryPointErrPointer)
 			} else {
 				return fmt.Errorf("warmUp: %w", err)
 			}
 		}
 	}
 
+	// Run the backend Node.js command
 	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
-	// var (
-	// 	// TODO: Deprecate
-	// 	isReadyToServe = make(chan struct{})
-	//
-	// 	// TODO: Why is the dev channel buffered?
-	// 	dev = make(chan AbstractDoneMessage, 1)
-	// )
-
 	var (
-		doneMessage AbstractDoneMessage
-		once        sync.Once
+		done DoneMessage
+		dev  = make(chan DoneMessage)
+
+		// Orchestrates `copyIndexHTMLEntryPoint`
+		once sync.Once
 	)
 
 	stdin <- "build"
@@ -69,46 +67,49 @@ loop:
 	for {
 		select {
 		case line := <-stdout:
-			if err := json.Unmarshal([]byte(line), &doneMessage); err != nil {
+			if err := json.Unmarshal([]byte(line), &done); err != nil {
 				// Log unmarshal errors so users can debug plugins, etc.
 				fmt.Println(decorateStdoutLine(line))
 			} else {
 				once.Do(func() {
 					entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
 					if err := copyIndexHTMLEntryPoint(entries); err != nil {
+						// Panic because of the goroutine
 						panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
 					}
 				})
+				// Done: Stop the Node.js runtime
 				stdin <- "done"
 				break loop
 			}
 		case text := <-stderr:
 			fmt.Fprintln(os.Stderr, decorateStderrText(text))
+			// Done: Stop the Node.js and Go runtime
 			stdin <- "done"
 			os.Exit(1)
 		}
 	}
 
 	// DEBUG
-	byteStr, err := json.MarshalIndent(doneMessage, "", "  ")
+	byteStr, err := json.MarshalIndent(done, "", "  ")
 	if err != nil {
-		panic(fmt.Errorf("json.MarshalIndent: %w", err))
+		return fmt.Errorf("json.MarshalIndent: %w", err)
 	}
 	fmt.Println(string(byteStr))
 
-	// dev := make(chan AbstractDoneMessage)
-	// go func() {
-	// 	// TODO: In theory this shouldn't fire until the user does something; we
-	// 	// need to check this doesn't fire eagerly
-	// 	for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
-	// 		if result.Err != nil {
-	// 			panic(fmt.Errorf("watch.Directory: %w", result.Err))
-	// 		}
-	// 		stdin <- "rebuild"
-	// 	}
-	// }()
+	go func() {
+		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
+			if result.Err != nil {
+				// Panic because of the goroutine
+				panic(fmt.Errorf("watch.Directory: %w", result.Err))
+			}
+			stdin <- "rebuild"
+		}
+	}()
 
-	// a.Serve(ServeOptions{Dev: dev, Ready: ready})
+	if err := a.Serve(ServeOptions{WarmUpFlag: false, Dev: dev}); err != nil {
+		return fmt.Errorf("a.Serve: %w", err)
+	}
 
 	return nil
 }
@@ -116,12 +117,12 @@ loop:
 ////////////////////////////////////////////////////////////////////////////////
 
 // type BuildOptions struct {
-// 	Preflight bool
+// 	WarmUpFlag bool
 // }
 //
 // func (r *App) Build(opt BuildOptions) {
 // 	var copyIndexHTMLEntryPoint func(string, string, string) error
-// 	if opt.Preflight {
+// 	if opt.WarmUpFlag {
 // 		var err error
 // 		copyIndexHTMLEntryPoint, err = r.warmUp()
 // 		switch err.(type) {
@@ -208,13 +209,6 @@ loop:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// type ServeOptions struct {
-// 	Preflight bool
-//
-// 	Dev   chan BackendResponse
-// 	Ready chan struct{}
-// }
-//
 // // https://stackoverflow.com/a/37382208
 // //
 // // FIXME: This doesn't support the use-case that the user isn't connected to the
@@ -252,109 +246,111 @@ loop:
 // To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
 // ` /* EOF */)
 // }
-//
-// func (r *App) Serve(opt ServeOptions) {
-// 	if opt.Preflight {
-// 		_, err := r.warmUp()
-// 		switch err.(type) {
-// 		case HTMLError:
-// 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
-// 			os.Exit(1)
-// 		default:
-// 			if err != nil {
-// 				panic(err)
-// 			}
-// 		}
-// 	}
-//
-// 	if opt.Ready != nil {
-// 		<-opt.Ready
-// 	}
-//
-// 	var res BackendResponse
-//
-// 	// Add the dev stub
-// 	var contents string
-// 	if os.Getenv("ENV") == "development" {
-// 		bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, "index.html"))
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 		contents = string(bstr)
-// 		contents = strings.Replace(contents, "</body>", fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub), 1)
-// 	}
-//
-// 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-// 		if req.URL.Path == "/~dev" {
-// 			return
-// 		}
-//
-// 		// 500 Server error
-// 		if res.Dirty() {
-// 			terminal.Clear(os.Stderr)
-// 			fmt.Fprint(w, res.HTML())
-// 			fmt.Fprint(os.Stderr, res)
-// 			return
-// 		}
-// 		// 200 OK - Serve non-index.html
-// 		path := getFilesystemPath(req.URL.Path)
-// 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
-// 			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, path))
-// 			return
-// 		}
-// 		// 200 OK - Serve index.html
-// 		if r.getCommandKind() == KindDevCommand {
-// 			fmt.Fprint(w, contents)
-// 			buildSuccess(r.getPort())
-// 		} else {
-// 			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, "index.html"))
-// 			buildSuccess(r.getPort())
-// 		}
-// 	})
-//
-// 	if r.getCommandKind() != KindServeCommand {
-// 		http.HandleFunc("/~dev", func(w http.ResponseWriter, req *http.Request) {
-// 			w.Header().Set("Content-Type", "text/event-stream")
-// 			w.Header().Set("Cache-Control", "no-cache")
-// 			w.Header().Set("Connection", "keep-alive")
-// 			flusher, ok := w.(http.Flusher)
-// 			if !ok {
-// 				panic("Internal error")
-// 			}
-// 			for {
-// 				select {
-// 				case res = <-opt.Dev:
-// 					fmt.Fprint(w, "event: reload\ndata\n\n")
-// 					flusher.Flush()
-// 				case <-req.Context().Done():
-// 					return
-// 				}
-// 			}
-// 		})
-// 	}
-//
-// 	var (
-// 		port    = r.getPort()
-// 		getPort = func() int { return port }
-// 	)
-//
-// 	go func() {
-// 		time.Sleep(10 * time.Millisecond)
-// 		buildSuccess(getPort())
-// 	}()
-//
-// 	for {
-// 		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-// 		if err != nil {
-// 			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {
-// 				port++
-// 				continue
-// 			}
-// 			panic(err)
-// 		}
-// 		break
-// 	}
-// }
+
+type ServeOptions struct {
+	WarmUpFlag bool
+	Dev        chan DoneMessage
+}
+
+func (a *App) Serve(options ServeOptions) error {
+	if options.WarmUpFlag {
+		entryPointErrPointer := &EntryPointError{}
+		if err := warmUp(a.getCommandKind()); err != nil {
+			if errors.As(err, entryPointErrPointer) {
+				fatalUserError(entryPointErrPointer)
+			} else {
+				return fmt.Errorf("warmUp: %w", err)
+			}
+		}
+	}
+
+	// www/index.html
+	byteStr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+	if err != nil {
+		return err
+	}
+	// Add the server sent events (SSE) stub
+	contents := strings.Replace(
+		string(byteStr),
+		"</body>",
+		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
+		1,
+	)
+
+	fmt.Print(contents)
+	return nil
+
+	//	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	//		if req.URL.Path == "/__dev__" {
+	//			return
+	//		}
+	//
+	//		// 500 Server error
+	//		if done.Data.Vendor.IsDirty() || done.Data.Client.IsDirty() {
+	//			terminal.Clear(os.Stderr) // TODO: Do we really want to clear the terminal?
+	//			fmt.Fprint(w, done.HTML())
+	//			fmt.Fprint(os.Stderr, done)
+	//			return
+	//		}
+	//		// 200 OK - Serve non-index.html
+	//		path := getFilesystemPath(req.URL.Path)
+	//		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
+	//			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, path))
+	//			return
+	//		}
+	//		// 200 OK - Serve index.html
+	//		if a.getCommandKind() == KindDevCommand {
+	//			fmt.Fprint(w, contents)
+	//			buildSuccess(a.getPort())
+	//		} else {
+	//			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, "index.html"))
+	//			buildSuccess(a.getPort())
+	//		}
+	//	})
+	//
+	//	if a.getCommandKind() != KindServeCommand {
+	//		http.HandleFunc("/__dev__", func(w http.ResponseWriter, req *http.Request) {
+	//			w.Header().Set("Content-Type", "text/event-stream")
+	//			w.Header().Set("Cache-Control", "no-cache")
+	//			w.Header().Set("Connection", "keep-alive")
+	//			flusher, ok := w.(http.Flusher)
+	//			if !ok {
+	//				panic("Internal error")
+	//			}
+	//			for {
+	//				select {
+	//				case done = <-options.Dev:
+	//					fmt.Fprint(w, "event: reload\ndata\n\n")
+	//					flusher.Flush()
+	//				case <-req.Context().Done():
+	//					return
+	//				}
+	//			}
+	//		})
+	//	}
+	//
+	//	var (
+	//		port    = a.getPort()
+	//		getPort = func() int { return port }
+	//	)
+	//
+	//	go func() {
+	//		time.Sleep(10 * time.Millisecond)
+	//		buildSuccess(getPort())
+	//	}()
+	//
+	//	for {
+	//		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	//		if err != nil {
+	//			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {
+	//				port++
+	//				continue
+	//			}
+	//			panic(err)
+	//		}
+	//		break
+	//	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -395,11 +391,11 @@ func Run() {
 	app := &App{Command: command}
 	switch app.Command.(type) {
 	case cli.DevCommand:
-		if err := app.Dev(DevOptions{Preflight: true}); err != nil {
+		if err := app.Dev(DevOptions{WarmUpFlag: true}); err != nil {
 			panic(fmt.Errorf("app.Dev: %w", err))
 		}
 		// case cli.BuildCommand:
-		// 	app.Build(BuildOptions{Preflight: true})
+		// 	app.Build(BuildOptions{WarmUpFlag: true})
 		// case cli.ServeCommand:
 		// 	app.Serve(ServeOptions{})
 	}
