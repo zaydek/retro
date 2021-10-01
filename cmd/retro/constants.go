@@ -1,14 +1,11 @@
 package retro
 
 const (
-	MODE_DIR  = 0755
-	MODE_FILE = 0644
-)
+	// Permission bits for writing files
+	permBitsFile = 0644
 
-const (
-	WWW_DIR = "www"
-	SRC_DIR = "src"
-	OUT_DIR = "out"
+	// Permission bits for writing directories
+	permBitsDirectory = 0755
 )
 
 // Server-sent events stub

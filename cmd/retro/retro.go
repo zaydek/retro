@@ -2,7 +2,6 @@ package retro
 
 import (
 	_ "embed"
-	"io/ioutil"
 	"log"
 	"net"
 	"sort"
@@ -51,7 +50,7 @@ func (r Runner) Dev(opt DevOptions) {
 	var copyHTMLEntryPoint func(string, string, string) error
 	if opt.Preflight {
 		var err error
-		copyHTMLEntryPoint, err = r.preflight()
+		copyHTMLEntryPoint, err = r.warmUp()
 		switch err.(type) {
 		case HTMLError:
 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
@@ -77,7 +76,7 @@ func (r Runner) Dev(opt DevOptions) {
 	ready := make(chan struct{})
 
 	go func() {
-		for result := range watch.Directory(SRC_DIR, 100*time.Millisecond) {
+		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
 			if result.Err != nil {
 				panic(result.Err)
 			}
@@ -121,7 +120,7 @@ func (r Runner) Build(opt BuildOptions) {
 	var copyHTMLEntryPoint func(string, string, string) error
 	if opt.Preflight {
 		var err error
-		copyHTMLEntryPoint, err = r.preflight()
+		copyHTMLEntryPoint, err = r.warmUp()
 		switch err.(type) {
 		case HTMLError:
 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
@@ -169,7 +168,7 @@ func (r Runner) Build(opt BuildOptions) {
 		fmt.Fprint(os.Stderr, err)
 	}
 
-	infos, err := ls(OUT_DIR)
+	infos, err := ls(RETRO_OUT_DIR)
 	if err != nil {
 		panic(err)
 	}
@@ -250,7 +249,7 @@ To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + 
 
 func (r Runner) Serve(opt ServeOptions) {
 	if opt.Preflight {
-		_, err := r.preflight()
+		_, err := r.warmUp()
 		switch err.(type) {
 		case HTMLError:
 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
@@ -271,7 +270,7 @@ func (r Runner) Serve(opt ServeOptions) {
 	// Add the dev stub
 	var contents string
 	if os.Getenv("ENV") == "development" {
-		bstr, err := ioutil.ReadFile(filepath.Join(OUT_DIR, "index.html"))
+		bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, "index.html"))
 		if err != nil {
 			panic(err)
 		}
@@ -294,7 +293,7 @@ func (r Runner) Serve(opt ServeOptions) {
 		// 200 OK - Serve non-index.html
 		path := getFSPath(req.URL.Path)
 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
-			http.ServeFile(w, req, filepath.Join(OUT_DIR, path))
+			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, path))
 			return
 		}
 		// 200 OK - Serve index.html
@@ -302,7 +301,7 @@ func (r Runner) Serve(opt ServeOptions) {
 			fmt.Fprint(w, contents)
 			buildSuccess(r.getPort())
 		} else {
-			http.ServeFile(w, req, filepath.Join(OUT_DIR, "index.html"))
+			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, "index.html"))
 			buildSuccess(r.getPort())
 		}
 	})

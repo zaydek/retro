@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 )
 
+// TODO: In theory this can and should be extracted to a separate package since
+// it has nothing to do with Retro
+
 type copyInfo struct {
 	source string
 	target string
@@ -31,14 +34,17 @@ type copyInfo struct {
 // 	return nil
 // })
 
-func cpdir(src, dst string, excludes []string) error {
+// Copies a directory recursively
+func copyDirectory(src, dst string, excludes []string) error {
+	// TODO: Do we want to guard for non-directory sources and or destinations?
+
 	// Sweep for sources and targets
-	var cpInfos []copyInfo
-	err := filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+	var copyInfos []copyInfo
+	if err := filepath.WalkDir(src, func(path string, directoryEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() {
+		if directoryEntry.IsDir() {
 			return nil
 		}
 		for _, exclude := range excludes {
@@ -46,36 +52,37 @@ func cpdir(src, dst string, excludes []string) error {
 				return nil
 			}
 		}
-		cpInfos = append(cpInfos, copyInfo{
+		copyInfos = append(copyInfos, copyInfo{
 			source: path,
 			target: filepath.Join(dst, filepath.Base(path)),
 		})
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
 	// Copy sources to targets
-	for _, cpInfo := range cpInfos {
-		if dir := filepath.Dir(cpInfo.target); dir != "." {
-			if err := os.MkdirAll(dir, MODE_DIR); err != nil {
+	for _, copyInfo := range copyInfos {
+		// FIXME: It's not obvious what this does
+		if filename := filepath.Dir(copyInfo.target); filename != "." {
+			if err := os.MkdirAll(filename, permBitsDirectory); err != nil {
 				return err
 			}
 		}
-		source, err := os.Open(cpInfo.source)
+		sourceFile, err := os.Open(copyInfo.source)
 		if err != nil {
 			return err
 		}
-		target, err := os.Create(cpInfo.target)
+		targetFile, err := os.Create(copyInfo.target)
 		if err != nil {
 			return err
 		}
-		if _, err := io.Copy(target, source); err != nil {
+		if _, err := io.Copy(targetFile, sourceFile); err != nil {
 			return err
 		}
-		source.Close()
-		target.Close()
+		sourceFile.Close()
+		targetFile.Close()
 	}
+
 	return nil
 }
