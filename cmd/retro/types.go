@@ -8,6 +8,10 @@ const (
 	KindServeCommand
 )
 
+// TODO: Why do we need a runner abstraction? Can we not use a CLI command
+// directly? I think the idea was to provide an interface that can resolve the
+// CLI type at runtime because Go's type-system is more strict.
+
 // func (r Runner) getCommandKind() (out CommandKind) {
 // 	switch r.Command.(type) {
 // 	// % retro dev

@@ -11,55 +11,6 @@ import (
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
-const (
-	indexHTML = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello, world!</title>
-    <link rel="stylesheet" href="/client.css" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script src="/vendor.js"></script>
-    <script src="/client.js"></script>
-  </body>
-</html>` + "\n"
-
-	indexJS = `import App from "./App"
-
-import "./index.css"
-
-if (document.getElementById("root").hasChildNodes()) {
-  ReactDOM.hydrate(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-    document.getElementById("root"),
-  )
-} else {
-  ReactDOM.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-    document.getElementById("root"),
-  )
-}` + "\n"
-
-	appJS = `import "./App.css"
-
-export default function App() {
-  return (
-    <div className="App">
-      <h1>Hello, world!</h1>
-    </div>
-  )
-}` + "\n"
-)
-
-////////////////////////////////////////////////////////////////////////////////
-
 // TODO: In theory we can also access default values from
 // `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexHTMLEntryPoint() error {
@@ -99,12 +50,10 @@ func copyDefaultAppJSEntryPoint() error {
 	return nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 // Guards for the presence of `www/index.js` and:
 //
 // - <link rel="stylesheet" href="/client.css" />
-// - <div id="root"></div>
+// - <div id="retro_root"></div>
 // - <script src="/vendor.js"></script>
 // - <script src="/client.js"></script>
 //
@@ -150,12 +99,12 @@ For example:
 		os.Exit(1)
 	}
 
-	// <div id="root"></div>
-	if !strings.Contains(contents, `<div id="root"></div>`) {
+	// <div id="retro_root"></div>
+	if !strings.Contains(contents, `<div id="rootretro_"></div>`) {
 		fmt.Fprintln(
 			os.Stderr,
 			format.Error(
-				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="root"></div>`)), terminal.Magenta(backtick(`<body>`)))+`.
+				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="rootretro_"></div>`)), terminal.Magenta(backtick(`<body>`)))+`.
 
 For example:
 
@@ -167,7 +116,7 @@ For example:
     `+terminal.Dim("...")+`
   </head>
   <body>
-    `+terminal.Green(`<div id="root"></div>`)+`
+    `+terminal.Green(`<div id="rootretro_"></div>`)+`
     `+terminal.Dim("...")+`
   </body>
 </html>`,
@@ -193,7 +142,7 @@ For example:
     `+terminal.Dim("...")+`
   </head>
   <body>
-    <div id="root"></div>
+    <div id="retro_root"></div>
     `+terminal.Green(`<script src="/vendor.js"></script>`)+`
     `+terminal.Dim("...")+`
   </body>
@@ -220,7 +169,7 @@ For example:
     `+terminal.Dim("...")+`
   </head>
   <body>
-    <div id="root"></div>
+    <div id="retro_root"></div>
     <script src="/vendor.js"></script>
     `+terminal.Green(`<script src="/client.js"></script>`)+`
     `+terminal.Dim("...")+`
@@ -275,8 +224,6 @@ func guardEntryPoints() error {
 	return nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, clientCSSFilename string) error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	byteStr, err := os.ReadFile(filename)
@@ -305,6 +252,7 @@ func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, cli
 		fmt.Sprintf(`<script src="/%s"></script>`, clientJSFilename),
 		1,
 	)
+	// Copy the transformed `www/index.html` to `out/www/index.html`
 	target := filepath.Join(RETRO_OUT_DIR, "index.html")
 	if err := os.MkdirAll(filepath.Dir(target), permBitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)

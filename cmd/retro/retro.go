@@ -95,6 +95,7 @@ func (r Runner) Dev(opt DevOptions) {
 					panic(err)
 				}
 				once.Do(func() {
+					// TODO: This needs to be changed from `bundle.js` to `client.js`
 					if err := copyHTMLEntryPoint("vendor.js", "bundle.js", "bundle.css"); err != nil {
 						panic(err)
 					}
@@ -291,7 +292,7 @@ func (r Runner) Serve(opt ServeOptions) {
 			return
 		}
 		// 200 OK - Serve non-index.html
-		path := getFSPath(req.URL.Path)
+		path := getFilesystemPath(req.URL.Path)
 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
 			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, path))
 			return

@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	// Global variables mirroring environmental variables
 	NODE_ENV      = ""
 	RETRO_CMD     = ""
 	RETRO_WWW_DIR = ""

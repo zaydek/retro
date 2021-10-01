@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 )
 
+// TODO: In theory this can and should be extracted to a separate package since
+// it has nothing to do with Retro
+
 type lsInfo struct {
 	path string
 	size int64
@@ -13,21 +16,8 @@ type lsInfo struct {
 
 type lsInfos []lsInfo
 
-// var greedyExtRe = regexp.MustCompile(`(\.).*$`)
-//
-// func greedyExt(path string) string {
-// 	matches := greedyExtRe.FindAllString(path, -1)
-// 	if len(matches) == 0 {
-// 		return ""
-// 	}
-// 	return matches[0]
-// }
-
 func (a lsInfos) Len() int      { return len(a) }
 func (a lsInfos) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-
-// // Sort by ext
-// func (a lsInfos) Less(i, j int) bool { return greedyExt(a[i].path) < greedyExt(a[j].path) }
 
 // Sort by name
 func (a lsInfos) Less(i, j int) bool { return a[i].path < a[j].path }
