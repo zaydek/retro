@@ -1,6 +1,6 @@
 {
 	// "https://github.com/evanw/esbuild/releases",
-	"esbuild": "^0.11.6",
+	"esbuild": "^0.13.3",
 
 	// "https://github.com/mdx-js/mdx/releases",
 	"mdx": "^1.6.22",

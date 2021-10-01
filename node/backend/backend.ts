@@ -69,6 +69,8 @@ async function buildClientBundle(): Promise<t.BundleMetadata> {
 		Errors: [],
 	}
 
+	// console.error(JSON.stringify(buildClientConfiguration(globalUserConfiguration)))
+
 	try {
 		globalClientBuildResult = await esbuild.build({
 			...buildClientConfiguration(globalUserConfiguration),
@@ -123,6 +125,10 @@ async function rebuildClientBundle(): Promise<t.BundleMetadata> {
 	return client
 }
 
+function sleep(durationMs) {
+	return new Promise(resolve => setTimeout(resolve, durationMs))
+}
+
 // This becomes a Node.js IPC process, from Go to JavaScript. Messages are sent
 // as plaintext strings (actions) and received as JSON-encoded payloads.
 //
@@ -160,6 +166,7 @@ async function main(): Promise<void> {
 			case "done":
 				return
 		}
+		await sleep(100)
 	}
 }
 

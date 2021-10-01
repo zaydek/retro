@@ -221,7 +221,7 @@ func guardEntryPoints() error {
 	return nil
 }
 
-func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, clientCSSFilename string) error {
+func transformAndCopyIndexHTMLEntryPoint(clientCSSFilename, vendorJSFilename, clientJSFilename string) error {
 	// Read contents of `www/index.html`
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	byteStr, err := os.ReadFile(filename)
@@ -255,7 +255,7 @@ func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, cli
 	)
 
 	// Copy the transformed `www/index.html` to `out/www/index.html`
-	target := filepath.Join(RETRO_OUT_DIR, "index.html")
+	target := filepath.Join(RETRO_OUT_DIR, filename)
 	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}

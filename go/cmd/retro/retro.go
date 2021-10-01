@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/zaydek/retro/go/cmd/format"
@@ -58,12 +57,12 @@ func (a *App) Dev(options DevOptions) error {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
-	var (
-		isReadyToServe = make(chan struct{})
-
-		// TODO: Why is the dev channel buffered?
-		dev = make(chan BackendResponse, 1)
-	)
+	// var (
+	// 	isReadyToServe = make(chan struct{})
+	//
+	// 	// TODO: Why is the dev channel buffered?
+	// 	dev = make(chan AbstractDoneMessage, 1)
+	// )
 
 	// go func() {
 	// 	// TODO: In theory this shouldn't fire until the user does something; we
@@ -78,17 +77,18 @@ func (a *App) Dev(options DevOptions) error {
 
 	go func() {
 		var (
-			message BackendResponse
+			message AbstractDoneMessage
 
-			// For `transformAndCopyIndexHTMLEntryPoint`; extracts the cache-friendly
-			// filenames for `src/index.css`, `src/index.js`, and `src/App.js`
-			once sync.Once
+			// // For `transformAndCopyIndexHTMLEntryPoint`; extracts the cache-friendly
+			// // filenames for `src/index.css`, `src/index.js`, and `src/App.js`
+			// once sync.Once
 		)
 
 		stdin <- "build"
 
 		// Technically we don't need a for-loop here except that user plugins can
 		// log to stdout or stderr repeatedly
+	loop:
 		for {
 			select {
 			case line := <-stdout:
@@ -97,30 +97,32 @@ func (a *App) Dev(options DevOptions) error {
 					fmt.Println(decorateStdoutLine(line))
 					continue
 				}
-				once.Do(func() {
-					// For development, there's no reason to cache-bust the vendor or
-					// client bundles; pass the canonical filenames as-is
-					if err := transformAndCopyIndexHTMLEntryPoint("vendor.js", "client.js", "client.css"); err != nil {
-						panic(fmt.Errorf("transformAndCopyIndexHTMLEntryPoint: %w", err))
-					}
-					isReadyToServe <- struct{}{}
-				})
-				dev <- message
-
-				// Break the select statement
-				stdin <- "done"
-				return
+				// once.Do(func() {
+				// 	// For development, there's no reason to cache-bust the vendor or
+				// 	// client bundles; pass the canonical filenames as-is
+				// 	if err := transformAndCopyIndexHTMLEntryPoint("client.css", "vendor.js", "client.js"); err != nil {
+				// 		panic(fmt.Errorf("transformAndCopyIndexHTMLEntryPoint: %w", err))
+				// 	}
+				// 	isReadyToServe <- struct{}{}
+				// })
+				// dev <- message
+				break loop
 			case text := <-stderr:
 				fmt.Fprintln(os.Stderr, decorateStderrText(text))
-
-				// Break the select statement
-				stdin <- "done"
-				return
+				break loop
 			}
 		}
+		stdin <- "done"
+
+		// DEBUG
+		byteStr, err := json.MarshalIndent(message, "", "  ")
+		if err != nil {
+			panic(fmt.Errorf("json.MarshalIndent: %w", err))
+		}
+		fmt.Println(string(byteStr))
 	}()
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	// a.Serve(ServeOptions{Dev: dev, Ready: ready})
 
