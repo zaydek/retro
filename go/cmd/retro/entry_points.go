@@ -221,7 +221,13 @@ func guardEntryPoints() error {
 	return nil
 }
 
-func transformAndCopyIndexHTMLEntryPoint(clientCSSFilename, vendorJSFilename, clientJSFilename string) error {
+type entryPoints struct {
+	clientCSS string
+	vendorJS  string
+	clientJS  string
+}
+
+func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	// Read contents of `www/index.html`
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	byteStr, err := os.ReadFile(filename)
@@ -234,7 +240,7 @@ func transformAndCopyIndexHTMLEntryPoint(clientCSSFilename, vendorJSFilename, cl
 	contents = strings.Replace(
 		contents,
 		`<link rel="stylesheet" href="/client.css" />`,
-		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`, clientCSSFilename),
+		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`, entries.clientCSS),
 		1,
 	)
 
@@ -242,7 +248,7 @@ func transformAndCopyIndexHTMLEntryPoint(clientCSSFilename, vendorJSFilename, cl
 	contents = strings.Replace(
 		contents,
 		`<script src="/vendor.js"></script>`,
-		fmt.Sprintf(`<script src="/%s"></script>`, vendorJSFilename),
+		fmt.Sprintf(`<script src="/%s"></script>`, entries.vendorJS),
 		1,
 	)
 
@@ -250,17 +256,20 @@ func transformAndCopyIndexHTMLEntryPoint(clientCSSFilename, vendorJSFilename, cl
 	contents = strings.Replace(
 		contents,
 		`<script src="/client.js"></script>`,
-		fmt.Sprintf(`<script src="/%s"></script>`, clientJSFilename),
+		fmt.Sprintf(`<script src="/%s"></script>`, entries.vendorJS),
 		1,
 	)
 
-	// Copy the transformed `www/index.html` to `out/www/index.html`
+	// out/www
 	target := filepath.Join(RETRO_OUT_DIR, filename)
 	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
+
+	// out/www/index.html
 	if err := ioutil.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
 		return fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
+
 	return nil
 }

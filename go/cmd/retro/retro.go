@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/zaydek/retro/go/cmd/format"
@@ -25,27 +26,18 @@ type DevOptions struct {
 	Preflight bool
 }
 
-func fatallyExit(err error) {
+func fatal(err error) {
 	// TODO: Clean this up; this is too vague
 	fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 	os.Exit(1)
 }
-
-// switch err := warmUp(a.getCommandKind()); err.(type) {
-// case EntryPointError:
-// 	fatallyExit(err)
-// default:
-// 	if err != nil {
-// 		panic(fmt.Errorf("warmUp: %w", err))
-// 	}
-// }
 
 func (a *App) Dev(options DevOptions) error {
 	if options.Preflight {
 		entryPointErrorPointer := &EntryPointError{}
 		if err := warmUp(a.getCommandKind()); err != nil {
 			if errors.As(err, entryPointErrorPointer) {
-				fatallyExit(entryPointErrorPointer)
+				fatal(entryPointErrorPointer)
 			} else {
 				return fmt.Errorf("warmUp: %w", err)
 			}
@@ -58,12 +50,53 @@ func (a *App) Dev(options DevOptions) error {
 	}
 
 	// var (
+	// 	// TODO: Deprecate
 	// 	isReadyToServe = make(chan struct{})
 	//
 	// 	// TODO: Why is the dev channel buffered?
 	// 	dev = make(chan AbstractDoneMessage, 1)
 	// )
 
+	var (
+		doneMessage AbstractDoneMessage
+		once        sync.Once
+	)
+
+	stdin <- "build"
+
+	// Use a for-loop so plugins can log repeatedly
+loop:
+	for {
+		select {
+		case line := <-stdout:
+			if err := json.Unmarshal([]byte(line), &doneMessage); err != nil {
+				// Log unmarshal errors so users can debug plugins, etc.
+				fmt.Println(decorateStdoutLine(line))
+			} else {
+				once.Do(func() {
+					entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
+					if err := copyIndexHTMLEntryPoint(entries); err != nil {
+						panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
+					}
+				})
+				stdin <- "done"
+				break loop
+			}
+		case text := <-stderr:
+			fmt.Fprintln(os.Stderr, decorateStderrText(text))
+			stdin <- "done"
+			os.Exit(1)
+		}
+	}
+
+	// DEBUG
+	byteStr, err := json.MarshalIndent(doneMessage, "", "  ")
+	if err != nil {
+		panic(fmt.Errorf("json.MarshalIndent: %w", err))
+	}
+	fmt.Println(string(byteStr))
+
+	// dev := make(chan AbstractDoneMessage)
 	// go func() {
 	// 	// TODO: In theory this shouldn't fire until the user does something; we
 	// 	// need to check this doesn't fire eagerly
@@ -74,55 +107,6 @@ func (a *App) Dev(options DevOptions) error {
 	// 		stdin <- "rebuild"
 	// 	}
 	// }()
-
-	go func() {
-		var (
-			message AbstractDoneMessage
-
-			// // For `transformAndCopyIndexHTMLEntryPoint`; extracts the cache-friendly
-			// // filenames for `src/index.css`, `src/index.js`, and `src/App.js`
-			// once sync.Once
-		)
-
-		stdin <- "build"
-
-		// Technically we don't need a for-loop here except that user plugins can
-		// log to stdout or stderr repeatedly
-	loop:
-		for {
-			select {
-			case line := <-stdout:
-				if err := json.Unmarshal([]byte(line), &message); err != nil {
-					// Log unmarshal errors as stdout so users can debug plugins, etc.
-					fmt.Println(decorateStdoutLine(line))
-					continue
-				}
-				// once.Do(func() {
-				// 	// For development, there's no reason to cache-bust the vendor or
-				// 	// client bundles; pass the canonical filenames as-is
-				// 	if err := transformAndCopyIndexHTMLEntryPoint("client.css", "vendor.js", "client.js"); err != nil {
-				// 		panic(fmt.Errorf("transformAndCopyIndexHTMLEntryPoint: %w", err))
-				// 	}
-				// 	isReadyToServe <- struct{}{}
-				// })
-				// dev <- message
-				break loop
-			case text := <-stderr:
-				fmt.Fprintln(os.Stderr, decorateStderrText(text))
-				break loop
-			}
-		}
-		stdin <- "done"
-
-		// DEBUG
-		byteStr, err := json.MarshalIndent(message, "", "  ")
-		if err != nil {
-			panic(fmt.Errorf("json.MarshalIndent: %w", err))
-		}
-		fmt.Println(string(byteStr))
-	}()
-
-	time.Sleep(5 * time.Second)
 
 	// a.Serve(ServeOptions{Dev: dev, Ready: ready})
 
@@ -136,10 +120,10 @@ func (a *App) Dev(options DevOptions) error {
 // }
 //
 // func (r *App) Build(opt BuildOptions) {
-// 	var transformAndCopyIndexHTMLEntryPoint func(string, string, string) error
+// 	var copyIndexHTMLEntryPoint func(string, string, string) error
 // 	if opt.Preflight {
 // 		var err error
-// 		transformAndCopyIndexHTMLEntryPoint, err = r.warmUp()
+// 		copyIndexHTMLEntryPoint, err = r.warmUp()
 // 		switch err.(type) {
 // 		case HTMLError:
 // 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
@@ -180,7 +164,7 @@ func (a *App) Dev(options DevOptions) error {
 // 			os.Exit(1)
 // 		}
 // 		vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
-// 		if err := transformAndCopyIndexHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
+// 		if err := copyIndexHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
 // 			panic(err)
 // 		}
 // 	case err := <-stderr:

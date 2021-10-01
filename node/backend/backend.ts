@@ -141,8 +141,9 @@ async function main(): Promise<void> {
 
 	while (true) {
 		const action = await readline()
+		console.log(`action=${action}`)
 		switch (action) {
-			case "build": {
+			case "build":
 				const [vendor, client] = await buildVendorAndClientBundles()
 				stdout({
 					Kind: "build_done",
@@ -152,7 +153,6 @@ async function main(): Promise<void> {
 					},
 				})
 				break
-			}
 			case "rebuild": {
 				const client = await rebuildClientBundle()
 				stdout({
@@ -164,7 +164,9 @@ async function main(): Promise<void> {
 				break
 			}
 			case "done":
-				return
+				// NOTE: Use `process.exit(0)` because `return` doesn't end the Node.js
+				// process
+				process.exit(0)
 		}
 		await sleep(100)
 	}

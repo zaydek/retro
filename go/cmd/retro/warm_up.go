@@ -26,7 +26,7 @@ func warmUp(commandKind CommandKind) error {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
 	// Copy `www` to `out/www`. Note that `www/index.html` is excluded because the
-	// vendor and client are transformed by `transformAndCopyIndexHTMLEntryPoint`.
+	// vendor and client are transformed by `copyIndexHTMLEntryPoint`.
 	target := filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR)
 	if err := copyDirectory(RETRO_WWW_DIR, target, []string{filepath.Join(RETRO_WWW_DIR, "index.html")}); err != nil {
 		return fmt.Errorf("copyDirectory: %w", err)
