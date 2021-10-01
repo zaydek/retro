@@ -11,18 +11,6 @@ import (
 	"github.com/zaydek/retro/pkg/terminal"
 )
 
-// type HTMLError struct {
-// 	err error
-// }
-//
-// func newHTMLError(str string) HTMLError {
-// 	return HTMLError{err: errors.New(str)}
-// }
-//
-// func (t HTMLError) Error() string {
-// 	return t.err.Error()
-// }
-
 const (
 	indexHTML = `<!DOCTYPE html>
 <html lang="en">
@@ -30,12 +18,12 @@ const (
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hello, world!</title>
-    <link rel="stylesheet" href="/bundle.css" />
+    <link rel="stylesheet" href="/client.css" />
   </head>
   <body>
     <div id="root"></div>
     <script src="/vendor.js"></script>
-    <script src="/bundle.js"></script>
+    <script src="/client.js"></script>
   </body>
 </html>` + "\n"
 
@@ -72,6 +60,8 @@ export default function App() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// TODO: In theory we can also access default values from
+// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if err := os.MkdirAll(filepath.Dir(filename), permBitsDirectory); err != nil {
@@ -83,6 +73,8 @@ func copyDefaultIndexHTMLEntryPoint() error {
 	return nil
 }
 
+// TODO: In theory we can also access default values from
+// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if err := os.MkdirAll(filepath.Dir(filename), permBitsDirectory); err != nil {
@@ -94,6 +86,8 @@ func copyDefaultIndexJSEntryPoint() error {
 	return nil
 }
 
+// TODO: In theory we can also access default values from
+// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if err := os.MkdirAll(filepath.Dir(filename), permBitsDirectory); err != nil {
@@ -107,6 +101,13 @@ func copyDefaultAppJSEntryPoint() error {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Guards for the presence of `www/index.js` and:
+//
+// - <link rel="stylesheet" href="/client.css" />
+// - <div id="root"></div>
+// - <script src="/vendor.js"></script>
+// - <script src="/client.js"></script>
+//
 func guardIndexHTMLEntryPoint() error {
 	// Guard `index.html`
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
@@ -123,12 +124,12 @@ func guardIndexHTMLEntryPoint() error {
 	}
 	contents := string(byteStr)
 
-	// <link rel="stylesheet" href="/bundle.css" />
-	if !strings.Contains(contents, `<link rel="stylesheet" href="/bundle.css" />`) {
+	// <link rel="stylesheet" href="/client.css" />
+	if !strings.Contains(contents, `<link rel="stylesheet" href="/client.css" />`) {
 		fmt.Fprintln(
 			os.Stderr,
 			format.Error(
-				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<link rel="stylesheet" href="/bundle.css" />`)), terminal.Magenta(backtick(`<head>`)))+`.
+				fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<link rel="stylesheet" href="/client.css" />`)), terminal.Magenta(backtick(`<head>`)))+`.
 
 For example:
 
@@ -137,7 +138,7 @@ For example:
   <head lang="en">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    `+terminal.Green(`<link rel="stylesheet" href="/bundle.css" />`)+`
+    `+terminal.Green(`<link rel="stylesheet" href="/client.css" />`)+`
     `+terminal.Dim("...")+`
   </head>
   <body>
@@ -233,8 +234,9 @@ For example:
 	return nil
 }
 
+// Guards for the presence of `src/index.js`
 func guardIndexJSEntryPoint() error {
-	filename := filepath.Join(RETRO_WWW_DIR, "index.js")
+	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexJSEntryPoint(); err != nil {
 			return fmt.Errorf("copyDefaultIndexJSEntryPoint: %w", err)
@@ -243,8 +245,9 @@ func guardIndexJSEntryPoint() error {
 	return nil
 }
 
+// Guards for the presence of `src/App.js`
 func guardAppJSEntryPoint() error {
-	filename := filepath.Join(RETRO_WWW_DIR, "app.js")
+	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultAppJSEntryPoint(); err != nil {
 			return fmt.Errorf("copyDefaultAppJSEntryPoint: %w", err)
@@ -256,8 +259,8 @@ func guardAppJSEntryPoint() error {
 // Guards entry points:
 //
 // - www/index.html
-// - src/index.{jsx?|tsx?}
-// - src/app.{jsx?|tsx?}
+// - src/index.js
+// - src/App.js
 //
 func guardEntryPoints() error {
 	if err := guardIndexHTMLEntryPoint(); err != nil {
@@ -272,43 +275,42 @@ func guardEntryPoints() error {
 	return nil
 }
 
-// func copyHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS string) error {
-// 	bstr, err := os.ReadFile(filepath.Join(RETRO_WWW_DIR, "index.html"))
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// 	// Swap cache busted paths
-// 	contents := string(bstr)
-// 	contents = strings.Replace(
-// 		contents,
-// 		`<script src="/vendor.js"></script>`,
-// 		fmt.Sprintf(`<script src="/%s"></script>`,
-// 			vendorDotJS,
-// 		),
-// 		1,
-// 	)
-//
-// 	contents = strings.Replace(
-// 		contents,
-// 		`<script src="/bundle.js"></script>`,
-// 		fmt.Sprintf(`<script src="/%s"></script>`,
-// 			bundleDotJS,
-// 		),
-// 		1,
-// 	)
-//
-// 	contents = strings.Replace(
-// 		contents,
-// 		`<link rel="stylesheet" href="/bundle.css" />`,
-// 		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`,
-// 			bundleDotCSS,
-// 		),
-// 		1,
-// 	)
-//
-// 	if err := ioutil.WriteFile(filepath.Join(RETRO_OUT_DIR, "index.html"), []byte(contents), permBitsFile); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+////////////////////////////////////////////////////////////////////////////////
+
+func transformAndCopyIndexHTMLEntryPoint(vendorJSFilename, clientJSFilename, clientCSSFilename string) error {
+	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
+	byteStr, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("os.ReadFile: %w", err)
+	}
+	// <link rel="stylesheet" href="/client.css" />
+	contents := string(byteStr)
+	contents = strings.Replace(
+		contents,
+		`<link rel="stylesheet" href="/client.css" />`,
+		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`, clientCSSFilename),
+		1,
+	)
+	// <script src="/vendor.js"></script>
+	contents = strings.Replace(
+		contents,
+		`<script src="/vendor.js"></script>`,
+		fmt.Sprintf(`<script src="/%s"></script>`, vendorJSFilename),
+		1,
+	)
+	// <script src="/client.js"></script>
+	contents = strings.Replace(
+		contents,
+		`<script src="/client.js"></script>`,
+		fmt.Sprintf(`<script src="/%s"></script>`, clientJSFilename),
+		1,
+	)
+	target := filepath.Join(RETRO_OUT_DIR, "index.html")
+	if err := os.MkdirAll(filepath.Dir(target), permBitsDirectory); err != nil {
+		return fmt.Errorf("os.MkdirAll: %w", err)
+	}
+	if err := ioutil.WriteFile(target, []byte(contents), permBitsFile); err != nil {
+		return fmt.Errorf("ioutil.WriteFile: %w", err)
+	}
+	return nil
+}
