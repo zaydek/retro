@@ -1,6 +1,6 @@
 package create_retro_app
 
-import "github.com/zaydek/retro/pkg/terminal"
+import "github.com/zaydek/retro/go/pkg/terminal"
 
 var usage = `
 ` + terminal.Bold("create-retro-app [app-name]") + `

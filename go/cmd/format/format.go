@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/zaydek/retro/pkg/terminal"
+	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
 func Pad(str string) string {

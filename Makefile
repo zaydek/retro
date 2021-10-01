@@ -7,6 +7,18 @@ VERSION = $(shell cat version.txt)
 
 ################################################################################
 
+# Bundles the backend Node.js code
+bundle-backend:
+	npx esbuild node/backend/backend.ts \
+		--bundle \
+		--external:esbuild --external:react --external:react-dom --external:react-dom/server \
+		--log-level=warning \
+		--outfile=node/backend.esbuild.js \
+		--platform=node \
+		--sourcemap
+
+################################################################################
+
 # Makes all binaries; `create-retro-app` and `retro`. Note that these binaries
 # are moved to `~/github/bin` so that they may be tested locally. Aliasing these
 # binaries is recommended for active development.
@@ -25,6 +37,7 @@ bin-create-retro-app:
 
 # Makes `retro`
 bin-retro:
+	make bundle-backend
 	go build -o=retro main_retro.go && mv retro ~/github/bin
 
 # Makes all binaries in parallel
@@ -67,12 +80,7 @@ build-create-retro-app:
 # Builds Go binaries and creates a placeholder executable for the post-
 # installation script
 build-retro:
-	./node_modules/.bin/esbuild \
-		scripts/backend.ts \
-			--format=cjs \
-			--log-level=warning \
-			--outfile=scripts/backend.esbuild.js \
-			--target=es2018
+	make bundle-backend
 
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/darwin-64 main_retro.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64 main_retro.go
@@ -80,7 +88,8 @@ build-retro:
 
 	touch npm/retro/bin/retro
 
-	cp -r scripts npm/retro/bin && rm npm/retro/bin/scripts/backend.ts
+	rm -rf npm/retro/bin/scripts && mkdir npm/retro/bin/scripts
+	cp -r node npm/retro/bin/scripts && rm -rf npm/retro/bin/scripts/backend
 
 # Makes all builds in parallel
 build:
@@ -110,6 +119,7 @@ release:
 ################################################################################
 
 clean:
-	rm -rf scripts/backend.esbuild.js
-	rm -rf npm/create-retro-app/bin
-	rm -rf npm/retro/bin
+	rm node/backend.esbuild.js
+	rm node/backend.esbuild.js.map
+	rm ~/github/bin/create-retro-app
+	rm ~/github/bin/retro

@@ -8,6 +8,32 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 )
 
+// FIXME: Right now we don't have a generic `BackendResponse` we can tie methods
+// to. So we need to decide if we can somehow generalize the backend response
+// into an abstract backend response, like `AbstractMessage` or
+// `AbstractDoneMessage`, or something else altogether
+//
+// type BundleResult struct {
+// 	Metafile map[string]interface{}
+// 	Warnings []api.Message
+// 	Errors   []api.Message
+// }
+//
+// type BuildDoneMessage struct {
+// 	Kind string
+// 	Data struct {
+// 		Vendor BundleResult
+// 		Client BundleResult
+// 	}
+// }
+//
+// type RebuildDoneMessage struct {
+// 	Kind string
+// 	Data struct {
+// 		Client BundleResult
+// 	}
+// }
+
 type BackendResponse struct {
 	Metafile struct {
 		Vendor map[string]interface{}

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zaydek/retro/pkg/terminal"
+	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
 type LoggerOptions struct {

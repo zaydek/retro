@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/zaydek/retro/cmd/create_retro_app/cli"
-	"github.com/zaydek/retro/cmd/create_retro_app/embeds"
-	"github.com/zaydek/retro/cmd/deps"
-	"github.com/zaydek/retro/cmd/format"
-	"github.com/zaydek/retro/pkg/terminal"
+	"github.com/zaydek/retro/go/cmd/create_retro_app/cli"
+	"github.com/zaydek/retro/go/cmd/create_retro_app/embeds"
+	"github.com/zaydek/retro/go/cmd/deps"
+	"github.com/zaydek/retro/go/cmd/format"
+	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
 var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }

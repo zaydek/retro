@@ -2,71 +2,65 @@ package ipc
 
 import (
 	"bufio"
-	"encoding/json"
+	"fmt"
 	"os/exec"
+	"strings"
 )
 
-type Request struct {
-	Kind string
-	Data interface{}
-}
+// Starts a long-lived IPC process. stdout messages are read line-by-line
+// whereas stderr messages are read once.
+func NewCommand(commandArgs ...string) (stdin, stdout, stderr chan string, err error) {
+	cmd := exec.Command(commandArgs[0], commandArgs[1:]...)
 
-type Response struct {
-	Kind string
-	Data json.RawMessage
-}
-
-// NewCommand starts a new IPC command.
-func NewCommand(args ...string) (stdin chan Request, stdout chan Response, stderr chan string, err error) {
-	cmd := exec.Command(args[0], args[1:]...)
-
+	// Get pipes
 	stdinPipe, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, nil, nil, err
-	}
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	stderrPipe, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, nil, nil, err
+		returnError := fmt.Errorf("cmd.StdinPipe: %w", err)
+		return nil, nil, nil, returnError
 	}
 
-	stdin = make(chan Request)
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		returnError := fmt.Errorf("cmd.StdoutPipe: %w", err)
+		return nil, nil, nil, returnError
+	}
+
+	stderrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		returnError := fmt.Errorf("cmd.StderrPipe: %w", err)
+		return nil, nil, nil, returnError
+	}
+
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		returnError := fmt.Errorf("cmd.Start: %w", err)
+		return nil, nil, nil, returnError
+	}
+
+	stdin = make(chan string)
 	go func() {
-		defer stdinPipe.Close()
-		for msg := range stdin {
-			bstr, err := json.Marshal(msg)
-			if err != nil {
-				panic(err)
-			}
-			// Add an EOF so `await stdin()` can process
-			stdinPipe.Write(append(bstr, '\n'))
+		defer func() {
+			stdinPipe.Close()
+			close(stdin)
+		}()
+		for message := range stdin {
+			fmt.Fprintln(stdinPipe, message)
 		}
 	}()
 
-	stdout = make(chan Response)
+	stdout = make(chan string)
 	go func() {
 		defer func() {
 			stdoutPipe.Close()
 			close(stdout)
 		}()
-		// Increase the buffer
+		// Scan line-by-line
 		scanner := bufio.NewScanner(stdoutPipe)
-		buf := make([]byte, 1024*1024)
-		scanner.Buffer(buf, len(buf))
+		scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
 		for scanner.Scan() {
-			if bstr := scanner.Bytes(); len(bstr) > 0 {
-				var res Response
-				if err := json.Unmarshal(bstr, &res); err != nil {
-					panic(err)
-				}
-				stdout <- res
+			if line := scanner.Text(); line != "" {
+				stdout <- line
 			}
-		}
-		if err := scanner.Err(); err != nil {
-			panic(err)
 		}
 	}()
 
@@ -76,26 +70,19 @@ func NewCommand(args ...string) (stdin chan Request, stdout chan Response, stder
 			stderrPipe.Close()
 			close(stderr)
 		}()
-		// Read from start-to-end
-		// https://golang.org/pkg/bufio/#SplitFunc
+		// Scan once
 		scanner := bufio.NewScanner(stderrPipe)
 		scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 			return len(data), data, nil
 		})
-		for scanner.Scan() {
-			if str := scanner.Text(); str != "" {
-				stderr <- str
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			panic(err)
+		scanner.Scan()
+		if text := scanner.Text(); text != "" {
+			stderr <- strings.TrimRight(
+				text,
+				"\n", // Remove the EOF
+			)
 		}
 	}()
-
-	// Start the command
-	if err := cmd.Start(); err != nil {
-		return nil, nil, nil, err
-	}
 
 	return stdin, stdout, stderr, nil
 }

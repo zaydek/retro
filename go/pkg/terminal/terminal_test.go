@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/zaydek/retro/pkg/expect"
+	"github.com/zaydek/retro/go/pkg/expect"
 )
 
 func TestRevert(t *testing.T) {

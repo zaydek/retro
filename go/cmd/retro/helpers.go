@@ -47,8 +47,8 @@ func getDirname() (string, error) {
 		return "", err
 	}
 	// Edge-case for local development: When running `go run main-*.go`, get the
-	// current directory. `main-*` works as heuristic because the entry point
-	// filenames are `main_create_retro_app.go` and `main_retro.go`.
+	// current working directory. `main-*` works as heuristic because the entry
+	// point filenames are `main_create_retro_app.go` and `main_retro.go`.
 	if strings.HasPrefix(filepath.Base(executable), "main_") {
 		return os.Getwd()
 	}

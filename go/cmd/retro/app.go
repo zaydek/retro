@@ -1,6 +1,6 @@
 package retro
 
-import "github.com/zaydek/retro/cmd/retro/cli"
+import "github.com/zaydek/retro/go/cmd/retro/cli"
 
 type CommandKind string
 

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zaydek/retro/cmd/perm"
+	"github.com/zaydek/retro/go/cmd/perm"
 )
 
 func warmUp(commandKind CommandKind) error {

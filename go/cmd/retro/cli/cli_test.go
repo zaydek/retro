@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/zaydek/retro/pkg/expect"
+	"github.com/zaydek/retro/go/pkg/expect"
 )
 
 func check(t *testing.T, err error) {

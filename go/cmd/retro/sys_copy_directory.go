@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zaydek/retro/cmd/perm"
+	"github.com/zaydek/retro/go/cmd/perm"
 )
 
 // TODO: In theory this can and should be extracted to a separate package since

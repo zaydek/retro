@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zaydek/retro/cmd/perm"
-	"github.com/zaydek/retro/pkg/terminal"
+	"github.com/zaydek/retro/go/cmd/perm"
+	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
 type EntryPointError struct {

@@ -158,7 +158,6 @@ async function main(): Promise<void> {
 				break
 			}
 			case "done":
-				// EOF
 				return
 		}
 	}

@@ -1,6 +1,6 @@
 package retro
 
-import "github.com/zaydek/retro/pkg/terminal"
+import "github.com/zaydek/retro/go/pkg/terminal"
 
 var usage = `
 ` + terminal.Bold("retro dev") + `

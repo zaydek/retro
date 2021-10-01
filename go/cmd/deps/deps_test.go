@@ -3,7 +3,7 @@ package deps
 import (
 	"testing"
 
-	"github.com/zaydek/retro/pkg/expect"
+	"github.com/zaydek/retro/go/pkg/expect"
 )
 
 func TestVersions(t *testing.T) {
