@@ -1,9 +1,13 @@
 # http://git-scm.com/docs/gitignore
 
+# macOS
 .DS_Store
-/node_modules
 
+# NPM
+/node_modules/
+/npm/*/bin/
+/npm/*/dist/
+
+# Production
+/out/
 *.esbuild.*
-/npm/*/bin
-/npm/*/dist
-/test

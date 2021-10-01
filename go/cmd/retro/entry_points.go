@@ -109,9 +109,9 @@ For example:
 	}
 
 	// <div id="retro_root"></div>
-	if !strings.Contains(contents, `<div id="rootretro_"></div>`) {
+	if !strings.Contains(contents, `<div id="retro_root"></div>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="rootretro_"></div>`)), terminal.Magenta(backtick(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="retro_root"></div>`)), terminal.Magenta(backtick(`<body>`))) + `.
 
 For example:
 
@@ -123,7 +123,7 @@ For example:
 		` + terminal.Dim("...") + `
 	</head>
 	<body>
-		` + terminal.Green(`<div id="rootretro_"></div>`) + `
+		` + terminal.Green(`<div id="retro_root"></div>`) + `
 		` + terminal.Dim("...") + `
 	</body>
 </html>`,
@@ -210,13 +210,13 @@ func guardAppJSEntryPoint() error {
 //
 func guardEntryPoints() error {
 	if err := guardIndexHTMLEntryPoint(); err != nil {
-		return fmt.Errorf("guardIndexHTMLEntryPoint: %w")
+		return fmt.Errorf("guardIndexHTMLEntryPoint: %w", err)
 	}
 	if err := guardIndexJSEntryPoint(); err != nil {
-		return fmt.Errorf("guardIndexJSEntryPoint: %w")
+		return fmt.Errorf("guardIndexJSEntryPoint: %w", err)
 	}
 	if err := guardAppJSEntryPoint(); err != nil {
-		return fmt.Errorf("guardAppJSEntryPoint: %w")
+		return fmt.Errorf("guardAppJSEntryPoint: %w", err)
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package retro
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,27 +26,36 @@ type DevOptions struct {
 	Preflight bool
 }
 
-func fatalUserError(err error) {
+func fatallyExit(err error) {
 	// TODO: Clean this up; this is too vague
 	fmt.Fprintln(os.Stderr, format.Error(err.Error()))
 	os.Exit(1)
 }
 
-func (a *App) Dev(options DevOptions) {
+// switch err := warmUp(a.getCommandKind()); err.(type) {
+// case EntryPointError:
+// 	fatallyExit(err)
+// default:
+// 	if err != nil {
+// 		panic(fmt.Errorf("warmUp: %w", err))
+// 	}
+// }
+
+func (a *App) Dev(options DevOptions) error {
 	if options.Preflight {
-		switch err := warmUp(a.getCommandKind()); err.(type) {
-		case EntryPointError:
-			fatalUserError(err)
-		default:
-			if err != nil {
-				panic(fmt.Errorf("warmUp: %w", err))
+		entryPointErrorPointer := &EntryPointError{}
+		if err := warmUp(a.getCommandKind()); err != nil {
+			if errors.As(err, entryPointErrorPointer) {
+				fatallyExit(entryPointErrorPointer)
+			} else {
+				return fmt.Errorf("warmUp: %w", err)
 			}
 		}
 	}
 
 	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
 	if err != nil {
-		panic(fmt.Errorf("ipc.NewCommand: %w", err))
+		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
 	var (
@@ -91,7 +101,7 @@ func (a *App) Dev(options DevOptions) {
 					// For development, there's no reason to cache-bust the vendor or
 					// client bundles; pass the canonical filenames as-is
 					if err := transformAndCopyIndexHTMLEntryPoint("vendor.js", "client.js", "client.css"); err != nil {
-						panic(fmt.Errorf("transformAndCopyIndexHTMLEntryPoint: %w"))
+						panic(fmt.Errorf("transformAndCopyIndexHTMLEntryPoint: %w", err))
 					}
 					isReadyToServe <- struct{}{}
 				})
@@ -110,7 +120,11 @@ func (a *App) Dev(options DevOptions) {
 		}
 	}()
 
+	time.Sleep(10 * time.Second)
+
 	// a.Serve(ServeOptions{Dev: dev, Ready: ready})
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -395,7 +409,9 @@ func Run() {
 	app := &App{Command: command}
 	switch app.Command.(type) {
 	case cli.DevCommand:
-		app.Dev(DevOptions{Preflight: true})
+		if err := app.Dev(DevOptions{Preflight: true}); err != nil {
+			panic(fmt.Errorf("app.Dev: %w", err))
+		}
 		// case cli.BuildCommand:
 		// 	app.Build(BuildOptions{Preflight: true})
 		// case cli.ServeCommand:
