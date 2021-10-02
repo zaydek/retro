@@ -40,13 +40,19 @@ func (b BundleResult) HTML() string {
 	<head>
 		<title>Build Error</title>
 		<style>
-html {
+:root {
+	-webkit-font-smoothing: antialiased; /* macOS */
+	-moz-osx-font-smoothing: grayscale;  /* Firefox */
+
 	color: #c7c7c7;
 	background-color: #000000;
 }
 
 code {
-	font: 16px / 1.4 "Consolas", "Monaco", monospace;
+	font: 19px / 1.4
+		"Consolas", /* Windows */
+		"Monaco",   /* macOS */
+		monospace;
 }
 
 a { color: unset; text-decoration: unset; }

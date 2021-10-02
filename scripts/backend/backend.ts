@@ -100,7 +100,7 @@ async function buildVendorAndClientBundles(): Promise<[t.BundleMetadata, t.Bundl
 
 // Builds or rebuild the client bundle
 async function rebuildClientBundle(): Promise<t.BundleMetadata> {
-	if (globalClientBuildResult === null || globalVendorBuildResult === null) {
+	if (globalClientBuildResult === null || globalClientBuildResult.rebuild === undefined) {
 		return await buildClientBundle()
 	}
 

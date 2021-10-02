@@ -40,6 +40,7 @@ func (a *App) Dev(options DevOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
+		cancel()
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
@@ -120,6 +121,7 @@ func (a *App) Build(options BuildOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
+		cancel()
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
@@ -187,29 +189,28 @@ func (a *App) Serve(options ServeOptions) error {
 	}
 
 	var (
-		// Get the build message
-		message = <-options.Dev
-
-		// The logMessage log message
+		message    = <-options.Dev
 		logMessage string
 	)
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Dedupe the next log message (error)
-		next := makeServeSuccess(a.getPort())
+		// Log message to stdout or the browser
+		var next string
 		if dirty := message.GetDirty(); dirty.IsDirty() {
 			next = dirty.String()
+		} else {
+			next = makeServeSuccess(a.getPort())
 		}
-		if next != logMessage {
+		if logMessage != next { // For stdout
 			logMessage = next
 			terminal.Clear(os.Stdout)
 			fmt.Println(logMessage)
-			if dirty := message.GetDirty(); dirty.IsDirty() {
-				fmt.Fprintln(w, dirty.HTML())
-				// Eagerly return
-				return
-			}
+		}
+		if dirty := message.GetDirty(); dirty.IsDirty() { // For the browser
+			fmt.Fprintln(w, dirty.HTML())
+			// Eagerly return
+			return
 		}
 		// Serve non-HTML resources
 		path := getFilesystemPath(r.URL.Path)
@@ -217,7 +218,7 @@ func (a *App) Serve(options ServeOptions) error {
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, path))
 			return
 		}
-		// Serve nTML resources
+		// Serve HTML resources
 		if a.getCommandKind() == KindDevCommand {
 			fmt.Fprint(w, contents)
 		} else {
@@ -248,11 +249,14 @@ func (a *App) Serve(options ServeOptions) error {
 		})
 	}
 
-	next := makeServeSuccess(a.getPort())
+	// Log message to stdout
+	var next string
 	if dirty := message.GetDirty(); dirty.IsDirty() {
 		next = dirty.String()
+	} else {
+		next = makeServeSuccess(a.getPort())
 	}
-	if next != logMessage {
+	if logMessage != next {
 		logMessage = next
 		terminal.Clear(os.Stdout)
 		fmt.Println(logMessage)
