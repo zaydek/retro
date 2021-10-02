@@ -15,27 +15,27 @@ func check(t *testing.T, err error) {
 
 func TestParseCommand(t *testing.T) {
 	var (
-		command *CreateCommand
+		command CreateCommand
 		err     error
 	)
 
 	command, err = ParseCommand(".")
 	check(t, err)
-	expect.DeepEqual(t, *command, CreateCommand{
+	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: ".",
 	})
 
 	command, err = ParseCommand(".", "--template=starter")
 	check(t, err)
-	expect.DeepEqual(t, *command, CreateCommand{
+	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: ".",
 	})
 
 	command, err = ParseCommand(".", "--template=sass")
 	check(t, err)
-	expect.DeepEqual(t, *command, CreateCommand{
+	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "sass",
 		Directory: ".",
 	})
@@ -44,21 +44,21 @@ func TestParseCommand(t *testing.T) {
 
 	command, err = ParseCommand("app")
 	check(t, err)
-	expect.DeepEqual(t, *command, CreateCommand{
+	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: "app",
 	})
 
 	command, err = ParseCommand("app", "--template=starter")
 	check(t, err)
-	expect.DeepEqual(t, *command, CreateCommand{
+	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: "app",
 	})
 
 	command, err = ParseCommand("app", "--template=sass")
 	check(t, err)
-	expect.DeepEqual(t, *command, CreateCommand{
+	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "sass",
 		Directory: "app",
 	})

@@ -149,7 +149,7 @@ func (r Runner) CreateApp() {
 ////////////////////////////////////////////////////////////////////////////////
 
 type Runner struct {
-	Command *cli.CreateCommand
+	Command cli.CreateCommand
 }
 
 func Run() {

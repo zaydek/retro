@@ -215,15 +215,17 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 	})
 
+	var port = a.getPort()
+
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		buildSuccess(a.getPort())
+		buildSuccess(port)
 	}()
 
 	for {
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", a.getPort()), nil); err != nil {
-			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", a.getPort()) {
-				a.setPort(a.getPort() + 1)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {
+				port++
 				continue
 			} else {
 				return fmt.Errorf("http.ListenAndServe: %w", err)
@@ -273,13 +275,13 @@ func Run() {
 
 	app := &App{Command: command}
 	switch app.Command.(type) {
-	case *cli.DevCommand:
+	case cli.DevCommand:
 		if err := app.Dev(DevOptions{WarmUpFlag: true}); err != nil {
 			panic(fmt.Errorf("app.Dev: %w", err))
 		}
 	// case cli.BuildCommand:
 	// 	app.Build(BuildOptions{WarmUpFlag: true})
-	case *cli.ServeCommand:
+	case cli.ServeCommand:
 		app.Serve(ServeOptions{})
 	}
 }

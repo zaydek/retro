@@ -58,8 +58,8 @@ func (e CommandError) Unwrap() error {
 // Support _ separators
 var portRegex = regexp.MustCompile(`^--port=([\d_]+)$`)
 
-func ParseDevCommand(args ...string) (*DevCommand, error) {
-	command := &DevCommand{
+func ParseDevCommand(args ...string) (DevCommand, error) {
+	command := DevCommand{
 		Sourcemap: true,
 		Port:      8000,
 	}
@@ -71,7 +71,7 @@ func ParseDevCommand(args ...string) (*DevCommand, error) {
 				command.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
 			} else {
 				err.Kind = BadPortValue
-				return nil, err
+				return DevCommand{}, err
 			}
 		} else if strings.HasPrefix(arg, "--sourcemap") {
 			if arg == "--sourcemap" {
@@ -80,20 +80,20 @@ func ParseDevCommand(args ...string) (*DevCommand, error) {
 				command.Sourcemap = arg == "--sourcemap=true"
 			} else {
 				err.Kind = BadSourcemapValue
-				return nil, err
+				return DevCommand{}, err
 			}
 		} else {
-			return nil, err
+			return DevCommand{}, err
 		}
 	}
 	if command.Port < 1_000 || command.Port >= 10_000 {
-		return nil, CommandError{Kind: BadPortRange, BadPort: command.Port}
+		return DevCommand{}, CommandError{Kind: BadPortRange, BadPort: command.Port}
 	}
 	return command, nil
 }
 
-func ParseBuildCommand(args ...string) (*BuildCommand, error) {
-	command := &BuildCommand{
+func ParseBuildCommand(args ...string) (BuildCommand, error) {
+	command := BuildCommand{
 		Sourcemap: true,
 	}
 	for _, arg := range args {
@@ -105,17 +105,17 @@ func ParseBuildCommand(args ...string) (*BuildCommand, error) {
 				command.Sourcemap = arg == "--sourcemap=true"
 			} else {
 				err.Kind = BadSourcemapValue
-				return nil, err
+				return BuildCommand{}, err
 			}
 		} else {
-			return nil, err
+			return BuildCommand{}, err
 		}
 	}
 	return command, nil
 }
 
-func ParseServeCommand(args ...string) (*ServeCommand, error) {
-	command := &ServeCommand{
+func ParseServeCommand(args ...string) (ServeCommand, error) {
+	command := ServeCommand{
 		Port: 8000,
 	}
 	for _, arg := range args {
@@ -126,14 +126,14 @@ func ParseServeCommand(args ...string) (*ServeCommand, error) {
 				command.Port, _ = strconv.Atoi(strings.ReplaceAll(matches[1], "_", ""))
 			} else {
 				err.Kind = BadPortValue
-				return nil, err
+				return ServeCommand{}, err
 			}
 		} else {
-			return nil, err
+			return ServeCommand{}, err
 		}
 	}
 	if command.Port < 1_000 || command.Port >= 10_000 {
-		return nil, CommandError{Kind: BadPortRange, BadPort: command.Port}
+		return ServeCommand{}, CommandError{Kind: BadPortRange, BadPort: command.Port}
 	}
 	return command, nil
 }
