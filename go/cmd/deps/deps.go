@@ -2,17 +2,11 @@ package deps
 
 import (
 	_ "embed"
+	"fmt"
 	"regexp"
 
 	"encoding/json"
 )
-
-func must(err error) {
-	if err == nil {
-		return
-	}
-	panic(err)
-}
 
 var (
 	//go:embed deps.jsonc
@@ -25,16 +19,16 @@ type PackageDeps struct {
 	RetroVersion string
 
 	EsbuildVersion string `json:"esbuild"`
-	MDXVersion     string `json:"mdx"`
 	ReactVersion   string `json:"react"`
 	SassVersion    string `json:"sass"`
 }
 
-var re = regexp.MustCompile(`\/\/.*`)
+var commentsRegex = regexp.MustCompile(`\/\/.*`)
 
 func init() {
 	// Remove comments
-	deps = re.ReplaceAllString(deps, "")
-	err := json.Unmarshal([]byte(deps), &Deps)
-	must(err)
+	deps = commentsRegex.ReplaceAllString(deps, "")
+	if err := json.Unmarshal([]byte(deps), &Deps); err != nil {
+		panic(fmt.Errorf("json.Unmarshal: %w", err))
+	}
 }

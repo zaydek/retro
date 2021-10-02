@@ -2,6 +2,7 @@ package embeds
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"text/template"
 )
@@ -10,7 +11,7 @@ func must(err error) {
 	if err == nil {
 		return
 	}
-	panic(err)
+	panic(fmt.Errorf("must: %w", err))
 }
 
 var (
@@ -20,12 +21,8 @@ var (
 	//go:embed package.sass.json
 	sassPkg string
 
-	//go:embed package.mdx.json
-	mdxPkg string
-
 	StarterPackage = template.Must(template.New("package.json").Parse(pkg))
 	SassPackage    = template.Must(template.New("package.json").Parse(sassPkg))
-	MDXPackage     = template.Must(template.New("package.json").Parse(mdxPkg))
 )
 
 var (
@@ -35,12 +32,8 @@ var (
 	//go:embed starter-sass/*
 	sassFS embed.FS
 
-	//go:embed starter-mdx/*
-	mdxFS embed.FS
-
 	StarterFS fs.FS
 	SassFS    fs.FS
-	MDXFS     fs.FS
 )
 
 func init() {
@@ -48,7 +41,5 @@ func init() {
 	StarterFS, err = fs.Sub(starterFS, "starter")
 	must(err)
 	SassFS, err = fs.Sub(sassFS, "starter-sass")
-	must(err)
-	MDXFS, err = fs.Sub(mdxFS, "starter-mdx")
 	must(err)
 }

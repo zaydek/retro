@@ -30,19 +30,19 @@ func getFilesystemPath(url string) string {
 	return returnUrl
 }
 
-// Gets the canonical browser path for a URL (removes `index.html` and `.html`).
-// Note that `getCanonicalBrowserPath` is inverse to `getFilesystemPath`.
-func getCanonicalBrowserPath(url string) string {
-	returnUrl := url
-	if strings.HasSuffix(url, "/index.html") {
-		returnUrl = returnUrl[:len(returnUrl)-len("index.html")]
-	} else if strings.HasSuffix(url, "/index") {
-		returnUrl = returnUrl[:len(returnUrl)-len("index")]
-	} else if strings.HasSuffix(url, ".html") {
-		returnUrl = returnUrl[:len(returnUrl)-len(".html")]
-	}
-	return returnUrl
-}
+// // Gets the canonical browser path for a URL (removes `index.html` and `.html`).
+// // Note that `getCanonicalBrowserPath` is inverse to `getFilesystemPath`.
+// func getCanonicalBrowserPath(url string) string {
+// 	returnUrl := url
+// 	if strings.HasSuffix(url, "/index.html") {
+// 		returnUrl = returnUrl[:len(returnUrl)-len("index.html")]
+// 	} else if strings.HasSuffix(url, "/index") {
+// 		returnUrl = returnUrl[:len(returnUrl)-len("index")]
+// 	} else if strings.HasSuffix(url, ".html") {
+// 		returnUrl = returnUrl[:len(returnUrl)-len(".html")]
+// 	}
+// 	return returnUrl
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 

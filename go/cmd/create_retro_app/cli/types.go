@@ -1,6 +1,6 @@
 package cli
 
-type Command struct {
+type CreateCommand struct {
 	// Flags
 	Template string
 

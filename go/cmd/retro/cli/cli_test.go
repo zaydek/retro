@@ -15,101 +15,105 @@ func check(t *testing.T, err error) {
 
 func TestDevCommand(t *testing.T) {
 	var (
-		cmd DevCommand
-		err error
+		command *DevCommand
+		err     error
 	)
 
-	cmd, err = ParseDevCommand()
+	command, err = ParseDevCommand()
 	check(t, err)
-	expect.DeepEqual(t, cmd, DevCommand{
+	expect.DeepEqual(t, *command, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseDevCommand("--port=8000")
+	command, err = ParseDevCommand("--port=8000")
 	check(t, err)
-	expect.DeepEqual(t, cmd, DevCommand{
+	expect.DeepEqual(t, *command, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseDevCommand("--port=3000")
+	command, err = ParseDevCommand("--port=3000")
 	check(t, err)
-	expect.DeepEqual(t, cmd, DevCommand{
+	expect.DeepEqual(t, *command, DevCommand{
 		Port:      3000,
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseDevCommand("--sourcemap")
+	command, err = ParseDevCommand("--sourcemap")
 	check(t, err)
-	expect.DeepEqual(t, cmd, DevCommand{
+	expect.DeepEqual(t, *command, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseDevCommand("--sourcemap=true")
+	command, err = ParseDevCommand("--sourcemap=true")
 	check(t, err)
-	expect.DeepEqual(t, cmd, DevCommand{
+	expect.DeepEqual(t, *command, DevCommand{
 		Port:      8000,
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseDevCommand("--sourcemap=false")
+	command, err = ParseDevCommand("--sourcemap=false")
 	check(t, err)
-	expect.DeepEqual(t, cmd, DevCommand{
+	expect.DeepEqual(t, *command, DevCommand{
 		Port:      8000,
 		Sourcemap: false,
 	})
 }
 
 func TestBuildCommand(t *testing.T) {
-	var cmd BuildCommand
-	var err error
+	var (
+		command *BuildCommand
+		err     error
+	)
 
-	cmd, err = ParseBuildCommand()
+	command, err = ParseBuildCommand()
 	check(t, err)
-	expect.DeepEqual(t, cmd, BuildCommand{
+	expect.DeepEqual(t, *command, BuildCommand{
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseBuildCommand("--sourcemap")
+	command, err = ParseBuildCommand("--sourcemap")
 	check(t, err)
-	expect.DeepEqual(t, cmd, BuildCommand{
+	expect.DeepEqual(t, *command, BuildCommand{
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseBuildCommand("--sourcemap=true")
+	command, err = ParseBuildCommand("--sourcemap=true")
 	check(t, err)
-	expect.DeepEqual(t, cmd, BuildCommand{
+	expect.DeepEqual(t, *command, BuildCommand{
 		Sourcemap: true,
 	})
 
-	cmd, err = ParseBuildCommand("--sourcemap=false")
+	command, err = ParseBuildCommand("--sourcemap=false")
 	check(t, err)
-	expect.DeepEqual(t, cmd, BuildCommand{
+	expect.DeepEqual(t, *command, BuildCommand{
 		Sourcemap: false,
 	})
 }
 
 func TestServeCommand(t *testing.T) {
-	var cmd ServeCommand
-	var err error
+	var (
+		command *ServeCommand
+		err     error
+	)
 
-	cmd, err = ParseServeCommand()
+	command, err = ParseServeCommand()
 	check(t, err)
-	expect.DeepEqual(t, cmd, ServeCommand{
+	expect.DeepEqual(t, *command, ServeCommand{
 		Port: 8000,
 	})
 
-	cmd, err = ParseServeCommand("--port=8000")
+	command, err = ParseServeCommand("--port=8000")
 	check(t, err)
-	expect.DeepEqual(t, cmd, ServeCommand{
+	expect.DeepEqual(t, *command, ServeCommand{
 		Port: 8000,
 	})
 
-	cmd, err = ParseServeCommand("--port=3000")
+	command, err = ParseServeCommand("--port=3000")
 	check(t, err)
-	expect.DeepEqual(t, cmd, ServeCommand{
+	expect.DeepEqual(t, *command, ServeCommand{
 		Port: 3000,
 	})
 }

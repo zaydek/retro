@@ -27,8 +27,6 @@ func (r Runner) getFSAndPkg() (fs.FS, *template.Template) {
 		return embeds.StarterFS, embeds.StarterPackage
 	case "sass":
 		return embeds.SassFS, embeds.SassPackage
-	case "mdx":
-		return embeds.MDXFS, embeds.MDXPackage
 	}
 	panic("Internal error")
 }
@@ -150,11 +148,11 @@ func (r Runner) CreateApp() {
 ////////////////////////////////////////////////////////////////////////////////
 
 type Runner struct {
-	Command cli.Command
+	Command *cli.CreateCommand
 }
 
 func Run() {
-	cmd, err := cli.ParseCLIArguments()
+	command, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.ErrVersion:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
@@ -176,6 +174,6 @@ func Run() {
 		}
 	}
 
-	runner := Runner{Command: cmd}
+	runner := &Runner{Command: command}
 	runner.CreateApp()
 }

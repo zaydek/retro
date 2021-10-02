@@ -46,8 +46,8 @@ func (e CommandError) Unwrap() error {
 	return e.Err
 }
 
-func ParseCommand(args ...string) (Command, error) {
-	cmd := Command{
+func ParseCommand(args ...string) (*CreateCommand, error) {
+	command := &CreateCommand{
 		Template:  "starter",
 		Directory: "",
 	}
@@ -56,52 +56,52 @@ func ParseCommand(args ...string) (Command, error) {
 		err := CommandError{Kind: BadArgument, BadArgument: arg}
 		if strings.HasPrefix(arg, "--template") {
 			if len(arg) <= len("--template=") {
-				return Command{}, CommandError{Kind: BadTemplateValue}
+				return nil, CommandError{Kind: BadTemplateValue}
 			}
 			switch strings.ToLower(arg[len("--template="):]) {
 			case "starter":
-				cmd.Template = "starter"
+				command.Template = "starter"
 			case "sass":
-				cmd.Template = "sass"
+				command.Template = "sass"
 			case "mdx":
-				cmd.Template = "mdx"
+				command.Template = "mdx"
 			default:
-				return Command{}, CommandError{Kind: BadTemplateValue}
+				return nil, CommandError{Kind: BadTemplateValue}
 			}
 		} else if !strings.HasPrefix(arg, "--") {
 			once.Do(func() {
-				cmd.Directory = arg
+				command.Directory = arg
 			})
 		} else {
-			return Command{}, err
+			return nil, err
 		}
 	}
-	if cmd.Directory == "" {
-		return Command{}, CommandError{Kind: BadDirectoryValue}
+	if command.Directory == "" {
+		return nil, CommandError{Kind: BadDirectoryValue}
 	}
-	return cmd, nil
+	return command, nil
 }
 
-func ParseCLIArguments() (Command, error) {
+func ParseCLIArguments() (*CreateCommand, error) {
 	if len(os.Args) < 2 {
-		return Command{}, ErrUsage
+		return nil, ErrUsage
 	}
 
 	var (
-		cmd Command
-		err error
+		command *CreateCommand
+		err     error
 	)
 
 	// TODO: Previously --port was not passed as an option to the dev server. It’s
 	// not clear whether this is because of os.Args[2:] or something else.
 	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
-		return Command{}, ErrVersion
+		return nil, ErrVersion
 	} else if cmdArg == "usage" || cmdArg == "--usage" {
-		return Command{}, ErrUsage
+		return nil, ErrUsage
 	} else if cmdArg == "help" || cmdArg == "--help" {
-		return Command{}, ErrHelp
+		return nil, ErrHelp
 	} else {
-		cmd, err = ParseCommand(os.Args[1:]...)
+		command, err = ParseCommand(os.Args[1:]...)
 	}
-	return cmd, err
+	return command, err
 }

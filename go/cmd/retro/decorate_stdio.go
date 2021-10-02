@@ -29,19 +29,19 @@ func decorateStderrLine(line string) string {
 	return stdout
 }
 
-// (Node.js) stdout  ...
-// (Node.js) stdout  ...
-func decorateStdoutText(text string) string {
-	var stdout string
-	split := strings.Split(strings.TrimRight(text, "\n"), "\n")
-	for lineIndex, line := range split {
-		if lineIndex > 0 {
-			stdout += "\n"
-		}
-		stdout += decorateStdoutLine(line)
-	}
-	return stdout
-}
+// // (Node.js) stdout  ...
+// // (Node.js) stdout  ...
+// func decorateStdoutText(text string) string {
+// 	var stdout string
+// 	split := strings.Split(strings.TrimRight(text, "\n"), "\n")
+// 	for lineIndex, line := range split {
+// 		if lineIndex > 0 {
+// 			stdout += "\n"
+// 		}
+// 		stdout += decorateStdoutLine(line)
+// 	}
+// 	return stdout
+// }
 
 // (Node.js) stderr  ...
 // (Node.js) stderr  ...
