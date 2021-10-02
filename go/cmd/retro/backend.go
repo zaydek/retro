@@ -91,7 +91,7 @@ a:hover { text-decoration: underline; }
 }
 
 // Describes a build done message or a rebuild done message
-type DoneMessage struct {
+type Message struct {
 	Kind string
 	Data struct {
 		Vendor BundleResult

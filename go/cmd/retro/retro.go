@@ -54,11 +54,12 @@ func (a *App) Dev(options DevOptions) error {
 	}
 
 	var (
-		done DoneMessage
+		// Blocks the serve command
+		ready = make(chan struct{})
 
-		// TODO: Does this need to be buffered because of server-sent events (SSE)
-		// or something else
-		dev = make(chan DoneMessage)
+		// Sends messages to the serve command. Note that the dev channel needs to
+		// be buffered so send operations are non-blocking.
+		dev = make(chan Message, 1)
 
 		// Orchestrates `copyIndexHTMLEntryPoint`
 		once sync.Once
@@ -66,40 +67,43 @@ func (a *App) Dev(options DevOptions) error {
 
 	stdin <- "build"
 
-	// Use a for-loop so plugins can log repeatedly
-loop:
-	for {
-		select {
-		case line := <-stdout:
-			if err := json.Unmarshal([]byte(line), &done); err != nil {
-				// Log unmarshal errors so users can debug plugins, etc.
-				fmt.Println(decorateStdoutLine(line))
-			} else {
-				once.Do(func() {
-					entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
-					if err := copyIndexHTMLEntryPoint(entries); err != nil {
-						// Panic because of the goroutine
-						panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
-					}
-				})
-				// Done: Stop the Node.js runtime
+	go func() {
+		// TOOD: Where do we put `stdin <- "done"`?
+	loop:
+		for {
+			select {
+			case line := <-stdout:
+				var message Message
+				if err := json.Unmarshal([]byte(line), &message); err != nil {
+					// Log unmarshal errors so users can debug plugins, etc.
+					fmt.Println(decorateStdoutLine(line))
+				} else {
+					once.Do(func() {
+						entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
+						if err := copyIndexHTMLEntryPoint(entries); err != nil {
+							// Panic because of the goroutine
+							panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
+						}
+						ready <- struct{}{}
+					})
+					// stdin <- "done"
+					dev <- message
+					break loop
+				}
+			case text := <-stderr:
+				fmt.Fprintln(os.Stderr, decorateStderrText(text))
 				stdin <- "done"
-				break loop
+				os.Exit(1)
 			}
-		case text := <-stderr:
-			fmt.Fprintln(os.Stderr, decorateStderrText(text))
-			// Done: Stop the Node.js and Go runtime
-			stdin <- "done"
-			os.Exit(1)
 		}
-	}
+	}()
 
-	// DEBUG
-	bstr, err := json.MarshalIndent(done, "", "  ")
-	if err != nil {
-		return fmt.Errorf("json.MarshalIndent: %w", err)
-	}
-	fmt.Println(string(bstr))
+	// // DEBUG
+	// bstr, err := json.MarshalIndent(message, "", "  ")
+	// if err != nil {
+	// 	return fmt.Errorf("json.MarshalIndent: %w", err)
+	// }
+	// fmt.Println(string(bstr))
 
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
@@ -111,6 +115,7 @@ loop:
 		}
 	}()
 
+	<-ready
 	if err := a.Serve(ServeOptions{WarmUpFlag: false, Dev: dev}); err != nil {
 		return fmt.Errorf("a.Serve: %w", err)
 	}
@@ -120,102 +125,9 @@ loop:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// type BuildOptions struct {
-// 	WarmUpFlag bool
-// }
-//
-// func (r *App) Build(opt BuildOptions) {
-// 	var copyIndexHTMLEntryPoint func(string, string, string) error
-// 	if opt.WarmUpFlag {
-// 		var err error
-// 		copyIndexHTMLEntryPoint, err = r.warmUp()
-// 		switch err.(type) {
-// 		case HTMLError:
-// 			fmt.Fprintln(os.Stderr, format.Error(err.Error()))
-// 			os.Exit(1)
-// 		default:
-// 			if err != nil {
-// 				panic(err)
-// 			}
-// 		}
-// 	}
-//
-// 	root, err := getBase()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// 	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(filepath.Dir(root), "scripts/backend.esbuild.js"))
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// 	stdin <- ipc.Request{Kind: "build"}
-//
-// 	select {
-// 	case out := <-stdout:
-// 		// FIXME: stdout messages e.g. `console.log` from retro.config.js should not
-// 		// be treated as errors if they fail to unmarshal. The problem is that
-// 		// ipc.Message needs to be more blunt and simply provide a plaintext
-// 		// interface for interacting with stdout and stderr.
-// 		//
-// 		// See https://github.com/zaydek/retro/issues/8.
-// 		var res BackendResponse
-// 		if err := json.Unmarshal(out.Data, &res); err != nil {
-// 			panic(err)
-// 		}
-// 		if res.Dirty() {
-// 			fmt.Fprint(os.Stderr, res)
-// 			os.Exit(1)
-// 		}
-// 		vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
-// 		if err := copyIndexHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
-// 			panic(err)
-// 		}
-// 	case err := <-stderr:
-// 		fmt.Fprint(os.Stderr, err)
-// 	}
-//
-// 	infos, err := ls(RETRO_OUT_DIR)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	sort.Sort(infos)
-//
-// 	var sum int64
-// 	for _, v := range infos {
-// 		var color = terminal.Normal
-// 		if strings.HasSuffix(v.path, ".html") {
-// 			color = terminal.Normal
-// 		} else if strings.HasSuffix(v.path, ".js") || strings.HasSuffix(v.path, ".js.map") {
-// 			color = terminal.Yellow
-// 		} else if strings.HasSuffix(v.path, ".css") || strings.HasSuffix(v.path, ".css.map") {
-// 			color = terminal.Cyan
-// 		} else {
-// 			color = terminal.Dim
-// 		}
-//
-// 		fmt.Printf("%v%s%v\n",
-// 			color(v.path),
-// 			strings.Repeat(" ", 40-len(v.path)),
-// 			terminal.Dimf("(%s)", byteCount(v.size)),
-// 		)
-//
-// 		if !strings.HasSuffix(v.path, ".map") {
-// 			sum += v.size
-// 		}
-// 	}
-//
-// 	fmt.Println(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", byteCount(sum)))
-// 	fmt.Println()
-// 	fmt.Println(terminal.Dimf("(%s)", time.Since(EPOCH)))
-// }
-
-////////////////////////////////////////////////////////////////////////////////
-
 type ServeOptions struct {
 	WarmUpFlag bool
-	Dev        chan DoneMessage
+	Dev        chan Message
 }
 
 func (a *App) Serve(options ServeOptions) error {
@@ -242,27 +154,33 @@ func (a *App) Serve(options ServeOptions) error {
 		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
 		1,
 	)
+	fmt.Println(contents)
 
-	// Create a done message; gets updated by the server-sent events (SSE) block
-	var done DoneMessage
-
+	var message Message
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/__dev__" {
 			return
 		}
 
+		// // DEBUG
+		// bstr, err := json.MarshalIndent(done, "", "  ")
+		// if err != nil {
+		// 	panic(fmt.Errorf("json.MarshalIndent: %w", err))
+		// }
+		// fmt.Println(string(bstr))
+
 		// 500 Server error (esbuild errors)
-		if done.Data.Vendor.IsDirty() {
+		if message.Data.Vendor.IsDirty() {
 			// Mirror errors to the browser and the terminal
 			terminal.Clear(os.Stderr)
-			fmt.Fprint(w, done.Data.Vendor.HTML())
-			fmt.Fprint(os.Stderr, done)
+			fmt.Fprint(w, message.Data.Vendor.HTML())
+			fmt.Fprint(os.Stderr, message)
 			return
-		} else if done.Data.Client.IsDirty() {
+		} else if message.Data.Client.IsDirty() {
 			// Mirror errors to the browser and the terminal
 			terminal.Clear(os.Stderr)
-			fmt.Fprint(w, done.Data.Client.HTML())
-			fmt.Fprint(os.Stderr, done)
+			fmt.Fprint(w, message.Data.Client.HTML())
+			fmt.Fprint(os.Stderr, message)
 			return
 		}
 
@@ -288,7 +206,7 @@ func (a *App) Serve(options ServeOptions) error {
 
 	// Add handler for dev events
 	if a.getCommandKind() == KindDevCommand {
-		http.HandleFunc("/__dev__", func(w http.ResponseWriter, req *http.Request) {
+		http.HandleFunc("/__dev__", func(w http.ResponseWriter, r *http.Request) {
 			// Add headers for server-sent events (SSE)
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-cache")
@@ -297,12 +215,14 @@ func (a *App) Serve(options ServeOptions) error {
 			if !ok {
 				panic("w.(http.Flusher)")
 			}
+			// fmt.Println("Here")
 			for {
 				select {
-				case done = <-options.Dev:
+				case message = <-options.Dev:
+					// fmt.Println("A reload event occurred")
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
-				case <-req.Context().Done():
+				case <-r.Context().Done():
 					return
 				}
 			}
