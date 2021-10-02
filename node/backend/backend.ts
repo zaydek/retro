@@ -62,14 +62,14 @@ async function buildVendorBundle(): Promise<t.BundleMetadata> {
 }
 
 // Builds the client bundle (e.g. Retro) and sets the global client variable
+//
+// TODO: Add support for bundling `App.js` to `out/.retro`?
 async function buildClientBundle(): Promise<t.BundleMetadata> {
 	const client: t.BundleMetadata = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
-
-	// console.error(JSON.stringify(buildClientConfiguration(globalUserConfiguration)))
 
 	try {
 		globalClientBuildResult = await esbuild.build({
@@ -125,7 +125,7 @@ async function rebuildClientBundle(): Promise<t.BundleMetadata> {
 	return client
 }
 
-function sleep(durationMs) {
+function sleep(durationMs: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, durationMs))
 }
 

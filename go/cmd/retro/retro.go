@@ -54,13 +54,8 @@ func (a *App) Dev(options DevOptions) error {
 	}
 
 	var (
-		// Blocks the serve command
 		ready = make(chan struct{})
 		dev   = make(chan Message, 1)
-
-		// // Sends messages to the serve command. Note that the dev channel needs to
-		// // be buffered so send operations are non-blocking.
-		// dev = make(chan Message, 1)
 
 		// Orchestrates `copyIndexHTMLEntryPoint`
 		once sync.Once
@@ -68,7 +63,7 @@ func (a *App) Dev(options DevOptions) error {
 
 	stdin <- "build"
 
-	// TODO: Where do we put `stdin <- "done"`?
+	// TODO: Do we have zombie Node.js processes?
 	go func() {
 		for {
 			select {
@@ -109,8 +104,6 @@ func (a *App) Dev(options DevOptions) error {
 				// Panic because of the goroutine
 				panic(fmt.Errorf("watch.Directory: %w", result.Err))
 			}
-			// DEBUG
-			fmt.Println("Sending a watch event")
 			stdin <- "rebuild"
 		}
 	}()
@@ -156,17 +149,6 @@ func (a *App) Serve(options ServeOptions) error {
 		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
 		1,
 	)
-
-	// contents := a.IndexHTMLEntryPointContents
-	// if a.getCommandKind() == KindDevCommand {
-	// 	contents = strings.Replace(
-	// 		string(contents),
-	// 		"</body>",
-	// 		// Add server-sent events (SSE)
-	// 		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
-	// 		1,
-	// 	)
-	// }
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -295,9 +277,9 @@ func Run() {
 		if err := app.Dev(DevOptions{WarmUpFlag: true}); err != nil {
 			panic(fmt.Errorf("app.Dev: %w", err))
 		}
-		// case cli.BuildCommand:
-		// 	app.Build(BuildOptions{WarmUpFlag: true})
-		// case cli.ServeCommand:
-		// 	app.Serve(ServeOptions{})
+	// case cli.BuildCommand:
+	// 	app.Build(BuildOptions{WarmUpFlag: true})
+	case *cli.ServeCommand:
+		app.Serve(ServeOptions{})
 	}
 }
