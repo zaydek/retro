@@ -87,8 +87,8 @@ func buildServeCommandSuccess(port int) string {
 		"dial udp 8.8.8.8:80: connect: network is unreachable",
 	)
 
-	cwd, _ := os.Getwd()
-	base := filepath.Base(cwd)
+	workingDirectory, _ := os.Getwd()
+	base := filepath.Base(workingDirectory)
 	if isNetworkUnreachable {
 		return terminal.Green("Compiled successfully!") + `
 
@@ -112,6 +112,8 @@ To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+var epoch = time.Now()
 
 func buildBuildCommandSuccess(directory string) (string, error) {
 	var str string
@@ -143,7 +145,7 @@ func buildBuildCommandSuccess(directory string) (string, error) {
 
 	str += fmt.Sprintln(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", fsUtils.ByteCountIEC(sum)))
 	str += fmt.Sprintln()
-	str += fmt.Sprintln(terminal.Dimf("(%s)", time.Since(EPOCH)))
+	str += fmt.Sprintln(terminal.Dimf("(%s)", time.Since(epoch)))
 
 	return str, nil
 }

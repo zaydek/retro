@@ -7,30 +7,30 @@ import (
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
-// (Node.js) stdout  ...
+// (retro:node) stdout  ...
 func formatStdoutLine(line string) string {
 	stdout := fmt.Sprintf(
 		"%s %s  %s",
-		terminal.Dim("(Node.js)"),
+		terminal.Dim("(retro:node)"),
 		terminal.BoldCyan("stdout"),
 		line,
 	)
 	return stdout
 }
 
-// (Node.js) stderr  ...
+// (retro:node) stderr  ...
 func formatStderrLine(line string) string {
 	stdout := fmt.Sprintf(
 		"%s %s  %s",
-		terminal.Dim("(Node.js)"),
+		terminal.Dim("(retro:node)"),
 		terminal.BoldRed("stderr"),
 		line,
 	)
 	return stdout
 }
 
-// (Node.js) stdout  ...
-// (Node.js) stdout  ...
+// (retro:node) stdout  ...
+// (retro:node) stdout  ...
 func formatStdoutText(text string) string {
 	var stdout string
 	split := strings.Split(strings.TrimRight(text, "\n"), "\n")
@@ -43,8 +43,8 @@ func formatStdoutText(text string) string {
 	return stdout
 }
 
-// (Node.js) stderr  ...
-// (Node.js) stderr  ...
+// (retro:node) stderr  ...
+// (retro:node) stderr  ...
 func formatStderrText(text string) string {
 	var stderr string
 	split := strings.Split(strings.TrimRight(text, "\n"), "\n")

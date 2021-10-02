@@ -39,6 +39,19 @@ func Accent(str string, accent func(args ...interface{}) string) string {
 	return strings.Join(arr, "\n")
 }
 
+func NonError(x interface{}) string {
+	var str string
+	switch v := x.(type) {
+	case string:
+		str = v
+	case error:
+		str = v.Error()
+	default:
+		panic("Internal error")
+	}
+	return Pad(Tabs(Accent(str, terminal.Cyan)))
+}
+
 func Error(x interface{}) string {
 	var str string
 	switch v := x.(type) {

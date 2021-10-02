@@ -34,11 +34,11 @@ func TestDirectory(t *testing.T) {
 		}
 	}()
 
-	check(t, ioutil.WriteFile(path.Join(dir, "a"), []byte("Hello, world!\n"), 0644))
+	check(t, os.WriteFile(path.Join(dir, "a"), []byte("Hello, world!\n"), 0644))
 	time.Sleep(10 * time.Millisecond)
-	check(t, ioutil.WriteFile(path.Join(dir, "b"), []byte("Hello, world!\n"), 0644))
+	check(t, os.WriteFile(path.Join(dir, "b"), []byte("Hello, world!\n"), 0644))
 	time.Sleep(10 * time.Millisecond)
-	check(t, ioutil.WriteFile(path.Join(dir, "c"), []byte("Hello, world!\n"), 0644))
+	check(t, os.WriteFile(path.Join(dir, "c"), []byte("Hello, world!\n"), 0644))
 	time.Sleep(10 * time.Millisecond)
 
 	expect.DeepEqual(t, count, 3)

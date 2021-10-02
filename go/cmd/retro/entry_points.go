@@ -3,7 +3,6 @@ package retro
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,8 +30,8 @@ func copyDefaultIndexHTMLEntryPoint() error {
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(indexHTML), perm.BitsFile); err != nil {
-		return fmt.Errorf("ioutil.WriteFile: %w", err)
+	if err := os.WriteFile(filename, []byte(indexHTML), perm.BitsFile); err != nil {
+		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil
 }
@@ -44,8 +43,8 @@ func copyDefaultIndexJSEntryPoint() error {
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(indexJS), perm.BitsFile); err != nil {
-		return fmt.Errorf("ioutil.WriteFile: %w", err)
+	if err := os.WriteFile(filename, []byte(indexJS), perm.BitsFile); err != nil {
+		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil
 }
@@ -57,8 +56,8 @@ func copyDefaultAppJSEntryPoint() error {
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(appJS), perm.BitsFile); err != nil {
-		return fmt.Errorf("ioutil.WriteFile: %w", err)
+	if err := os.WriteFile(filename, []byte(appJS), perm.BitsFile); err != nil {
+		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil
 }
@@ -262,8 +261,8 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
 	// out/www/index.html
-	if err := ioutil.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
-		return fmt.Errorf("ioutil.WriteFile: %w", err)
+	if err := os.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
+		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil
 }

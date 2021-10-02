@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -14,6 +13,7 @@ import (
 	"github.com/zaydek/retro/go/cmd/create_retro_app/embeds"
 	"github.com/zaydek/retro/go/cmd/deps"
 	"github.com/zaydek/retro/go/cmd/format"
+	"github.com/zaydek/retro/go/cmd/perm"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
@@ -54,7 +54,7 @@ func (r App) CreateApp() error {
 			)
 			os.Exit(1)
 		}
-		if err := os.MkdirAll(r.Command.Directory, MODE_DIR); err != nil {
+		if err := os.MkdirAll(r.Command.Directory, perm.BitsDirectory); err != nil {
 			return fmt.Errorf("os.MkdirAll: %w", err)
 		}
 		if err := os.Chdir(r.Command.Directory); err != nil {
@@ -110,7 +110,7 @@ func (r App) CreateApp() error {
 	paths = paths[1:]
 	for _, v := range paths {
 		if dir := filepath.Dir(v); dir != "." {
-			if err := os.MkdirAll(dir, MODE_DIR); err != nil {
+			if err := os.MkdirAll(dir, perm.BitsDirectory); err != nil {
 				return fmt.Errorf("os.MkdirAll: %w", err)
 			}
 		}
@@ -135,8 +135,8 @@ func (r App) CreateApp() error {
 		return fmt.Errorf("pkg.Execute: %w", err)
 	}
 
-	if err := ioutil.WriteFile("package.json", buf.Bytes(), MODE_FILE); err != nil {
-		return fmt.Errorf("ioutil.WriteFile: %w", err)
+	if err := os.WriteFile("package.json", buf.Bytes(), perm.BitsFile); err != nil {
+		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 
 	if r.Command.Directory == "." {

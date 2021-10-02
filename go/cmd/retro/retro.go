@@ -19,12 +19,6 @@ import (
 	"github.com/zaydek/retro/go/pkg/watch"
 )
 
-var EPOCH = time.Now()
-
-var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
-
-////////////////////////////////////////////////////////////////////////////////
-
 type DevOptions struct {
 	WarmUpFlag bool
 }
@@ -52,12 +46,13 @@ func (a *App) Dev(options DevOptions) error {
 		// Blocks the serve command
 		ready = make(chan struct{})
 
-		// Sends messages to `/__dev__` HTTP handler
+		// Sends messages to the `/__dev__` HTTP handler
 		dev = make(chan Message)
 	)
 
 	go func() {
 		stdin <- "build"
+		// defer func() { stdin <- "done" }() // DEBUG
 
 		var once sync.Once
 		for {
@@ -79,6 +74,7 @@ func (a *App) Dev(options DevOptions) error {
 				}
 			case text := <-stderr:
 				fmt.Fprintln(os.Stderr, formatStderrText(text))
+				// stdin <- "done" // DEBUG
 				os.Exit(1)
 			}
 		}
@@ -127,6 +123,7 @@ func (a *App) Build(options BuildOptions) error {
 	}
 
 	stdin <- "build"
+	// defer func() { stdin <- "done" }() // DEBUG
 
 loop:
 	for {
@@ -149,6 +146,7 @@ loop:
 			}
 		case text := <-stderr:
 			fmt.Fprintln(os.Stderr, formatStderrText(text))
+			// stdin <- "done" // DEBUG
 			os.Exit(1)
 		}
 	}
@@ -190,7 +188,6 @@ func (a *App) Serve(options ServeOptions) error {
 	contents := strings.Replace(
 		string(bstr),
 		"</body>",
-		// Add server-sent events (SSE)
 		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
 		1,
 	)
@@ -224,7 +221,6 @@ func (a *App) Serve(options ServeOptions) error {
 	// Path for server-sent events (SSE)
 	http.HandleFunc("/__dev__", func(w http.ResponseWriter, r *http.Request) {
 		if a.getCommandKind() == KindDevCommand {
-			// Add headers for server-sent events (SSE)
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-cache")
 			w.Header().Set("Connection", "keep-alive")
@@ -278,7 +274,7 @@ func Run() {
 		panic(fmt.Errorf("getDirname: %w", err))
 	}
 
-	// Parse the CLI arguments and guard sentinel errors
+	// Parse the CLI arguments and guard errors
 	command, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.ErrVersion:
@@ -287,14 +283,12 @@ func Run() {
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
-		// TODO: Clean this up; this is too vague
-		fmt.Println(format.Pad(format.Tabs(cyan(usage))))
+		fmt.Println(format.NonError(usage))
 		return
 	}
 
 	switch err.(type) {
 	case cli.CommandError:
-		// TODO: Clean this up; this is too vague
 		fmt.Fprintln(os.Stderr, format.Error(err))
 		os.Exit(1)
 	default:
