@@ -199,7 +199,25 @@ loop:
 			var message Message
 			if err := json.Unmarshal([]byte(line), &message); err == nil {
 				once.Do(func() {
+
+					if message.Data.Vendor.IsDirty() {
+						fmt.Fprint(os.Stderr, message.Data.Vendor.String())
+						os.Exit(1)
+					} else if message.Data.Client.IsDirty() {
+						fmt.Fprint(os.Stderr, message.Data.Client.String())
+						os.Exit(1)
+					}
+
 					// entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
+
+					bstr, err := json.MarshalIndent(message, "", "  ")
+					if err != nil {
+						panic(err)
+					}
+					fmt.Println(string(bstr))
+
+					os.Exit(0)
+
 					entries := message.getChunkedNames()
 					if err := copyIndexHTMLEntryPoint(entries); err != nil {
 						// Panic because of the goroutine
@@ -418,8 +436,8 @@ func Run() {
 	switch app.Command.(type) {
 	case cli.DevCommand:
 		err = app.Dev(DevOptions{WarmUpFlag: true})
-	// case cli.BuildCommand:
-	// 	err = app.Build(BuildOptions{WarmUpFlag: true})
+	case cli.BuildCommand:
+		err = app.Build(BuildOptions{WarmUpFlag: true})
 	case cli.ServeCommand:
 		err = app.Serve(ServeOptions{})
 	}
