@@ -1,4 +1,4 @@
-package create_retro_app
+package ipc
 
 import "fmt"
 

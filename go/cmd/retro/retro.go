@@ -67,9 +67,9 @@ func (a *App) Dev(options DevOptions) error {
 				} else {
 					once.Do(func() {
 						entries := message.getChunkedEntrypoints()
-						if err := copyIndexHTMLEntryPoint(entries); err != nil {
-							panic(decorate(&err, "copyIndexHTMLEntryPoint"))
-						}
+						err := copyIndexHTMLEntryPoint(entries)
+						decorate(&err, "copyIndexHTMLEntryPoint")
+						must(err)
 						ready <- struct{}{}
 					})
 					dev <- message
@@ -84,9 +84,9 @@ func (a *App) Dev(options DevOptions) error {
 
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
-			if result.Err != nil {
-				panic(decorate(&err, "watch.Directory"))
-			}
+			err := result.Err
+			decorate(&err, "watch.Directory")
+			must(err)
 			stdin <- "rebuild"
 		}
 	}()
@@ -185,7 +185,7 @@ func (a *App) Serve(options ServeOptions) error {
 		if err != nil {
 			return decorate(&err, "os.ReadFile")
 		}
-		contents = strings.Replace(string(bstr), "</body>", fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub), 1)
+		contents = strings.Replace(string(bstr), "</body>", fmt.Sprintf("\t%s\n\t</body>", htmlServerSentEvents), 1)
 	}
 
 	var (

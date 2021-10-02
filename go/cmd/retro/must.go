@@ -2,7 +2,7 @@ package retro
 
 import "fmt"
 
-// Decorates and returns a non-nil error pointer
+// Decorates a non-nil error pointer and returns the error
 func decorate(errPointer *error, wrap string) error {
 	if !(errPointer != nil && *errPointer != nil) {
 		return nil

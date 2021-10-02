@@ -63,9 +63,9 @@ func NewCommand(ctx context.Context, commandArgs ...string) (stdin, stdout, stde
 				stdout <- line
 			}
 		}
-		if err := scanner.Err(); err != nil {
-			panic(fmt.Errorf("scanner.Err: %w", err))
-		}
+		err := scanner.Err()
+		decorate(&err, "scanner.Err")
+		must(err)
 	}()
 
 	stderr = make(chan string)
@@ -86,9 +86,9 @@ func NewCommand(ctx context.Context, commandArgs ...string) (stdin, stdout, stde
 				"\n", // Remove the EOF
 			)
 		}
-		if err := scanner.Err(); err != nil {
-			panic(fmt.Errorf("scanner.Err: %w", err))
-		}
+		err := scanner.Err()
+		decorate(&err, "scanner.Err")
+		must(err)
 	}()
 
 	return stdin, stdout, stderr, nil

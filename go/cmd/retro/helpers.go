@@ -80,16 +80,15 @@ func getIP() (net.IP, error) {
 }
 
 func makeServeSuccess(port int) string {
-	// Get the IP address and a flag describing the user's offline
 	ip, err := getIP()
-	isNetworkUnreachable := err != nil && strings.HasSuffix(
+	isOffline := err != nil && strings.HasSuffix(
 		err.Error(),
 		"dial udp 8.8.8.8:80: connect: network is unreachable",
 	)
 
 	workingDirectory, _ := os.Getwd()
 	base := filepath.Base(workingDirectory)
-	if isNetworkUnreachable {
+	if isOffline {
 		return terminal.Green("Compiled successfully!") + `
 
 You can now view ` + terminal.Bold(base) + ` in the browser.
