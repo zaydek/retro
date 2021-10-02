@@ -166,6 +166,8 @@ async function main(): Promise<void> {
 				// NOTE: Use `process.exit(0)` because `return` doesn't stop the Node.js
 				// runtime
 				process.exit(0)
+			default:
+				throw new Error("Internal error")
 		}
 		await sleep(100)
 	}

@@ -18,9 +18,6 @@ type App struct {
 	// - *cli.ServeCommand
 	//
 	Command interface{}
-
-	// Contents of the transformed `out/www/index.html`
-	IndexHTMLEntryPointContents string
 }
 
 // Gets the app's command kind; one of dev, build, or serve

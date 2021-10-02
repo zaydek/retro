@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -76,12 +77,10 @@ func (a *App) Dev(options DevOptions) error {
 				if err := json.Unmarshal([]byte(line), &message); err == nil {
 					once.Do(func() {
 						entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
-						contents, err := copyIndexHTMLEntryPoint(entries)
-						if err != nil {
+						if err := copyIndexHTMLEntryPoint(entries); err != nil {
 							// Panic because of the goroutine
 							panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
 						}
-						a.IndexHTMLEntryPointContents = contents
 						ready <- struct{}{}
 					})
 					dev <- message
@@ -145,8 +144,36 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 	}
 
+	// out/index.html
+	bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+	if err != nil {
+		return fmt.Errorf("os.ReadFile: %w", err)
+	}
+	contents := strings.Replace(
+		string(bstr),
+		"</body>",
+		// Add server-sent events (SSE)
+		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
+		1,
+	)
+
+	// contents := a.IndexHTMLEntryPointContents
+	// if a.getCommandKind() == KindDevCommand {
+	// 	contents = strings.Replace(
+	// 		string(contents),
+	// 		"</body>",
+	// 		// Add server-sent events (SSE)
+	// 		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
+	// 		1,
+	// 	)
+	// }
+
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// if r.URL.String() == "/__dev__" {
+		// 	return
+		// }
+
 		// 500 Server error
 		if message.Data.Vendor.IsDirty() {
 			// Log mirrored vendor errors and warnings to the browser and stderr
@@ -170,13 +197,12 @@ func (a *App) Serve(options ServeOptions) error {
 			return
 		} else if a.getCommandKind() == KindDevCommand {
 			// Serve `out/www.index.html` + server-sent events (SSE)
-			fmt.Fprint(w, a.IndexHTMLEntryPointContents)
+			fmt.Fprint(w, contents)
 			if err := buildSuccess(a.getPort()); err != nil {
 				panic(fmt.Errorf("buildSuccess: %w", err))
 			}
 		} else {
 			// Serve `out/www.index.html`
-			// TODO: Does Go cache `http.ServeFile` responses?
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
 			if err := buildSuccess(a.getPort()); err != nil {
 				panic(fmt.Errorf("buildSuccess: %w", err))

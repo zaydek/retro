@@ -37,7 +37,7 @@ bin-create-retro-app:
 
 # Makes `retro`
 bin-retro:
-	make bundle-backend
+	make bundle
 	go build -o=retro main_retro.go && mv retro ~/github/bin
 
 # Makes all binaries in parallel
@@ -80,7 +80,7 @@ build-create-retro-app:
 # Builds Go binaries and creates a placeholder executable for the post-
 # installation script
 build-retro:
-	make bundle-backend
+	make bundle
 
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/darwin-64 main_retro.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64 main_retro.go
