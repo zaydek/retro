@@ -10,11 +10,17 @@ var (
 	KindServeCommand CommandKind = "serve"
 )
 
-// Abstraction on top of the returned CLI command
 type App struct {
-	// One of `*cli.DevCommand`, `*cli.BuildCommand`, or `*cli.ServeCommand`. Note
-	// that pointers are used because port numbers may be incremented.
+	// One of:
+	//
+	// - *cli.DevCommand
+	// - *cli.BuildCommand
+	// - *cli.ServeCommand
+	//
 	Command interface{}
+
+	// Contents of the transformed `out/www/index.html`
+	IndexHTMLEntryPointContents string
 }
 
 // Gets the app's command kind; one of dev, build, or serve

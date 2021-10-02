@@ -227,16 +227,16 @@ type entryPoints struct {
 	clientJS  string // The bundled client JS filename
 }
 
-func copyIndexHTMLEntryPoint(entries entryPoints) error {
+func copyIndexHTMLEntryPoint(entries entryPoints) (contents string, err error) {
 	// www/index.html
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	bstr, err := os.ReadFile(filename)
 	if err != nil {
-		return fmt.Errorf("os.ReadFile: %w", err)
+		return "", fmt.Errorf("os.ReadFile: %w", err)
 	}
 
 	// <link rel="stylesheet" href="/client.css" />
-	contents := string(bstr)
+	contents = string(bstr)
 	contents = strings.Replace(
 		contents,
 		`<link rel="stylesheet" href="/client.css" />`,
@@ -263,13 +263,13 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	// out/www
 	target := filepath.Join(RETRO_OUT_DIR, filename)
 	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
-		return fmt.Errorf("os.MkdirAll: %w", err)
+		return "", fmt.Errorf("os.MkdirAll: %w", err)
 	}
 
 	// out/www/index.html
 	if err := ioutil.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
-		return fmt.Errorf("ioutil.WriteFile: %w", err)
+		return "", fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
 
-	return nil
+	return contents, nil
 }

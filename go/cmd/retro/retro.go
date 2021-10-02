@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -77,14 +76,14 @@ func (a *App) Dev(options DevOptions) error {
 				if err := json.Unmarshal([]byte(line), &message); err == nil {
 					once.Do(func() {
 						entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
-						if err := copyIndexHTMLEntryPoint(entries); err != nil {
+						contents, err := copyIndexHTMLEntryPoint(entries)
+						if err != nil {
 							// Panic because of the goroutine
 							panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
 						}
+						a.IndexHTMLEntryPointContents = contents
 						ready <- struct{}{}
 					})
-					// DEBUG
-					fmt.Println("Sending a done message")
 					dev <- message
 				} else {
 					// Log unmarshal errors so users can debug plugins, etc.
@@ -98,7 +97,7 @@ func (a *App) Dev(options DevOptions) error {
 		}
 	}()
 
-	// // DEBUG
+	// DEBUG
 	// bstr, err := json.MarshalIndent(message, "", "  ")
 	// if err != nil {
 	// 	return fmt.Errorf("json.MarshalIndent: %w", err)
@@ -133,6 +132,8 @@ type ServeOptions struct {
 }
 
 func (a *App) Serve(options ServeOptions) error {
+	var message Message
+
 	if options.WarmUpFlag {
 		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
@@ -144,63 +145,38 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 	}
 
-	// out/index.html
-	//
-	// TODO: Theoretically this should already be in memory, attached to the app
-	// context
-	bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
-	if err != nil {
-		return err
-	}
-	contents := strings.Replace(
-		string(bstr),
-		"</body>",
-		// Add server-sent events (SSE)
-		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
-		1,
-	)
-
-	var message Message
+	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/__dev__" {
-			return
-		}
-
-		// // DEBUG
-		// bstr, err := json.MarshalIndent(done, "", "  ")
-		// if err != nil {
-		// 	panic(fmt.Errorf("json.MarshalIndent: %w", err))
-		// }
-		// fmt.Println(string(bstr))
-
-		// 500 Server error (esbuild errors)
+		// 500 Server error
 		if message.Data.Vendor.IsDirty() {
-			// Mirror errors to the browser and stderr
+			// Log mirrored vendor errors and warnings to the browser and stderr
 			terminal.Clear(os.Stderr)
 			fmt.Fprint(w, message.Data.Vendor.HTML())
 			fmt.Fprint(os.Stderr, message.Data.Vendor.String())
 			return
 		} else if message.Data.Client.IsDirty() {
-			// Mirror errors to the browser and stderr
+			// Log mirrored client errors and warnings to the browser and stderr
 			terminal.Clear(os.Stderr)
 			fmt.Fprint(w, message.Data.Client.HTML())
 			fmt.Fprint(os.Stderr, message.Data.Client.String())
 			return
 		}
 
-		url := getFilesystemPath(r.URL.Path)
-		if extension := filepath.Ext(url); extension != "" && extension != ".html" {
-			// 200 OK - Serve non-HTML
-			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, url))
+		// 200 OK
+		filesystemPath := getFilesystemPath(r.URL.Path)
+		if extension := filepath.Ext(filesystemPath); extension != "" && extension != ".html" {
+			// Serve non-HTML resources
+			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, filesystemPath))
 			return
 		} else if a.getCommandKind() == KindDevCommand {
-			// 200 OK - Serve HTML + server-sent events (SSE)
-			fmt.Fprint(w, contents)
+			// Serve `out/www.index.html` + server-sent events (SSE)
+			fmt.Fprint(w, a.IndexHTMLEntryPointContents)
 			if err := buildSuccess(a.getPort()); err != nil {
 				panic(fmt.Errorf("buildSuccess: %w", err))
 			}
 		} else {
-			// 200 OK - Serve HTML
+			// Serve `out/www.index.html`
+			// TODO: Does Go cache `http.ServeFile` responses?
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
 			if err := buildSuccess(a.getPort()); err != nil {
 				panic(fmt.Errorf("buildSuccess: %w", err))
@@ -208,9 +184,9 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 	})
 
-	// Add handler for dev events
-	if a.getCommandKind() == KindDevCommand {
-		http.HandleFunc("/__dev__", func(w http.ResponseWriter, r *http.Request) {
+	// Path for server-sent events (SSE)
+	http.HandleFunc("/__dev__", func(w http.ResponseWriter, r *http.Request) {
+		if a.getCommandKind() == KindDevCommand {
 			// Add headers for server-sent events (SSE)
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-cache")
@@ -222,16 +198,14 @@ func (a *App) Serve(options ServeOptions) error {
 			for {
 				select {
 				case message = <-options.Dev:
-					// DEBUG
-					fmt.Println("Receiving a done message")
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-r.Context().Done():
 					return
 				}
 			}
-		})
-	}
+		}
+	})
 
 	go func() {
 		time.Sleep(10 * time.Millisecond)
