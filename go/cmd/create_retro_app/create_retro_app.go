@@ -21,7 +21,7 @@ var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func (r Runner) getFSAndPkg() (fs.FS, *template.Template) {
+func (r App) getFSAndPkg() (fs.FS, *template.Template) {
 	switch r.Command.Template {
 	case "starter":
 		return embeds.StarterFS, embeds.StarterPackage
@@ -32,7 +32,7 @@ func (r Runner) getFSAndPkg() (fs.FS, *template.Template) {
 }
 
 // TODO: Fix the panics
-func (r Runner) CreateApp() {
+func (r App) CreateApp() error {
 	fsys, pkg := r.getFSAndPkg()
 
 	appName := r.Command.Directory
@@ -55,10 +55,10 @@ func (r Runner) CreateApp() {
 			os.Exit(1)
 		}
 		if err := os.MkdirAll(r.Command.Directory, MODE_DIR); err != nil {
-			panic(err)
+			return fmt.Errorf("os.MkdirAll: %w", err)
 		}
 		if err := os.Chdir(r.Command.Directory); err != nil {
-			panic(err)
+			return fmt.Errorf("os.Chdir: %w", err)
 		}
 		defer os.Chdir("..")
 	}
@@ -75,7 +75,7 @@ func (r Runner) CreateApp() {
 		return nil
 	})
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("fs.WalkDir: %w", err))
 	}
 
 	var badPaths []string
@@ -111,19 +111,19 @@ func (r Runner) CreateApp() {
 	for _, v := range paths {
 		if dir := filepath.Dir(v); dir != "." {
 			if err := os.MkdirAll(dir, MODE_DIR); err != nil {
-				panic(err)
+				return fmt.Errorf("os.MkdirAll: %w", err)
 			}
 		}
 		src, err := fsys.Open(v)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("fsys.Open: %w", err)
 		}
 		dst, err := os.Create(v)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("os.Create: %w", err)
 		}
 		if _, err := io.Copy(dst, src); err != nil {
-			panic(err)
+			return fmt.Errorf("io.Copy: %w", err)
 		}
 		src.Close()
 		dst.Close()
@@ -132,11 +132,11 @@ func (r Runner) CreateApp() {
 	var buf bytes.Buffer
 	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
 	if err := pkg.Execute(&buf, deps.Deps); err != nil {
-		panic(err)
+		return fmt.Errorf("pkg.Execute: %w", err)
 	}
 
 	if err := ioutil.WriteFile("package.json", buf.Bytes(), MODE_FILE); err != nil {
-		panic(err)
+		return fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
 
 	if r.Command.Directory == "." {
@@ -144,11 +144,13 @@ func (r Runner) CreateApp() {
 	} else {
 		fmt.Println(format.Tabs(fmt.Sprintf(successDirFmt, appName)))
 	}
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type Runner struct {
+type App struct {
 	Command cli.CreateCommand
 }
 
@@ -171,10 +173,12 @@ func Run() {
 		os.Exit(1)
 	default:
 		if err != nil {
-			panic(err)
+			panic(fmt.Errorf("cli.ParseCLIArguments: %w", err))
 		}
 	}
 
-	runner := &Runner{Command: command}
-	runner.CreateApp()
+	app := &App{Command: command}
+	if err := app.CreateApp(); err != nil {
+		panic(fmt.Errorf("app.CreateApp: %w", err))
+	}
 }

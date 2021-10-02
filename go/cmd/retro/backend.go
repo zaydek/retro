@@ -40,7 +40,6 @@ func (r BundleResult) HTML() string {
 	<head>
 		<title>Build Error</title>
 		<style>
-
 html {
 	color: #c7c7c7;
 	background-color: #000000;
@@ -75,7 +74,6 @@ a:hover { text-decoration: underline; }
 .term-fg1.term-fg35 { color: #ff76ff; }
 .term-fg1.term-fg36 { color: #5ffdff; }
 .term-fg1.term-fg37 { color: #feffff; }
-
 		</style>
 	</head>
 	<body>
@@ -94,17 +92,26 @@ type Message struct {
 	}
 }
 
-func (r Message) getChunkedNames() entryPoints {
+func (m Message) GetDirty() BundleResult {
+	if m.Data.Vendor.IsDirty() {
+		return m.Data.Vendor
+	} else if m.Data.Client.IsDirty() {
+		return m.Data.Client
+	}
+	return BundleResult{}
+}
+
+func (m Message) getChunkedNames() entryPoints {
 	// Get the vendor JS filename
 	var entries entryPoints
-	for key := range r.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
+	for key := range m.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".js") {
 			entries.vendorJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
 			break
 		}
 	}
 	// Get the client CSS and JS filenames
-	for key := range r.Data.Client.Metafile["outputs"].(map[string]interface{}) {
+	for key := range m.Data.Client.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".css") {
 			entries.clientCSS, _ = filepath.Rel(RETRO_OUT_DIR, key)
 			if entries.clientJS != "" { // Check other

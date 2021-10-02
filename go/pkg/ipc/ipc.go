@@ -63,7 +63,6 @@ func NewCommand(commandArgs ...string) (stdin, stdout, stderr chan string, err e
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			// Panic because of the goroutine
 			panic(fmt.Errorf("scanner.Err: %w", err))
 		}
 	}()
@@ -87,7 +86,6 @@ func NewCommand(commandArgs ...string) (stdin, stdout, stderr chan string, err e
 			)
 		}
 		if err := scanner.Err(); err != nil {
-			// Panic because of the goroutine
 			panic(fmt.Errorf("scanner.Err: %w", err))
 		}
 	}()

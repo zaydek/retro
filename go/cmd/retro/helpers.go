@@ -5,8 +5,11 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 
+	"github.com/zaydek/retro/go/pkg/fsUtils"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
@@ -120,4 +123,41 @@ To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + 
 	}
 
 	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func buildLog(directory string) (string, error) {
+	var str string
+
+	lsInfos, err := fsUtils.List(directory)
+	if err != nil {
+		return "", fmt.Errorf("fsUtils.List: %w", err)
+	}
+	sort.Sort(lsInfos)
+
+	var sum int64
+	for _, lsInfo := range lsInfos {
+		var color = terminal.Normal
+		if strings.HasSuffix(lsInfo.Path, ".html") {
+			color = terminal.Normal
+		} else if strings.HasSuffix(lsInfo.Path, ".js") || strings.HasSuffix(lsInfo.Path, ".js.map") {
+			color = terminal.Yellow
+		} else if strings.HasSuffix(lsInfo.Path, ".css") || strings.HasSuffix(lsInfo.Path, ".css.map") {
+			color = terminal.Cyan
+		} else {
+			color = terminal.Dim
+		}
+		str += fmt.Sprintf("%v%s%v\n", color(lsInfo.Path), strings.Repeat(" ", 40-len(lsInfo.Path)),
+			terminal.Dimf("(%s)", fsUtils.ByteCountIEC(lsInfo.Size)))
+		if !strings.HasSuffix(lsInfo.Path, ".map") {
+			sum += lsInfo.Size
+		}
+	}
+
+	str += fmt.Sprintln(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", fsUtils.ByteCountIEC(sum)))
+	str += fmt.Sprintln()
+	str += fmt.Sprintln(terminal.Dimf("(%s)", time.Since(EPOCH)))
+
+	return str, nil
 }

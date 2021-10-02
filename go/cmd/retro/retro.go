@@ -8,14 +8,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/zaydek/retro/go/cmd/format"
 	"github.com/zaydek/retro/go/cmd/retro/cli"
-	"github.com/zaydek/retro/go/pkg/fsUtils"
 	"github.com/zaydek/retro/go/pkg/ipc"
 	"github.com/zaydek/retro/go/pkg/terminal"
 	"github.com/zaydek/retro/go/pkg/watch"
@@ -31,25 +30,20 @@ type DevOptions struct {
 	WarmUpFlag bool
 }
 
-func fatalUserError(err error) {
-	// TODO: Clean this up; this is too vague
-	fmt.Fprintln(os.Stderr, format.Error(err.Error()))
-	os.Exit(1)
-}
-
 func (a *App) Dev(options DevOptions) error {
 	if options.WarmUpFlag {
 		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
 			if errors.As(err, &entryPointErr) {
-				fatalUserError(entryPointErr)
+				fmt.Fprintln(os.Stderr, format.Error(err))
+				os.Exit(1)
 			} else {
 				return fmt.Errorf("warmUp: %w", err)
 			}
 		}
 	}
 
-	// Run the Node.js backend code
+	// Run the Node.js backend
 	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
@@ -57,13 +51,12 @@ func (a *App) Dev(options DevOptions) error {
 
 	var (
 		ready = make(chan struct{})
-		dev   = make(chan Message, 1)
+		dev   = make(chan Message)
 	)
 
-	stdin <- "build"
-
-	// TODO: Do we have zombie Node.js processes?
 	go func() {
+		stdin <- "build"
+
 		var once sync.Once
 		for {
 			select {
@@ -73,35 +66,25 @@ func (a *App) Dev(options DevOptions) error {
 					once.Do(func() {
 						entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
 						if err := copyIndexHTMLEntryPoint(entries); err != nil {
-							// Panic because of the goroutine
 							panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
 						}
 						ready <- struct{}{}
 					})
 					dev <- message
 				} else {
-					// Log unmarshal errors so users can debug plugins, etc.
-					fmt.Println(decorateStdoutLine(line))
+					// Log unmarshal errs so users can debug plugins, etc.
+					fmt.Println(prettyStdoutLine(line))
 				}
 			case text := <-stderr:
-				fmt.Fprintln(os.Stderr, decorateStderrText(text))
-				stdin <- "done"
+				fmt.Fprintln(os.Stderr, prettyStderrText(text))
 				os.Exit(1)
 			}
 		}
 	}()
 
-	// DEBUG
-	// bstr, err := json.MarshalIndent(message, "", "  ")
-	// if err != nil {
-	// 	return fmt.Errorf("json.MarshalIndent: %w", err)
-	// }
-	// fmt.Println(string(bstr))
-
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
 			if result.Err != nil {
-				// Panic because of the goroutine
 				panic(fmt.Errorf("watch.Directory: %w", result.Err))
 			}
 			stdin <- "rebuild"
@@ -127,70 +110,21 @@ func (a *App) Build(options BuildOptions) error {
 		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
 			if errors.As(err, &entryPointErr) {
-				fatalUserError(entryPointErr)
+				fmt.Fprintln(os.Stderr, format.Error(err))
+				os.Exit(1)
 			} else {
 				return fmt.Errorf("warmUp: %w", err)
 			}
 		}
 	}
 
-	// Run the Node.js backend code
+	// Run the Node.js backend
 	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
-	// select {
-	// case line := <-stdout:
-	// 	// FIXME: stdout messages e.g. `console.log` from retro.config.js should not
-	// 	// be treated as errors if they fail to unmarshal. The problem is that
-	// 	// ipc.Message needs to be more blunt and simply provide a plaintext
-	// 	// interface for interacting with stdout and stderr.
-	// 	//
-	// 	// See https://github.com/zaydek/retro/issues/8.
-	// 	var res BackendResponse
-	// 	if err := json.Unmarshal(line.Data, &res); err != nil {
-	// 		panic(err)
-	// 	}
-	// 	if res.Dirty() {
-	// 		fmt.Fprint(os.Stderr, res)
-	// 		os.Exit(1)
-	// 	}
-	// 	vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
-	// 	if err := copyIndexHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
-	// 		panic(err)
-	// 	}
-	// case text := <-stderr:
-	// 	fmt.Fprintln(os.Stderr, decorateStderrText(text))
-	// 	stdin <- "done"
-	// 	os.Exit(1)
-	// }
-
 	stdin <- "build"
-
-	// var once sync.Once
-	// select {
-	// case line := <-stdout:
-	// 	var message Message
-	// 	if err := json.Unmarshal([]byte(line), &message); err == nil {
-	// 		once.Do(func() {
-	// 			entries := message.getChunkedNames()
-	// 			if err := copyIndexHTMLEntryPoint(entries); err != nil {
-	// 				// Panic because of the goroutine
-	// 				panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
-	// 			}
-	// 		})
-	// 	} else {
-	// 		// Log unmarshal errors so users can debug plugins, etc.
-	// 		fmt.Println(decorateStdoutLine(line))
-	// 	}
-	// case text := <-stderr:
-	// 	fmt.Fprintln(os.Stderr, decorateStderrText(text))
-	// 	stdin <- "done"
-	// 	os.Exit(1)
-	// }
-
-	var once sync.Once
 
 loop:
 	for {
@@ -198,79 +132,31 @@ loop:
 		case line := <-stdout:
 			var message Message
 			if err := json.Unmarshal([]byte(line), &message); err == nil {
-				once.Do(func() {
-
-					if message.Data.Vendor.IsDirty() {
-						fmt.Fprint(os.Stderr, message.Data.Vendor.String())
-						os.Exit(1)
-					} else if message.Data.Client.IsDirty() {
-						fmt.Fprint(os.Stderr, message.Data.Client.String())
-						os.Exit(1)
-					}
-
-					// entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
-
-					bstr, err := json.MarshalIndent(message, "", "  ")
-					if err != nil {
-						panic(err)
-					}
-					fmt.Println(string(bstr))
-
-					os.Exit(0)
-
-					entries := message.getChunkedNames()
-					if err := copyIndexHTMLEntryPoint(entries); err != nil {
-						// Panic because of the goroutine
-						panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
-					}
-					// ready <- struct{}{}
-				})
-				// dev <- message
+				if bundle := message.GetDirty(); !reflect.ValueOf(bundle).IsZero() {
+					fmt.Fprint(os.Stderr, message.Data.Vendor.String())
+					os.Exit(1)
+				}
+				entries := message.getChunkedNames()
+				if err := copyIndexHTMLEntryPoint(entries); err != nil {
+					return fmt.Errorf("copyIndexHTMLEntryPoint: %w", err)
+				}
 				break loop
 			} else {
-				// Log unmarshal errors so users can debug plugins, etc.
-				fmt.Println(decorateStdoutLine(line))
+				// Log unmarshal errs so users can debug plugins, etc.
+				fmt.Println(prettyStdoutLine(line))
 			}
 		case text := <-stderr:
-			fmt.Fprintln(os.Stderr, decorateStderrText(text))
-			stdin <- "done"
+			fmt.Fprintln(os.Stderr, prettyStderrText(text))
 			os.Exit(1)
 		}
 	}
 
-	lsInfos, err := fsUtils.List(RETRO_OUT_DIR)
+	// TODO: We are probably going to rename `buildLog`
+	str, err := buildLog(RETRO_OUT_DIR)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("buildLog: %w", err)
 	}
-	sort.Sort(lsInfos)
-
-	var sum int64
-	for _, lsInfo := range lsInfos {
-		var color = terminal.Normal
-		if strings.HasSuffix(lsInfo.Path, ".html") {
-			color = terminal.Normal
-		} else if strings.HasSuffix(lsInfo.Path, ".js") || strings.HasSuffix(lsInfo.Path, ".js.map") {
-			color = terminal.Yellow
-		} else if strings.HasSuffix(lsInfo.Path, ".css") || strings.HasSuffix(lsInfo.Path, ".css.map") {
-			color = terminal.Cyan
-		} else {
-			color = terminal.Dim
-		}
-
-		fmt.Printf("%v%s%v\n",
-			color(lsInfo.Path),
-			strings.Repeat(" ", 40-len(lsInfo.Path)),
-			terminal.Dimf("(%s)", fsUtils.ByteCountIEC(lsInfo.Size)),
-		)
-
-		if !strings.HasSuffix(lsInfo.Path, ".map") {
-			sum += lsInfo.Size
-		}
-	}
-
-	fmt.Println(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", fsUtils.ByteCountIEC(sum)))
-	fmt.Println()
-	fmt.Println(terminal.Dimf("(%s)", time.Since(EPOCH)))
+	fmt.Print(str)
 
 	return nil
 }
@@ -283,13 +169,12 @@ type ServeOptions struct {
 }
 
 func (a *App) Serve(options ServeOptions) error {
-	var message Message
-
 	if options.WarmUpFlag {
 		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
 			if errors.As(err, &entryPointErr) {
-				fatalUserError(entryPointErr)
+				fmt.Fprintln(os.Stderr, format.Error(err))
+				os.Exit(1)
 			} else {
 				return fmt.Errorf("warmUp: %w", err)
 			}
@@ -309,12 +194,10 @@ func (a *App) Serve(options ServeOptions) error {
 		1,
 	)
 
+	var message Message
+
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// if r.URL.String() == "/__dev__" {
-		// 	return
-		// }
-
 		// 500 Server error
 		if message.Data.Vendor.IsDirty() {
 			// Log mirrored vendor errors and warnings to the browser and stderr
@@ -331,19 +214,19 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 
 		// 200 OK
-		filesystemPath := getFilesystemPath(r.URL.Path)
-		if extension := filepath.Ext(filesystemPath); extension != "" && extension != ".html" {
-			// Serve non-HTML resources
-			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, filesystemPath))
+		path := getFilesystemPath(r.URL.Path)
+		if extension := filepath.Ext(path); extension != "" && extension != ".html" {
+			// Non-HTML resources
+			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, path))
 			return
 		} else if a.getCommandKind() == KindDevCommand {
-			// Serve `out/www.index.html` + server-sent events (SSE)
+			// out/www.index.html + server-sent events (SSE)
 			fmt.Fprint(w, contents)
 			if err := buildSuccess(a.getPort()); err != nil {
 				panic(fmt.Errorf("buildSuccess: %w", err))
 			}
 		} else {
-			// Serve `out/www.index.html`
+			// out/www.index.html
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
 			if err := buildSuccess(a.getPort()); err != nil {
 				panic(fmt.Errorf("buildSuccess: %w", err))
@@ -424,24 +307,31 @@ func Run() {
 	switch err.(type) {
 	case cli.CommandError:
 		// TODO: Clean this up; this is too vague
-		fmt.Fprintln(os.Stderr, format.Error(err.Error()))
+		fmt.Fprintln(os.Stderr, format.Error(err))
 		os.Exit(1)
 	default:
 		if err != nil {
-			panic(err)
+			panic(fmt.Errorf("cli.ParseCLIArguments: %w", err))
 		}
 	}
 
-	app := &App{Command: command}
+	var (
+		app         = &App{Command: command}
+		commandName string
+	)
+
 	switch app.Command.(type) {
 	case cli.DevCommand:
 		err = app.Dev(DevOptions{WarmUpFlag: true})
+		commandName = "app.Dev"
 	case cli.BuildCommand:
 		err = app.Build(BuildOptions{WarmUpFlag: true})
+		commandName = "app.Build"
 	case cli.ServeCommand:
 		err = app.Serve(ServeOptions{})
+		commandName = "app.Serve"
 	}
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("%s: %w", commandName, err))
 	}
 }

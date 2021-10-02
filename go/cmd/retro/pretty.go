@@ -8,7 +8,7 @@ import (
 )
 
 // (Node.js) stdout  ...
-func decorateStdoutLine(line string) string {
+func prettyStdoutLine(line string) string {
 	stdout := fmt.Sprintf(
 		"%s %s  %s",
 		terminal.Dim("(Node.js)"),
@@ -19,7 +19,7 @@ func decorateStdoutLine(line string) string {
 }
 
 // (Node.js) stderr  ...
-func decorateStderrLine(line string) string {
+func prettyStderrLine(line string) string {
 	stdout := fmt.Sprintf(
 		"%s %s  %s",
 		terminal.Dim("(Node.js)"),
@@ -31,28 +31,28 @@ func decorateStderrLine(line string) string {
 
 // // (Node.js) stdout  ...
 // // (Node.js) stdout  ...
-// func decorateStdoutText(text string) string {
+// func prettyStdoutText(text string) string {
 // 	var stdout string
 // 	split := strings.Split(strings.TrimRight(text, "\n"), "\n")
 // 	for lineIndex, line := range split {
 // 		if lineIndex > 0 {
 // 			stdout += "\n"
 // 		}
-// 		stdout += decorateStdoutLine(line)
+// 		stdout += prettyStdoutLine(line)
 // 	}
 // 	return stdout
 // }
 
 // (Node.js) stderr  ...
 // (Node.js) stderr  ...
-func decorateStderrText(text string) string {
+func prettyStderrText(text string) string {
 	var stderr string
 	split := strings.Split(strings.TrimRight(text, "\n"), "\n")
 	for lineIndex, line := range split {
 		if lineIndex > 0 {
 			stderr += "\n"
 		}
-		stderr += decorateStderrLine(line)
+		stderr += prettyStderrLine(line)
 	}
 	return stderr
 }
