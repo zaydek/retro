@@ -10,29 +10,29 @@ import (
 // Starts a long-lived IPC process. stdout messages are read line-by-line
 // whereas stderr messages are read once.
 func NewCommand(commandArgs ...string) (stdin, stdout, stderr chan string, err error) {
-	cmd := exec.Command(commandArgs[0], commandArgs[1:]...)
+	command := exec.Command(commandArgs[0], commandArgs[1:]...)
 
 	// Get pipes
-	stdinPipe, err := cmd.StdinPipe()
+	stdinPipe, err := command.StdinPipe()
 	if err != nil {
 		returnError := fmt.Errorf("cmd.StdinPipe: %w", err)
 		return nil, nil, nil, returnError
 	}
 
-	stdoutPipe, err := cmd.StdoutPipe()
+	stdoutPipe, err := command.StdoutPipe()
 	if err != nil {
 		returnError := fmt.Errorf("cmd.StdoutPipe: %w", err)
 		return nil, nil, nil, returnError
 	}
 
-	stderrPipe, err := cmd.StderrPipe()
+	stderrPipe, err := command.StderrPipe()
 	if err != nil {
 		returnError := fmt.Errorf("cmd.StderrPipe: %w", err)
 		return nil, nil, nil, returnError
 	}
 
 	// Start the command
-	if err := cmd.Start(); err != nil {
+	if err := command.Start(); err != nil {
 		returnError := fmt.Errorf("cmd.Start: %w", err)
 		return nil, nil, nil, returnError
 	}

@@ -40,9 +40,9 @@ func (a *App) getCommandKind() CommandKind {
 // Gets the app's port number
 func (a *App) getPort() int {
 	var zeroValue int
-	if cmd := a.getCommandKind(); cmd == KindDevCommand {
+	if commandKind := a.getCommandKind(); commandKind == KindDevCommand {
 		return a.Command.(*cli.DevCommand).Port
-	} else if cmd == KindServeCommand {
+	} else if commandKind == KindServeCommand {
 		return a.Command.(*cli.ServeCommand).Port
 	}
 	return zeroValue
@@ -50,9 +50,9 @@ func (a *App) getPort() int {
 
 // Sets the app's port number
 func (a *App) setPort(port int) {
-	if cmd := a.getCommandKind(); cmd == KindDevCommand {
+	if commandKind := a.getCommandKind(); commandKind == KindDevCommand {
 		a.Command.(*cli.DevCommand).Port = port
-	} else if cmd == KindServeCommand {
+	} else if commandKind == KindServeCommand {
 		a.Command.(*cli.ServeCommand).Port = port
 	}
 }
