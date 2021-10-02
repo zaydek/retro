@@ -37,10 +37,10 @@ func fatalUserError(err error) {
 
 func (a *App) Dev(options DevOptions) error {
 	if options.WarmUpFlag {
-		entryPointErrPointer := &EntryPointError{}
+		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
-			if errors.As(err, entryPointErrPointer) {
-				fatalUserError(entryPointErrPointer)
+			if errors.As(err, &entryPointErr) {
+				fatalUserError(entryPointErr)
 			} else {
 				return fmt.Errorf("warmUp: %w", err)
 			}
@@ -56,10 +56,11 @@ func (a *App) Dev(options DevOptions) error {
 	var (
 		// Blocks the serve command
 		ready = make(chan struct{})
+		dev   = make(chan Message, 1)
 
-		// Sends messages to the serve command. Note that the dev channel needs to
-		// be buffered so send operations are non-blocking.
-		dev = make(chan Message, 1)
+		// // Sends messages to the serve command. Note that the dev channel needs to
+		// // be buffered so send operations are non-blocking.
+		// dev = make(chan Message, 1)
 
 		// Orchestrates `copyIndexHTMLEntryPoint`
 		once sync.Once
@@ -67,17 +68,13 @@ func (a *App) Dev(options DevOptions) error {
 
 	stdin <- "build"
 
+	// TODO: Where do we put `stdin <- "done"`?
 	go func() {
-		// TOOD: Where do we put `stdin <- "done"`?
-	loop:
 		for {
 			select {
 			case line := <-stdout:
 				var message Message
-				if err := json.Unmarshal([]byte(line), &message); err != nil {
-					// Log unmarshal errors so users can debug plugins, etc.
-					fmt.Println(decorateStdoutLine(line))
-				} else {
+				if err := json.Unmarshal([]byte(line), &message); err == nil {
 					once.Do(func() {
 						entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
 						if err := copyIndexHTMLEntryPoint(entries); err != nil {
@@ -86,9 +83,12 @@ func (a *App) Dev(options DevOptions) error {
 						}
 						ready <- struct{}{}
 					})
-					// stdin <- "done"
+					// DEBUG
+					fmt.Println("Sending a done message")
 					dev <- message
-					break loop
+				} else {
+					// Log unmarshal errors so users can debug plugins, etc.
+					fmt.Println(decorateStdoutLine(line))
 				}
 			case text := <-stderr:
 				fmt.Fprintln(os.Stderr, decorateStderrText(text))
@@ -111,6 +111,8 @@ func (a *App) Dev(options DevOptions) error {
 				// Panic because of the goroutine
 				panic(fmt.Errorf("watch.Directory: %w", result.Err))
 			}
+			// DEBUG
+			fmt.Println("Sending a watch event")
 			stdin <- "rebuild"
 		}
 	}()
@@ -132,29 +134,31 @@ type ServeOptions struct {
 
 func (a *App) Serve(options ServeOptions) error {
 	if options.WarmUpFlag {
-		entryPointErrPointer := &EntryPointError{}
+		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
-			if errors.As(err, entryPointErrPointer) {
-				fatalUserError(entryPointErrPointer)
+			if errors.As(err, &entryPointErr) {
+				fatalUserError(entryPointErr)
 			} else {
 				return fmt.Errorf("warmUp: %w", err)
 			}
 		}
 	}
 
-	// www/index.html
+	// out/index.html
+	//
+	// TODO: Theoretically this should already be in memory, attached to the app
+	// context
 	bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 	if err != nil {
 		return err
 	}
-	// Add the server sent events (SSE) stub
 	contents := strings.Replace(
 		string(bstr),
 		"</body>",
+		// Add server-sent events (SSE)
 		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
 		1,
 	)
-	fmt.Println(contents)
 
 	var message Message
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -171,16 +175,16 @@ func (a *App) Serve(options ServeOptions) error {
 
 		// 500 Server error (esbuild errors)
 		if message.Data.Vendor.IsDirty() {
-			// Mirror errors to the browser and the terminal
+			// Mirror errors to the browser and stderr
 			terminal.Clear(os.Stderr)
 			fmt.Fprint(w, message.Data.Vendor.HTML())
-			fmt.Fprint(os.Stderr, message)
+			fmt.Fprint(os.Stderr, message.Data.Vendor.String())
 			return
 		} else if message.Data.Client.IsDirty() {
-			// Mirror errors to the browser and the terminal
+			// Mirror errors to the browser and stderr
 			terminal.Clear(os.Stderr)
 			fmt.Fprint(w, message.Data.Client.HTML())
-			fmt.Fprint(os.Stderr, message)
+			fmt.Fprint(os.Stderr, message.Data.Client.String())
 			return
 		}
 
@@ -215,11 +219,11 @@ func (a *App) Serve(options ServeOptions) error {
 			if !ok {
 				panic("w.(http.Flusher)")
 			}
-			// fmt.Println("Here")
 			for {
 				select {
 				case message = <-options.Dev:
-					// fmt.Println("A reload event occurred")
+					// DEBUG
+					fmt.Println("Receiving a done message")
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-r.Context().Done():
@@ -235,13 +239,13 @@ func (a *App) Serve(options ServeOptions) error {
 	}()
 
 	for {
-		err := http.ListenAndServe(fmt.Sprintf(":%d", a.getPort()), nil)
-		if err != nil {
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", a.getPort()), nil); err != nil {
 			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", a.getPort()) {
 				a.setPort(a.getPort() + 1)
 				continue
+			} else {
+				return fmt.Errorf("http.ListenAndServe: %w", err)
 			}
-			panic(err)
 		}
 		break
 	}
