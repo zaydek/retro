@@ -7,8 +7,8 @@ VERSION = $(shell cat version.txt)
 
 ################################################################################
 
-# Bundles the backend Node.js code
-bundle-backend:
+# Bundles the Node.js backend code
+bundle:
 	npx esbuild node/backend/backend.ts \
 		--bundle \
 		--external:esbuild --external:react --external:react-dom --external:react-dom/server \

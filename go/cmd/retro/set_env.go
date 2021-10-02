@@ -14,7 +14,7 @@ var (
 	RETRO_OUT_DIR = ""
 )
 
-func setEnv(errPointer *error, envKey, defaultValue string) {
+func setEnvImpl(errPointer *error, envKey, defaultValue string) {
 	if *errPointer != nil {
 		return
 	}
@@ -44,23 +44,23 @@ func setEnvsAndGlobalVariables(commandKind CommandKind) error {
 	var err error
 	switch commandKind {
 	case KindDevCommand:
-		setEnv(&err, "NODE_ENV", "development")
-		setEnv(&err, "RETRO_CMD", "dev")
-		setEnv(&err, "RETRO_WWW_DIR", "www")
-		setEnv(&err, "RETRO_SRC_DIR", "src")
-		setEnv(&err, "RETRO_OUT_DIR", "out")
+		setEnvImpl(&err, "NODE_ENV", "development")
+		setEnvImpl(&err, "RETRO_CMD", "dev")
+		setEnvImpl(&err, "RETRO_WWW_DIR", "www")
+		setEnvImpl(&err, "RETRO_SRC_DIR", "src")
+		setEnvImpl(&err, "RETRO_OUT_DIR", "out")
 	case KindBuildCommand:
-		setEnv(&err, "NODE_ENV", "production")
-		setEnv(&err, "RETRO_CMD", "build")
-		setEnv(&err, "RETRO_WWW_DIR", "www")
-		setEnv(&err, "RETRO_SRC_DIR", "src")
-		setEnv(&err, "RETRO_OUT_DIR", "out")
+		setEnvImpl(&err, "NODE_ENV", "production")
+		setEnvImpl(&err, "RETRO_CMD", "build")
+		setEnvImpl(&err, "RETRO_WWW_DIR", "www")
+		setEnvImpl(&err, "RETRO_SRC_DIR", "src")
+		setEnvImpl(&err, "RETRO_OUT_DIR", "out")
 	case KindServeCommand:
-		setEnv(&err, "NODE_ENV", "production")
-		setEnv(&err, "RETRO_CMD", "serve")
-		setEnv(&err, "RETRO_WWW_DIR", "www")
-		setEnv(&err, "RETRO_SRC_DIR", "src")
-		setEnv(&err, "RETRO_OUT_DIR", "out")
+		setEnvImpl(&err, "NODE_ENV", "production")
+		setEnvImpl(&err, "RETRO_CMD", "serve")
+		setEnvImpl(&err, "RETRO_WWW_DIR", "www")
+		setEnvImpl(&err, "RETRO_SRC_DIR", "src")
+		setEnvImpl(&err, "RETRO_OUT_DIR", "out")
 	}
 	return err
 }

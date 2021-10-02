@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -56,7 +55,10 @@ func (a *App) Dev(options DevOptions) error {
 
 	var (
 		done DoneMessage
-		dev  = make(chan DoneMessage)
+
+		// TODO: Does this need to be buffered because of server-sent events (SSE)
+		// or something else
+		dev = make(chan DoneMessage)
 
 		// Orchestrates `copyIndexHTMLEntryPoint`
 		once sync.Once
@@ -211,47 +213,6 @@ loop:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// https://stackoverflow.com/a/37382208
-//
-// FIXME: This doesn't support the use-case that the user isn't connected to the
-// internet, which makes Retro unusable for internet-less development
-func getIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP
-}
-
-// TODO: Add error-handling
-func buildSuccess(port int) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	var (
-		base = filepath.Base(cwd)
-		ip   = getIP()
-	)
-
-	terminal.Clear(os.Stdout)
-	fmt.Println(terminal.Green("Compiled successfully!") + `
-
-You can now view ` + terminal.Bold(base) + ` in the browser.
-
-  ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
-  ` + terminal.Bold("On Your Network:") + `  ` + fmt.Sprintf("http://%s:%s", ip, terminal.Bold(port)) + `
-
-Note that the development build is not optimized.
-To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
-` /* EOF */)
-
-	return nil
-}
-
 type ServeOptions struct {
 	WarmUpFlag bool
 	Dev        chan DoneMessage
@@ -269,52 +230,61 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 	}
 
-	// // www/index.html
-	// bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
-	// if err != nil {
-	// 	return err
-	// }
-	// // Add the server sent events (SSE) stub
-	// contents := strings.Replace(
-	// 	string(bstr),
-	// 	"</body>",
-	// 	fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
-	// 	1,
-	// )
+	// www/index.html
+	bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+	if err != nil {
+		return err
+	}
+	// Add the server sent events (SSE) stub
+	contents := strings.Replace(
+		string(bstr),
+		"</body>",
+		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
+		1,
+	)
 
-	// 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-	// 		if req.URL.Path == "/__dev__" {
-	// 			return
-	// 		}
-	//
-	// 		// 500 Server error
-	// 		if done.Data.Vendor.IsDirty() || done.Data.Client.IsDirty() {
-	// 			terminal.Clear(os.Stderr) // TODO: Do we really want to clear the terminal?
-	// 			fmt.Fprint(w, done.HTML())
-	// 			fmt.Fprint(os.Stderr, done)
-	// 			return
-	// 		}
-	// 		// 200 OK - Serve non-index.html
-	// 		path := getFilesystemPath(req.URL.Path)
-	// 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
-	// 			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, path))
-	// 			return
-	// 		}
-	// 		// 200 OK - Serve index.html
-	// 		if a.getCommandKind() == KindDevCommand {
-	// 			// Serve HTML + server-sent events (SSE)
-	// 			fmt.Fprint(w, contents)
-	// 			if err := buildSuccess(a.getPort()); err != nil {
-	// 				panic(fmt.Errorf("buildSuccess: %w", err))
-	// 			}
-	// 		} else {
-	// 			// Serve HTML
-	// 			http.ServeFile(w, req, filepath.Join(RETRO_OUT_DIR, "index.html"))
-	// 			if err := buildSuccess(a.getPort()); err != nil {
-	// 				panic(fmt.Errorf("buildSuccess: %w", err))
-	// 			}
-	// 		}
-	// 	})
+	// Create a done message; gets updated by the server-sent events (SSE) block
+	var done DoneMessage
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/__dev__" {
+			return
+		}
+
+		// 500 Server error (esbuild errors)
+		if done.Data.Vendor.IsDirty() {
+			// Mirror errors to the browser and the terminal
+			terminal.Clear(os.Stderr)
+			fmt.Fprint(w, done.Data.Vendor.HTML())
+			fmt.Fprint(os.Stderr, done)
+			return
+		} else if done.Data.Client.IsDirty() {
+			// Mirror errors to the browser and the terminal
+			terminal.Clear(os.Stderr)
+			fmt.Fprint(w, done.Data.Client.HTML())
+			fmt.Fprint(os.Stderr, done)
+			return
+		}
+
+		url := getFilesystemPath(r.URL.Path)
+		if extension := filepath.Ext(url); extension != "" && extension != ".html" {
+			// 200 OK - Serve non-HTML
+			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, url))
+			return
+		} else if a.getCommandKind() == KindDevCommand {
+			// 200 OK - Serve HTML + server-sent events (SSE)
+			fmt.Fprint(w, contents)
+			if err := buildSuccess(a.getPort()); err != nil {
+				panic(fmt.Errorf("buildSuccess: %w", err))
+			}
+		} else {
+			// 200 OK - Serve HTML
+			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
+			if err := buildSuccess(a.getPort()); err != nil {
+				panic(fmt.Errorf("buildSuccess: %w", err))
+			}
+		}
+	})
 
 	// Add handler for dev events
 	if a.getCommandKind() == KindDevCommand {
@@ -329,7 +299,7 @@ func (a *App) Serve(options ServeOptions) error {
 			}
 			for {
 				select {
-				case <-options.Dev:
+				case done = <-options.Dev:
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-req.Context().Done():
@@ -348,7 +318,6 @@ func (a *App) Serve(options ServeOptions) error {
 		err := http.ListenAndServe(fmt.Sprintf(":%d", a.getPort()), nil)
 		if err != nil {
 			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", a.getPort()) {
-				// Increment the port and try again
 				a.setPort(a.getPort() + 1)
 				continue
 			}

@@ -62,6 +62,10 @@ func NewCommand(commandArgs ...string) (stdin, stdout, stderr chan string, err e
 				stdout <- line
 			}
 		}
+		if err := scanner.Err(); err != nil {
+			// Panic because of the goroutine
+			panic(fmt.Errorf("scanner.Err: %w", err))
+		}
 	}()
 
 	stderr = make(chan string)
@@ -81,6 +85,10 @@ func NewCommand(commandArgs ...string) (stdin, stdout, stderr chan string, err e
 				text,
 				"\n", // Remove the EOF
 			)
+		}
+		if err := scanner.Err(); err != nil {
+			// Panic because of the goroutine
+			panic(fmt.Errorf("scanner.Err: %w", err))
 		}
 	}()
 
