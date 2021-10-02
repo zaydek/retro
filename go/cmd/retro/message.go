@@ -91,7 +91,7 @@ a:hover { text-decoration: underline; }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Describes a `build_done` message or a `rebuild_done` message
+// Describes a `build_done` or `rebuild_done` message from the Node.js backend
 type Message struct {
 	Kind string
 	Data struct {
@@ -110,9 +110,10 @@ func (m Message) GetDirty() BundleResult {
 }
 
 func (m Message) getChunkedEntrypoints() entryPoints {
-	// Guard zero value messages
 	if m.Data.Vendor.Metafile == nil || m.Data.Client.Metafile == nil {
-		return entryPoints{}
+		// Because we don't know the values of the entry points, use the default
+		// values as a fallback
+		return entryPoints{"client.css", "vendor.js", "client.js"}
 	}
 	var entries entryPoints
 	for key := range m.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
