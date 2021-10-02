@@ -2,7 +2,6 @@ package main
 
 import (
 	_ "embed"
-	"fmt"
 	"os"
 	"strings"
 
@@ -13,8 +12,6 @@ import (
 var RETRO_VERSION string
 
 func main() {
-	if err := os.Setenv("RETRO_VERSION", strings.TrimSpace(RETRO_VERSION)); err != nil {
-		panic(fmt.Errorf("os.Setenv: %w", err))
-	}
+	os.Setenv("RETRO_VERSION", strings.TrimSpace(RETRO_VERSION))
 	create_retro_app.Run()
 }

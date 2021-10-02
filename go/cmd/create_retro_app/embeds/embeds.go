@@ -2,17 +2,9 @@ package embeds
 
 import (
 	"embed"
-	"fmt"
 	"io/fs"
 	"text/template"
 )
-
-func must(err error) {
-	if err == nil {
-		return
-	}
-	panic(fmt.Errorf("must: %w", err))
-}
 
 var (
 	//go:embed package.json

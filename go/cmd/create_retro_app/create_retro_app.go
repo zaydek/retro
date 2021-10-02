@@ -21,7 +21,7 @@ var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func (r App) getFSAndPkg() (fs.FS, *template.Template) {
+func (r App) mustGetFSAndPKG() (fs.FS, *template.Template) {
 	switch r.Command.Template {
 	case "starter":
 		return embeds.StarterFS, embeds.StarterPackage
@@ -31,9 +31,8 @@ func (r App) getFSAndPkg() (fs.FS, *template.Template) {
 	panic("Internal error")
 }
 
-// TODO: Fix the panics
 func (r App) CreateApp() error {
-	fsys, pkg := r.getFSAndPkg()
+	fsys, pkg := r.mustGetFSAndPKG()
 
 	appName := r.Command.Directory
 	if r.Command.Directory == "." {
@@ -55,10 +54,10 @@ func (r App) CreateApp() error {
 			os.Exit(1)
 		}
 		if err := os.MkdirAll(r.Command.Directory, perm.BitsDirectory); err != nil {
-			return decorate(&err, "os.MkdirAll")
+			return err
 		}
 		if err := os.Chdir(r.Command.Directory); err != nil {
-			return decorate(&err, "os.Chdir")
+			return err
 		}
 		defer os.Chdir("..")
 	}
@@ -75,7 +74,7 @@ func (r App) CreateApp() error {
 		return nil
 	})
 	if err != nil {
-		panic(decorate(&err, "fs.WalkDir"))
+		return err
 	}
 
 	var badPaths []string
@@ -111,19 +110,19 @@ func (r App) CreateApp() error {
 	for _, v := range paths {
 		if dir := filepath.Dir(v); dir != "." {
 			if err := os.MkdirAll(dir, perm.BitsDirectory); err != nil {
-				return decorate(&err, "os.MkdirAll")
+				return err
 			}
 		}
 		src, err := fsys.Open(v)
 		if err != nil {
-			return decorate(&err, "fsys.Open")
+			return err
 		}
 		dst, err := os.Create(v)
 		if err != nil {
-			return decorate(&err, "os.Create")
+			return err
 		}
 		if _, err := io.Copy(dst, src); err != nil {
-			return decorate(&err, "io.Copy")
+			return err
 		}
 		src.Close()
 		dst.Close()
@@ -132,11 +131,11 @@ func (r App) CreateApp() error {
 	var buf bytes.Buffer
 	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
 	if err := pkg.Execute(&buf, deps.Deps); err != nil {
-		return decorate(&err, "pkg.Execute")
+		return err
 	}
 
 	if err := os.WriteFile("package.json", buf.Bytes(), perm.BitsFile); err != nil {
-		return decorate(&err, "os.WriteFile")
+		return err
 	}
 
 	if r.Command.Directory == "." {
@@ -155,6 +154,7 @@ type App struct {
 }
 
 func Run() {
+	// Non-command errors
 	command, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.ErrVersion:
@@ -167,18 +167,15 @@ func Run() {
 		return
 	}
 
+	// Command errors
 	switch err.(type) {
 	case cli.CommandError:
 		fmt.Fprintln(os.Stderr, format.Error(err))
 		os.Exit(1)
 	default:
-		if err != nil {
-			panic(decorate(&err, "cli.ParseCLIArguments"))
-		}
+		must(err)
 	}
 
 	app := &App{Command: command}
-	if err := app.CreateApp(); err != nil {
-		panic(decorate(&err, "app.CreateApp"))
-	}
+	must(app.CreateApp())
 }

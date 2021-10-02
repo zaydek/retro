@@ -32,7 +32,7 @@ func (a *App) Dev(options DevOptions) error {
 				fmt.Fprintln(os.Stderr, format.Error(err))
 				os.Exit(1)
 			} else {
-				return decorate(&err, "warmUp")
+				return err
 			}
 		}
 	}
@@ -41,7 +41,7 @@ func (a *App) Dev(options DevOptions) error {
 	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		cancel()
-		return decorate(&err, "ipc.NewCommand")
+		return err
 	}
 
 	var (
@@ -67,9 +67,7 @@ func (a *App) Dev(options DevOptions) error {
 				} else {
 					once.Do(func() {
 						entries := message.getChunkedEntrypoints()
-						err := copyIndexHTMLEntryPoint(entries)
-						decorate(&err, "copyIndexHTMLEntryPoint")
-						must(err)
+						must(copyIndexHTMLEntryPoint(entries))
 						ready <- struct{}{}
 					})
 					dev <- message
@@ -84,16 +82,14 @@ func (a *App) Dev(options DevOptions) error {
 
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
-			err := result.Err
-			decorate(&err, "watch.Directory")
-			must(err)
+			must(result.Err)
 			stdin <- "rebuild"
 		}
 	}()
 
 	<-ready
 	if err := a.Serve(ServeOptions{WarmUpFlag: false, Dev: dev}); err != nil {
-		return decorate(&err, "a.Serve")
+		return err
 	}
 
 	return nil
@@ -113,7 +109,7 @@ func (a *App) Build(options BuildOptions) error {
 				fmt.Fprintln(os.Stderr, format.Error(err))
 				os.Exit(1)
 			} else {
-				return decorate(&err, "warmUp")
+				return err
 			}
 		}
 	}
@@ -122,7 +118,7 @@ func (a *App) Build(options BuildOptions) error {
 	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		cancel()
-		return decorate(&err, "ipc.NewCommand")
+		return err
 	}
 
 	stdin <- "build"
@@ -144,7 +140,7 @@ loop:
 				}
 				entries := message.getChunkedEntrypoints()
 				if err := copyIndexHTMLEntryPoint(entries); err != nil {
-					return decorate(&err, "copyIndexHTMLEntryPoint")
+					return err
 				}
 				break loop
 			}
@@ -157,7 +153,7 @@ loop:
 
 	str, err := makeBuildSuccess(RETRO_OUT_DIR)
 	if err != nil {
-		return decorate(&err, "makeBuildSuccess")
+		return err
 	}
 	fmt.Print(str)
 
@@ -174,7 +170,7 @@ type ServeOptions struct {
 func (a *App) Serve(options ServeOptions) error {
 	if options.WarmUpFlag {
 		if err := setEnv(KindServeCommand); err != nil {
-			return decorate(&err, "setEnv")
+			return err
 		}
 	}
 
@@ -183,7 +179,7 @@ func (a *App) Serve(options ServeOptions) error {
 	if a.getCommandKind() == KindDevCommand {
 		bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 		if err != nil {
-			return decorate(&err, "os.ReadFile")
+			return err
 		}
 		contents = strings.Replace(string(bstr), "</body>", fmt.Sprintf("\t%s\n\t</body>", htmlServerSentEvents), 1)
 	}
@@ -209,7 +205,6 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 		if dirty := message.GetDirty(); dirty.IsDirty() { // For the browser
 			fmt.Fprintln(w, dirty.HTML())
-			// Eagerly return
 			return
 		}
 		// Serve non-HTML resources
@@ -221,10 +216,9 @@ func (a *App) Serve(options ServeOptions) error {
 		// Serve HTML resources
 		if a.getCommandKind() == KindDevCommand {
 			fmt.Fprint(w, contents)
-		} else {
-			fmt.Println(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
-			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+			return
 		}
+		http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 	})
 
 	// Path for server-sent events (SSE)
@@ -269,7 +263,7 @@ func (a *App) Serve(options ServeOptions) error {
 				port++
 				continue
 			} else {
-				return decorate(&err, "http.ListenAndServe")
+				return err
 			}
 		}
 		break
@@ -285,42 +279,38 @@ var __dirname string
 func Run() {
 	var err error
 	__dirname, err = getDirname()
-	decorate(&err, "getDirname")
 	must(err)
 
-	// Parse the CLI arguments and guard errors
+	// Non-command errors
 	command, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.ErrVersion:
 		fmt.Println(os.Getenv("RETRO_VERSION"))
-		return
+		os.Exit(0)
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
 		fmt.Println(format.NonError(usage))
-		return
+		os.Exit(0)
 	}
 
+	// Command errors
 	switch err.(type) {
 	case cli.CommandError:
 		fmt.Fprintln(os.Stderr, format.Error(err))
 		os.Exit(1)
 	default:
-		decorate(&err, "cli.ParseCLIArguments")
 		must(err)
 	}
 
 	app := &App{Command: command}
 	switch app.Command.(type) {
 	case cli.DevCommand:
-		err := app.Dev(DevOptions{WarmUpFlag: true})
-		decorate(&err, "app.Dev")
+		err = app.Dev(DevOptions{WarmUpFlag: true})
 	case cli.BuildCommand:
-		err := app.Build(BuildOptions{WarmUpFlag: true})
-		decorate(&err, "app.Build")
+		err = app.Build(BuildOptions{WarmUpFlag: true})
 	case cli.ServeCommand:
-		err := app.Serve(ServeOptions{WarmUpFlag: true})
-		decorate(&err, "app.Build")
+		err = app.Serve(ServeOptions{WarmUpFlag: true})
 	}
 	must(err)
 }

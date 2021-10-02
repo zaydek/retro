@@ -9,21 +9,26 @@ import (
 )
 
 func warmUp(commandKind CommandKind) error {
+	// Set environmental variables and global variables
 	if err := setEnv(commandKind); err != nil { // Takes precedence
-		return decorate(&err, "setEnv")
+		return err
 	}
+	// Guard HTML and JS entry points
 	if err := guardEntryPoints(); err != nil {
-		return decorate(&err, "guardEntryPoints")
+		return err
 	}
+	// Remove `RETRO_OUT_DIR` directory
 	if err := os.RemoveAll(RETRO_OUT_DIR); err != nil {
-		return decorate(&err, "os.RemoveAll")
+		return err
 	}
+	// Create `RETRO_OUT_DIR` directgory
 	if err := os.MkdirAll(RETRO_OUT_DIR, perm.BitsDirectory); err != nil {
-		return decorate(&err, "os.MkdirAll")
+		return err
 	}
+	// Copy `RETRO_WWW_DIR` directory recursively
 	target := filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR)
 	if err := fsUtils.CopyRecursively(RETRO_WWW_DIR, target, []string{filepath.Join(RETRO_WWW_DIR, "index.html")}); err != nil {
-		return decorate(&err, "copyDirectory")
+		return err
 	}
 	return nil
 }

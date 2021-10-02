@@ -72,7 +72,7 @@ func getDirname() (string, error) {
 func getIP() (net.IP, error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		return nil, decorate(&err, "net.Dial")
+		return nil, err
 	}
 	defer conn.Close()
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
@@ -119,7 +119,7 @@ func makeBuildSuccess(directory string) (string, error) {
 
 	lsInfos, err := fsUtils.List(directory)
 	if err != nil {
-		return "", decorate(&err, "fsUtils.List")
+		return "", err
 	}
 	sort.Sort(lsInfos)
 

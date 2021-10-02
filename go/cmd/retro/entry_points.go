@@ -28,10 +28,10 @@ func (e EntryPointError) Error() string {
 func copyDefaultIndexHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
-		return decorate(&err, "os.MkdirAll")
+		return err
 	}
 	if err := os.WriteFile(filename, []byte(htmlEntryPoint+"\n"), perm.BitsFile); err != nil {
-		return decorate(&err, "os.WriteFile")
+		return err
 	}
 	return nil
 }
@@ -41,10 +41,10 @@ func copyDefaultIndexHTMLEntryPoint() error {
 func copyDefaultIndexJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
-		return decorate(&err, "os.MkdirAll")
+		return err
 	}
 	if err := os.WriteFile(filename, []byte(jsEntryPoint+"\n"), perm.BitsFile); err != nil {
-		return decorate(&err, "os.WriteFile")
+		return err
 	}
 	return nil
 }
@@ -54,10 +54,10 @@ func copyDefaultIndexJSEntryPoint() error {
 func copyDefaultAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
-		return decorate(&err, "os.MkdirAll")
+		return err
 	}
 	if err := os.WriteFile(filename, []byte(appJSEntryPoint+"\n"), perm.BitsFile); err != nil {
-		return decorate(&err, "os.WriteFile")
+		return err
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func guardHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexHTMLEntryPoint(); err != nil {
-			return decorate(&err, "copyDefaultIndexHTMLEntryPoint")
+			return err
 		}
 	}
 
@@ -184,7 +184,7 @@ func guardJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexJSEntryPoint(); err != nil {
-			return decorate(&err, "copyDefaultIndexJSEntryPoint")
+			return err
 		}
 	}
 	return nil
@@ -195,7 +195,7 @@ func guardAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultAppJSEntryPoint(); err != nil {
-			return decorate(&err, "copyDefaultAppJSEntryPoint")
+			return err
 		}
 	}
 	return nil
@@ -209,13 +209,13 @@ func guardAppJSEntryPoint() error {
 //
 func guardEntryPoints() error {
 	if err := guardHTMLEntryPoint(); err != nil {
-		return decorate(&err, "guardHTMLEntryPoint")
+		return err
 	}
 	if err := guardJSEntryPoint(); err != nil {
-		return decorate(&err, "guardJSEntryPoint")
+		return err
 	}
 	if err := guardAppJSEntryPoint(); err != nil {
-		return decorate(&err, "guardAppJSEntryPoint")
+		return err
 	}
 	return nil
 }
@@ -231,7 +231,7 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	bstr, err := os.ReadFile(filename)
 	if err != nil {
-		return decorate(&err, "os.ReadFile")
+		return err
 	}
 	// <link rel="stylesheet" href="/client.css" />
 	contents := string(bstr)
@@ -258,11 +258,11 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	// out/www
 	target := filepath.Join(RETRO_OUT_DIR, filename)
 	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
-		return decorate(&err, "os.MkdirAll")
+		return err
 	}
 	// out/www/index.html
 	if err := os.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
-		return decorate(&err, "os.WriteFile")
+		return err
 	}
 	return nil
 }

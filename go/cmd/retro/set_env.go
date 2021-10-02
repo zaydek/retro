@@ -32,9 +32,7 @@ func setEnvImpl(errPointer *error, envKey, defaultValue string) {
 	case "RETRO_OUT_DIR":
 		RETRO_OUT_DIR = envValue
 	}
-	if err := os.Setenv(envKey, envValue); err != nil {
-		*errPointer = decorate(&err, "os.Setenv")
-	}
+	*errPointer = os.Setenv(envKey, envValue)
 }
 
 // Propagates environmental variables or sets default values

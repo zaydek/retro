@@ -13,29 +13,21 @@ import (
 func NewCommand(ctx context.Context, commandArgs ...string) (stdin, stdout, stderr chan string, err error) {
 	command := exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
 
-	// Get pipes
 	stdinPipe, err := command.StdinPipe()
 	if err != nil {
-		returnError := fmt.Errorf("cmd.StdinPipe: %w", err)
-		return nil, nil, nil, returnError
+		return nil, nil, nil, err
 	}
-
 	stdoutPipe, err := command.StdoutPipe()
 	if err != nil {
-		returnError := fmt.Errorf("cmd.StdoutPipe: %w", err)
-		return nil, nil, nil, returnError
+		return nil, nil, nil, err
 	}
-
 	stderrPipe, err := command.StderrPipe()
 	if err != nil {
-		returnError := fmt.Errorf("cmd.StderrPipe: %w", err)
-		return nil, nil, nil, returnError
+		return nil, nil, nil, err
 	}
 
-	// Start the command
 	if err := command.Start(); err != nil {
-		returnError := fmt.Errorf("cmd.Start: %w", err)
-		return nil, nil, nil, returnError
+		return nil, nil, nil, err
 	}
 
 	stdin = make(chan string)
@@ -63,9 +55,7 @@ func NewCommand(ctx context.Context, commandArgs ...string) (stdin, stdout, stde
 				stdout <- line
 			}
 		}
-		err := scanner.Err()
-		decorate(&err, "scanner.Err")
-		must(err)
+		must(scanner.Err())
 	}()
 
 	stderr = make(chan string)
@@ -74,21 +64,16 @@ func NewCommand(ctx context.Context, commandArgs ...string) (stdin, stdout, stde
 			stderrPipe.Close()
 			close(stderr)
 		}()
-		// Scan once
 		scanner := bufio.NewScanner(stderrPipe)
 		scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 			return len(data), data, nil
 		})
 		scanner.Scan()
 		if text := scanner.Text(); text != "" {
-			stderr <- strings.TrimRight(
-				text,
-				"\n", // Remove the EOF
-			)
+			// Remove the EOF
+			stderr <- strings.TrimRight(text, "\n")
 		}
-		err := scanner.Err()
-		decorate(&err, "scanner.Err")
-		must(err)
+		must(scanner.Err())
 	}()
 
 	return stdin, stdout, stderr, nil

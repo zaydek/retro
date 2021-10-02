@@ -1,4 +1,4 @@
-package ipc
+package embeds
 
 func must(err error) {
 	if err == nil {
