@@ -20,8 +20,8 @@ export async function resolveUserConfiguration(): Promise<esbuild.BuildOptions> 
 	return require(path.join(process.cwd(), "retro.config.js"))
 }
 
-// The common configuration, for the vendor and client bundles
-export const commonConfiguration: esbuild.BuildOptions = {
+// Base configuration for vendor and client bundles
+export const baseConfiguration: esbuild.BuildOptions = {
 	// Always bundle
 	bundle: true,
 
@@ -55,15 +55,14 @@ export const commonConfiguration: esbuild.BuildOptions = {
 	sourcemap: true,
 }
 
-// Build the client configuration from the user configuration e.g.
-// `retro.config.js`
+// Builds the client configuration from the base and user configurations
 export const buildClientConfiguration = (userConfiguration: esbuild.BuildOptions): esbuild.BuildOptions => ({
-	...commonConfiguration,
+	...baseConfiguration,
 	...userConfiguration,
 
 	// Global variables
 	define: {
-		...commonConfiguration.define,
+		...baseConfiguration.define,
 		...userConfiguration.define,
 	},
 
@@ -83,7 +82,7 @@ export const buildClientConfiguration = (userConfiguration: esbuild.BuildOptions
 	inject: [path.join(__dirname, "require.js")],
 
 	loader: {
-		...commonConfiguration.loader,
+		...baseConfiguration.loader,
 		...userConfiguration.loader,
 	},
 })

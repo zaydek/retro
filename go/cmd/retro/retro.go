@@ -42,7 +42,7 @@ func (a *App) Dev(options DevOptions) error {
 		}
 	}
 
-	backendJS := filepath.Join(__dirname, "node/backend.esbuild.js")
+	backendJS := filepath.Join(__dirname, "scripts/backend.esbuild.js")
 	stdin, stdout, stderr, err := ipc.NewCommand("node", backendJS)
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
@@ -64,7 +64,7 @@ func (a *App) Dev(options DevOptions) error {
 			select {
 			case line := <-stdout:
 				var message Message
-				if err := json.Unmarshal([]byte(line), &message); err == nil {
+				if err := json.Unmarshal([]byte(line), &message); err != nil {
 					// Log unmarshal errs so users can debug plugins, etc.
 					fmt.Println(formatStdoutLine(line))
 				} else {
@@ -120,7 +120,7 @@ func (a *App) Build(options BuildOptions) error {
 		}
 	}
 
-	backendJS := filepath.Join(__dirname, "node/backend.esbuild.js")
+	backendJS := filepath.Join(__dirname, "scripts/backend.esbuild.js")
 	stdin, stdout, stderr, err := ipc.NewCommand("node", backendJS)
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
@@ -133,7 +133,7 @@ loop:
 		select {
 		case line := <-stdout:
 			var message Message
-			if err := json.Unmarshal([]byte(line), &message); err == nil {
+			if err := json.Unmarshal([]byte(line), &message); err != nil {
 				// Log unmarshal errs so users can debug plugins, etc.
 				fmt.Println(formatStdoutLine(line))
 			} else {

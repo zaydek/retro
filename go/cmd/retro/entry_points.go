@@ -234,7 +234,6 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	if err != nil {
 		return fmt.Errorf("os.ReadFile: %w", err)
 	}
-
 	// <link rel="stylesheet" href="/client.css" />
 	contents := string(bstr)
 	contents = strings.Replace(
@@ -243,7 +242,6 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`, entries.clientCSS),
 		1,
 	)
-
 	// <script src="/vendor.js"></script>
 	contents = strings.Replace(
 		contents,
@@ -251,7 +249,6 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 		fmt.Sprintf(`<script src="/%s"></script>`, entries.vendorJS),
 		1,
 	)
-
 	// <script src="/client.js"></script>
 	contents = strings.Replace(
 		contents,
@@ -259,17 +256,14 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 		fmt.Sprintf(`<script src="/%s"></script>`, entries.clientJS),
 		1,
 	)
-
 	// out/www
 	target := filepath.Join(RETRO_OUT_DIR, filename)
 	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-
 	// out/www/index.html
 	if err := ioutil.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
 		return fmt.Errorf("ioutil.WriteFile: %w", err)
 	}
-
 	return nil
 }

@@ -9,11 +9,11 @@ VERSION = $(shell cat version.txt)
 
 # Bundles the Node.js backend code
 bundle:
-	npx esbuild node/backend/backend.ts \
+	npx esbuild scripts/backend/backend.ts \
 		--bundle \
 		--external:esbuild --external:react --external:react-dom --external:react-dom/server \
 		--log-level=warning \
-		--outfile=node/backend.esbuild.js \
+		--outfile=scripts/backend.esbuild.js \
 		--platform=node \
 		--sourcemap
 
@@ -88,8 +88,8 @@ build-retro:
 
 	touch npm/retro/bin/retro
 
-	rm -rf npm/retro/bin/scripts && mkdir npm/retro/bin/scripts
-	cp -r node npm/retro/bin/scripts && rm -rf npm/retro/bin/scripts/backend
+	rm -rf npm/retro/bin
+	cp -rf scripts npm/retro/bin
 
 # Makes all builds in parallel
 build:
@@ -119,7 +119,7 @@ release:
 ################################################################################
 
 clean:
-	rm node/backend.esbuild.js
-	rm node/backend.esbuild.js.map
+	rm scripts/backend.esbuild.js
+	rm scripts/backend.esbuild.js.map
 	rm ~/github/bin/create-retro-app
 	rm ~/github/bin/retro

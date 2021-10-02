@@ -4,8 +4,8 @@ import * as t from "./types"
 import readline from "./readline"
 
 import {
+	baseConfiguration,
 	buildClientConfiguration,
-	commonConfiguration,
 	resolveUserConfiguration,
 } from "./configuration"
 
@@ -41,7 +41,7 @@ async function buildVendorBundle(): Promise<t.BundleMetadata> {
 
 	try {
 		globalVendorBuildResult = await esbuild.build({
-			...commonConfiguration,
+			...baseConfiguration,
 			entryNames: NODE_ENV !== "production"
 				? undefined
 				: "[dir]/[name]__[hash]",
@@ -62,8 +62,6 @@ async function buildVendorBundle(): Promise<t.BundleMetadata> {
 }
 
 // Builds the client bundle (e.g. Retro) and sets the global client variable
-//
-// TODO: Add support for bundling `App.js` to `out/.retro`?
 async function buildClientBundle(): Promise<t.BundleMetadata> {
 	const client: t.BundleMetadata = {
 		Metafile: null,
@@ -84,7 +82,7 @@ async function buildClientBundle(): Promise<t.BundleMetadata> {
 		})
 		if (globalClientBuildResult.warnings.length > 0) { client.Warnings = globalClientBuildResult.warnings }
 		if (globalClientBuildResult.errors.length > 0) { client.Errors = globalClientBuildResult.errors }
-		client.Metafile = globalVendorBuildResult.metafile
+		client.Metafile = globalClientBuildResult.metafile
 	} catch (caught) {
 		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
 		if (caught.errors.length > 0) { client.Errors = caught.errors }
