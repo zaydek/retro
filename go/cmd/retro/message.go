@@ -102,6 +102,11 @@ func (m Message) GetDirty() BundleResult {
 }
 
 func (m Message) getChunkedEntrypoints() entryPoints {
+	// Guard zero value messages
+	if m.Data.Vendor.Metafile == nil || m.Data.Client.Metafile == nil {
+		return entryPoints{}
+	}
+	// Iterate vendor outputs
 	var entries entryPoints
 	for key := range m.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".js") {
@@ -109,6 +114,7 @@ func (m Message) getChunkedEntrypoints() entryPoints {
 			break
 		}
 	}
+	// Iterate client outputs
 	for key := range m.Data.Client.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".css") {
 			entries.clientCSS, _ = filepath.Rel(RETRO_OUT_DIR, key)

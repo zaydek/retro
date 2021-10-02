@@ -135,8 +135,8 @@ loop:
 				// // Log unmarshal errs so users can debug plugins, etc.
 				// fmt.Println(formatStdoutLine(line))
 			} else {
-				if bundle := message.GetDirty(); bundle.IsDirty() {
-					fmt.Print(bundle.String())
+				if dirty := message.GetDirty(); dirty.IsDirty() {
+					fmt.Print(dirty.String())
 					cancel()
 					os.Exit(1)
 				}
@@ -194,17 +194,21 @@ func (a *App) Serve(options ServeOptions) error {
 	)
 
 	var (
-		message   Message
+		// Get the build message
+		message = <-options.Dev
+
+		// Describes the log state; dirty or clean. Dirty means an unsuccessful
+		// build was logged, and clean means a successful build was logged.
 		logStatus LogStatus
 	)
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// 500 Server error
-		if bundle := message.GetDirty(); bundle.IsDirty() {
+		if dirty := message.GetDirty(); dirty.IsDirty() {
 			terminal.Clear(os.Stdout)
-			fmt.Fprint(w, bundle.HTML())
-			fmt.Print(bundle.String())
+			fmt.Fprint(w, dirty.HTML())
+			fmt.Print(dirty.String())
 			logStatus = LogDirty
 			return
 		}
@@ -253,13 +257,15 @@ func (a *App) Serve(options ServeOptions) error {
 	}
 
 	var port = a.getPort()
-
-	go func() {
-		time.Sleep(10 * time.Millisecond)
+	if dirty := message.GetDirty(); dirty.IsDirty() {
+		terminal.Clear(os.Stdout)
+		fmt.Print(dirty.String())
+		logStatus = LogDirty
+	} else {
 		terminal.Clear(os.Stdout)
 		fmt.Println(buildServeCommandSuccess(port))
 		logStatus = LogClean
-	}()
+	}
 
 	for {
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {

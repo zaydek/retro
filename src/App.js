@@ -1,9 +1,9 @@
 export default function App() {
-	const [state, setState] = React.useState("Hell")
+	const [state, setState] = React.useSta)
 
 	return (
 		<div>
-			<span>Hello, world! Hahaha {state}</span>
+			<span>Hello, world! {state}</span>
 			<button onClick={e => setState(state - 1)}>-</button>
 			<button onClick={e => setState(state + 1)}>+</button>
 		</div>
