@@ -1,6 +1,7 @@
 package retro
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -36,8 +37,8 @@ func (a *App) Dev(options DevOptions) error {
 		}
 	}
 
-	backendJS := filepath.Join(__dirname, "scripts/backend.esbuild.js")
-	stdin, stdout, stderr, err := ipc.NewCommand("node", backendJS)
+	ctx, cancel := context.WithCancel(context.Background())
+	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
@@ -52,7 +53,7 @@ func (a *App) Dev(options DevOptions) error {
 
 	go func() {
 		stdin <- "build"
-		// defer func() { stdin <- "done" }() // DEBUG
+		defer cancel()
 
 		var once sync.Once
 		for {
@@ -60,8 +61,8 @@ func (a *App) Dev(options DevOptions) error {
 			case line := <-stdout:
 				var message Message
 				if err := json.Unmarshal([]byte(line), &message); err != nil {
-					// Log unmarshal errs so users can debug plugins, etc.
-					fmt.Println(formatStdoutLine(line))
+					// // Log unmarshal errs so users can debug plugins, etc.
+					// fmt.Println(formatStdoutLine(line))
 				} else {
 					once.Do(func() {
 						entries := message.getChunkedEntrypoints()
@@ -74,7 +75,7 @@ func (a *App) Dev(options DevOptions) error {
 				}
 			case text := <-stderr:
 				fmt.Fprintln(os.Stderr, formatStderrText(text))
-				// stdin <- "done" // DEBUG
+				cancel()
 				os.Exit(1)
 			}
 		}
@@ -116,14 +117,14 @@ func (a *App) Build(options BuildOptions) error {
 		}
 	}
 
-	backendJS := filepath.Join(__dirname, "scripts/backend.esbuild.js")
-	stdin, stdout, stderr, err := ipc.NewCommand("node", backendJS)
+	ctx, cancel := context.WithCancel(context.Background())
+	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
 	stdin <- "build"
-	// defer func() { stdin <- "done" }() // DEBUG
+	defer cancel()
 
 loop:
 	for {
@@ -131,11 +132,12 @@ loop:
 		case line := <-stdout:
 			var message Message
 			if err := json.Unmarshal([]byte(line), &message); err != nil {
-				// Log unmarshal errs so users can debug plugins, etc.
-				fmt.Println(formatStdoutLine(line))
+				// // Log unmarshal errs so users can debug plugins, etc.
+				// fmt.Println(formatStdoutLine(line))
 			} else {
 				if bundle := message.GetDirty(); bundle.IsDirty() {
 					fmt.Print(bundle.String())
+					cancel()
 					os.Exit(1)
 				}
 				entries := message.getChunkedEntrypoints()
@@ -146,7 +148,7 @@ loop:
 			}
 		case text := <-stderr:
 			fmt.Fprintln(os.Stderr, formatStderrText(text))
-			// stdin <- "done" // DEBUG
+			cancel()
 			os.Exit(1)
 		}
 	}
@@ -168,18 +170,6 @@ type ServeOptions struct {
 }
 
 func (a *App) Serve(options ServeOptions) error {
-	// if options.WarmUpFlag {
-	// 	var entryPointErr EntryPointError
-	// 	if err := warmUp(a.getCommandKind()); err != nil {
-	// 		if errors.As(err, &entryPointErr) {
-	// 			fmt.Fprintln(os.Stderr, format.Error(err))
-	// 			os.Exit(1)
-	// 		} else {
-	// 			return fmt.Errorf("warmUp: %w", err)
-	// 		}
-	// 	}
-	// } else {
-
 	if options.WarmUpFlag {
 		if err := setEnv(KindServeCommand); err != nil {
 			return fmt.Errorf("setEnv: %w", err)
@@ -187,26 +177,36 @@ func (a *App) Serve(options ServeOptions) error {
 	}
 
 	// out/index.html
-	bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
-	if err != nil {
-		return fmt.Errorf("os.ReadFile: %w", err)
+	var contents string
+	if a.getCommandKind() == KindDevCommand {
+		bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+		if err != nil {
+			return fmt.Errorf("os.ReadFile: %w", err)
+		}
+		contents = strings.Replace(string(bstr), "</body>", fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub), 1)
 	}
-	contents := strings.Replace(
-		string(bstr),
-		"</body>",
-		fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub),
-		1,
+
+	type LogStatus string
+
+	const (
+		LogDirty LogStatus = "dirty"
+		LogClean LogStatus = "clean"
 	)
 
-	var message Message
+	var (
+		message   Message
+		logStatus LogStatus
+	)
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// 500 Server error
 		if bundle := message.GetDirty(); bundle.IsDirty() {
 			terminal.Clear(os.Stdout)
-			fmt.Print(bundle.HTML())
+			fmt.Fprint(w, bundle.HTML())
 			fmt.Print(bundle.String())
+			logStatus = LogDirty
+			return
 		}
 		// 200 OK - Non-HTML resources
 		path := getFilesystemPath(r.URL.Path)
@@ -221,13 +221,18 @@ func (a *App) Serve(options ServeOptions) error {
 			fmt.Println(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 		}
+		// Dedupe repeat logs
+		if logStatus == LogClean {
+			return
+		}
 		terminal.Clear(os.Stdout)
 		fmt.Println(buildServeCommandSuccess(a.getPort()))
+		logStatus = LogClean
 	})
 
 	// Path for server-sent events (SSE)
-	http.HandleFunc("/__dev__", func(w http.ResponseWriter, r *http.Request) {
-		if a.getCommandKind() == KindDevCommand {
+	if a.getCommandKind() == KindDevCommand {
+		http.HandleFunc("/__dev__", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-cache")
 			w.Header().Set("Connection", "keep-alive")
@@ -244,8 +249,8 @@ func (a *App) Serve(options ServeOptions) error {
 					return
 				}
 			}
-		}
-	})
+		})
+	}
 
 	var port = a.getPort()
 
@@ -253,6 +258,7 @@ func (a *App) Serve(options ServeOptions) error {
 		time.Sleep(10 * time.Millisecond)
 		terminal.Clear(os.Stdout)
 		fmt.Println(buildServeCommandSuccess(port))
+		logStatus = LogClean
 	}()
 
 	for {
@@ -277,9 +283,8 @@ var __dirname string
 func Run() {
 	var err error
 	__dirname, err = getDirname()
-	if err != nil {
-		panic(fmt.Errorf("getDirname: %w", err))
-	}
+	decorate(&err, "getDirname")
+	check(err)
 
 	// Parse the CLI arguments and guard errors
 	command, err := cli.ParseCLIArguments()
@@ -299,28 +304,21 @@ func Run() {
 		fmt.Fprintln(os.Stderr, format.Error(err))
 		os.Exit(1)
 	default:
-		if err != nil {
-			panic(fmt.Errorf("cli.ParseCLIArguments: %w", err))
-		}
+		decorate(&err, "cli.ParseCLIArguments")
+		check(err)
 	}
 
-	var (
-		app         = &App{Command: command}
-		commandName string
-	)
-
+	app := &App{Command: command}
 	switch app.Command.(type) {
 	case cli.DevCommand:
-		err = app.Dev(DevOptions{WarmUpFlag: true})
-		commandName = "app.Dev"
+		err := app.Dev(DevOptions{WarmUpFlag: true})
+		decorate(&err, "app.Dev")
 	case cli.BuildCommand:
-		err = app.Build(BuildOptions{WarmUpFlag: true})
-		commandName = "app.Build"
+		err := app.Build(BuildOptions{WarmUpFlag: true})
+		decorate(&err, "app.Build")
 	case cli.ServeCommand:
-		err = app.Serve(ServeOptions{WarmUpFlag: true})
-		commandName = "app.Serve"
+		err := app.Serve(ServeOptions{WarmUpFlag: true})
+		decorate(&err, "app.Build")
 	}
-	if err != nil {
-		panic(fmt.Errorf("%s: %w", commandName, err))
-	}
+	check(err)
 }

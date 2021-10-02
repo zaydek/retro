@@ -2,6 +2,7 @@ package ipc
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -9,8 +10,8 @@ import (
 
 // Starts a long-lived IPC process. stdout messages are read line-by-line
 // whereas stderr messages are read once.
-func NewCommand(commandArgs ...string) (stdin, stdout, stderr chan string, err error) {
-	command := exec.Command(commandArgs[0], commandArgs[1:]...)
+func NewCommand(ctx context.Context, commandArgs ...string) (stdin, stdout, stderr chan string, err error) {
+	command := exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
 
 	// Get pipes
 	stdinPipe, err := command.StdinPipe()

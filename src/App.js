@@ -1,5 +1,5 @@
 export default function App() {
-	const [state, setState] = React.useState(1)
+	const [state, setState] = React.useState("Hell")
 
 	return (
 		<div>
