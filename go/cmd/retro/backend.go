@@ -1,8 +1,6 @@
 package retro
 
 import (
-	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -104,13 +102,6 @@ func (m Message) GetDirty() BundleResult {
 }
 
 func (m Message) getChunkedEntrypoints() entryPoints {
-
-	bstr, err := json.MarshalIndent(m, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(bstr))
-
 	var entries entryPoints
 	for key := range m.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".js") {

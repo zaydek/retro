@@ -168,15 +168,21 @@ type ServeOptions struct {
 }
 
 func (a *App) Serve(options ServeOptions) error {
+	// if options.WarmUpFlag {
+	// 	var entryPointErr EntryPointError
+	// 	if err := warmUp(a.getCommandKind()); err != nil {
+	// 		if errors.As(err, &entryPointErr) {
+	// 			fmt.Fprintln(os.Stderr, format.Error(err))
+	// 			os.Exit(1)
+	// 		} else {
+	// 			return fmt.Errorf("warmUp: %w", err)
+	// 		}
+	// 	}
+	// } else {
+
 	if options.WarmUpFlag {
-		var entryPointErr EntryPointError
-		if err := warmUp(a.getCommandKind()); err != nil {
-			if errors.As(err, &entryPointErr) {
-				fmt.Fprintln(os.Stderr, format.Error(err))
-				os.Exit(1)
-			} else {
-				return fmt.Errorf("warmUp: %w", err)
-			}
+		if err := setEnv(KindServeCommand); err != nil {
+			return fmt.Errorf("setEnv: %w", err)
 		}
 	}
 
@@ -212,7 +218,8 @@ func (a *App) Serve(options ServeOptions) error {
 		if a.getCommandKind() == KindDevCommand {
 			fmt.Fprint(w, contents)
 		} else {
-			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
+			fmt.Println(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 		}
 		terminal.Clear(os.Stdout)
 		fmt.Println(buildServeCommandSuccess(a.getPort()))
@@ -310,7 +317,7 @@ func Run() {
 		err = app.Build(BuildOptions{WarmUpFlag: true})
 		commandName = "app.Build"
 	case cli.ServeCommand:
-		err = app.Serve(ServeOptions{})
+		err = app.Serve(ServeOptions{WarmUpFlag: true})
 		commandName = "app.Serve"
 	}
 	if err != nil {

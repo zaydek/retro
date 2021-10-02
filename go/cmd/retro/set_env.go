@@ -6,7 +6,6 @@ import (
 )
 
 var (
-	// Global variables mirroring environmental variables
 	NODE_ENV      = ""
 	RETRO_CMD     = ""
 	RETRO_WWW_DIR = ""
@@ -40,7 +39,7 @@ func setEnvImpl(errPointer *error, envKey, defaultValue string) {
 }
 
 // Propagates environmental variables or sets default values
-func setEnvsAndGlobalVariables(commandKind CommandKind) error {
+func setEnv(commandKind CommandKind) error {
 	var err error
 	switch commandKind {
 	case KindDevCommand:

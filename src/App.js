@@ -3,7 +3,7 @@ export default function App() {
 
 	return (
 		<div>
-			<span>Hello, world! {state}</span>
+			<span>Hello, world! Hahaha {state}</span>
 			<button onClick={e => setState(state - 1)}>-</button>
 			<button onClick={e => setState(state + 1)}>+</button>
 		</div>

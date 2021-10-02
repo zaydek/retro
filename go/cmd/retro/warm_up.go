@@ -11,8 +11,8 @@ import (
 
 func warmUp(commandKind CommandKind) error {
 	// Set environmental variables and global variables
-	if err := setEnvsAndGlobalVariables(commandKind); err != nil { // Takes precedence
-		return fmt.Errorf("setEnvsAndGlobalVariables: %w", err)
+	if err := setEnv(commandKind); err != nil { // Takes precedence
+		return fmt.Errorf("setEnv: %w", err)
 	}
 	// Guard entry points
 	if err := guardEntryPoints(); err != nil {
