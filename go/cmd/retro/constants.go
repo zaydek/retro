@@ -4,17 +4,17 @@ const (
 	// The HTML entry point
 	htmlEntryPoint = `<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello, world!</title>
-    <link rel="stylesheet" href="/client.css" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script src="/vendor.js"></script>
-    <script src="/client.js"></script>
-  </body>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Hello, world!</title>
+		<link rel="stylesheet" href="/client.css" />
+	</head>
+	<body>
+		<div id="root"></div>
+		<script src="/vendor.js"></script>
+		<script src="/client.js"></script>
+	</body>
 </html>`
 
 	// Server-sent events (SSE) for the dev command
@@ -47,10 +47,10 @@ if (document.getElementById("root").hasChildNodes()) {
 	appJSEntryPoint = `import "./App.css"
 
 export default function App() {
-  return (
-    <div className="App">
-      <h1>Hello, world!</h1>
-    </div>
-  )
+	return (
+		<div className="App">
+			<h1>Hello, world!</h1>
+		</div>
+	)
 }`
 )

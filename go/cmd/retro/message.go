@@ -84,7 +84,7 @@ a:hover { text-decoration: underline; }
 	</head>
 	<body>
 		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
-		` + serverSentEventsStub + `
+		` + htmlServerSentEvents + `
 	</body>
 </html>`
 }
