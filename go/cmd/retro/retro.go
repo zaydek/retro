@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/zaydek/retro/go/cmd/format"
 	"github.com/zaydek/retro/go/cmd/retro/cli"
+	"github.com/zaydek/retro/go/pkg/fsUtils"
 	"github.com/zaydek/retro/go/pkg/ipc"
 	"github.com/zaydek/retro/go/pkg/terminal"
 	"github.com/zaydek/retro/go/pkg/watch"
@@ -47,7 +49,7 @@ func (a *App) Dev(options DevOptions) error {
 		}
 	}
 
-	// Run the backend Node.js command
+	// Run the Node.js backend code
 	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
@@ -56,15 +58,13 @@ func (a *App) Dev(options DevOptions) error {
 	var (
 		ready = make(chan struct{})
 		dev   = make(chan Message, 1)
-
-		// Orchestrates `copyIndexHTMLEntryPoint`
-		once sync.Once
 	)
 
 	stdin <- "build"
 
 	// TODO: Do we have zombie Node.js processes?
 	go func() {
+		var once sync.Once
 		for {
 			select {
 			case line := <-stdout:
@@ -112,6 +112,147 @@ func (a *App) Dev(options DevOptions) error {
 	if err := a.Serve(ServeOptions{WarmUpFlag: false, Dev: dev}); err != nil {
 		return fmt.Errorf("a.Serve: %w", err)
 	}
+
+	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type BuildOptions struct {
+	WarmUpFlag bool
+}
+
+func (a *App) Build(options BuildOptions) error {
+	if options.WarmUpFlag {
+		var entryPointErr EntryPointError
+		if err := warmUp(a.getCommandKind()); err != nil {
+			if errors.As(err, &entryPointErr) {
+				fatalUserError(entryPointErr)
+			} else {
+				return fmt.Errorf("warmUp: %w", err)
+			}
+		}
+	}
+
+	// Run the Node.js backend code
+	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
+	if err != nil {
+		return fmt.Errorf("ipc.NewCommand: %w", err)
+	}
+
+	// select {
+	// case line := <-stdout:
+	// 	// FIXME: stdout messages e.g. `console.log` from retro.config.js should not
+	// 	// be treated as errors if they fail to unmarshal. The problem is that
+	// 	// ipc.Message needs to be more blunt and simply provide a plaintext
+	// 	// interface for interacting with stdout and stderr.
+	// 	//
+	// 	// See https://github.com/zaydek/retro/issues/8.
+	// 	var res BackendResponse
+	// 	if err := json.Unmarshal(line.Data, &res); err != nil {
+	// 		panic(err)
+	// 	}
+	// 	if res.Dirty() {
+	// 		fmt.Fprint(os.Stderr, res)
+	// 		os.Exit(1)
+	// 	}
+	// 	vendorDotJS, bundleDotJS, bundleDotCSS := res.getChunkedNames()
+	// 	if err := copyIndexHTMLEntryPoint(vendorDotJS, bundleDotJS, bundleDotCSS); err != nil {
+	// 		panic(err)
+	// 	}
+	// case text := <-stderr:
+	// 	fmt.Fprintln(os.Stderr, decorateStderrText(text))
+	// 	stdin <- "done"
+	// 	os.Exit(1)
+	// }
+
+	stdin <- "build"
+
+	// var once sync.Once
+	// select {
+	// case line := <-stdout:
+	// 	var message Message
+	// 	if err := json.Unmarshal([]byte(line), &message); err == nil {
+	// 		once.Do(func() {
+	// 			entries := message.getChunkedNames()
+	// 			if err := copyIndexHTMLEntryPoint(entries); err != nil {
+	// 				// Panic because of the goroutine
+	// 				panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
+	// 			}
+	// 		})
+	// 	} else {
+	// 		// Log unmarshal errors so users can debug plugins, etc.
+	// 		fmt.Println(decorateStdoutLine(line))
+	// 	}
+	// case text := <-stderr:
+	// 	fmt.Fprintln(os.Stderr, decorateStderrText(text))
+	// 	stdin <- "done"
+	// 	os.Exit(1)
+	// }
+
+	var once sync.Once
+
+loop:
+	for {
+		select {
+		case line := <-stdout:
+			var message Message
+			if err := json.Unmarshal([]byte(line), &message); err == nil {
+				once.Do(func() {
+					// entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
+					entries := message.getChunkedNames()
+					if err := copyIndexHTMLEntryPoint(entries); err != nil {
+						// Panic because of the goroutine
+						panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
+					}
+					// ready <- struct{}{}
+				})
+				// dev <- message
+				break loop
+			} else {
+				// Log unmarshal errors so users can debug plugins, etc.
+				fmt.Println(decorateStdoutLine(line))
+			}
+		case text := <-stderr:
+			fmt.Fprintln(os.Stderr, decorateStderrText(text))
+			stdin <- "done"
+			os.Exit(1)
+		}
+	}
+
+	lsInfos, err := fsUtils.List(RETRO_OUT_DIR)
+	if err != nil {
+		panic(err)
+	}
+	sort.Sort(lsInfos)
+
+	var sum int64
+	for _, lsInfo := range lsInfos {
+		var color = terminal.Normal
+		if strings.HasSuffix(lsInfo.Path, ".html") {
+			color = terminal.Normal
+		} else if strings.HasSuffix(lsInfo.Path, ".js") || strings.HasSuffix(lsInfo.Path, ".js.map") {
+			color = terminal.Yellow
+		} else if strings.HasSuffix(lsInfo.Path, ".css") || strings.HasSuffix(lsInfo.Path, ".css.map") {
+			color = terminal.Cyan
+		} else {
+			color = terminal.Dim
+		}
+
+		fmt.Printf("%v%s%v\n",
+			color(lsInfo.Path),
+			strings.Repeat(" ", 40-len(lsInfo.Path)),
+			terminal.Dimf("(%s)", fsUtils.ByteCountIEC(lsInfo.Size)),
+		)
+
+		if !strings.HasSuffix(lsInfo.Path, ".map") {
+			sum += lsInfo.Size
+		}
+	}
+
+	fmt.Println(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", fsUtils.ByteCountIEC(sum)))
+	fmt.Println()
+	fmt.Println(terminal.Dimf("(%s)", time.Since(EPOCH)))
 
 	return nil
 }
@@ -276,12 +417,13 @@ func Run() {
 	app := &App{Command: command}
 	switch app.Command.(type) {
 	case cli.DevCommand:
-		if err := app.Dev(DevOptions{WarmUpFlag: true}); err != nil {
-			panic(fmt.Errorf("app.Dev: %w", err))
-		}
+		err = app.Dev(DevOptions{WarmUpFlag: true})
 	// case cli.BuildCommand:
-	// 	app.Build(BuildOptions{WarmUpFlag: true})
+	// 	err = app.Build(BuildOptions{WarmUpFlag: true})
 	case cli.ServeCommand:
-		app.Serve(ServeOptions{})
+		err = app.Serve(ServeOptions{})
+	}
+	if err != nil {
+		panic(err)
 	}
 }

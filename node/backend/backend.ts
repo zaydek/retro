@@ -169,7 +169,7 @@ async function main(): Promise<void> {
 			default:
 				throw new Error("Internal error")
 		}
-		await sleep(100)
+		await sleep(10)
 	}
 }
 

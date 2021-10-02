@@ -1,4 +1,4 @@
-package retro
+package fsUtils
 
 import (
 	"io"
@@ -9,40 +9,18 @@ import (
 	"github.com/zaydek/retro/go/cmd/perm"
 )
 
-// TODO: In theory this can and should be extracted to a separate package since
-// it has nothing to do with Retro
-
 type copyInfo struct {
 	source string
 	target string
 }
 
-// err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if info.IsDir() {
-// 		return nil
-// 	}
-// 	for _, exclude := range excludes {
-// 		if path == exclude {
-// 			return nil
-// 		}
-// 	}
-// 	cpInfos = append(cpInfos, copyInfo{
-// 		source: path,
-// 		target: filepath.Join(dst, filepath.Base(path)),
-// 	})
-// 	return nil
-// })
-
 // Copies a directory recursively
-func copyDirectory(src, dst string, excludes []string) error {
+func CopyRecursively(source, target string, excludes []string) error {
 	// TODO: Do we want to guard for non-directory sources and or destinations?
 
 	// Sweep for sources and targets
 	var copyInfos []copyInfo
-	if err := filepath.WalkDir(src, func(path string, directoryEntry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(source, func(path string, directoryEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -56,10 +34,11 @@ func copyDirectory(src, dst string, excludes []string) error {
 		}
 		copyInfos = append(copyInfos, copyInfo{
 			source: path,
-			target: filepath.Join(dst, filepath.Base(path)),
+			target: filepath.Join(target, filepath.Base(path)),
 		})
 		return nil
-	}); err != nil {
+	})
+	if err != nil {
 		return err
 	}
 

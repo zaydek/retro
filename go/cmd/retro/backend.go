@@ -1,6 +1,7 @@
 package retro
 
 import (
+	"path/filepath"
 	"strings"
 
 	render "github.com/buildkite/terminal-to-html/v3"
@@ -34,12 +35,6 @@ func (r BundleResult) String() string {
 func (r BundleResult) HTML() string {
 	str := r.String()
 
-	// TODO: We may not need to do this anymore since we upgraded esbuild
-	str = strings.ReplaceAll(str, "╷", "|")
-	str = strings.ReplaceAll(str, "│", "|")
-	str = strings.ReplaceAll(str, "╵", "|")
-
-	// TODO: Add support for deep-linking VS Code or similar
 	return `<!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -85,7 +80,7 @@ a:hover { text-decoration: underline; }
 	</head>
 	<body>
 		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
-		` + strings.TrimRight(serverSentEventsStub, "\n") + `
+		` + serverSentEventsStub + `
 	</body>
 </html>` + "\n"
 }
@@ -99,53 +94,28 @@ type Message struct {
 	}
 }
 
-// type BackendResponse struct {
-// 	Metafile struct {
-// 		Vendor map[string]interface{}
-// 		Bundle map[string]interface{}
-// 	}
-// 	Errors   []api.Message
-// 	Warnings []api.Message
-// }
-
-// func (m AbstractDoneMessage) Dirty() bool {
-// 	return len(m.Errors) > 0 || len(m.Warnings) > 0
-// }
-
-// func (r BackendResponse) String() string {
-// 	e := api.FormatMessages(r.Errors, api.FormatMessagesOptions{
-// 		Color:         true,
-// 		Kind:          api.ErrorMessage,
-// 		TerminalWidth: 80,
-// 	})
-// 	w := api.FormatMessages(r.Warnings, api.FormatMessagesOptions{
-// 		Color:         true,
-// 		Kind:          api.WarningMessage,
-// 		TerminalWidth: 80,
-// 	})
-// 	return strings.Join(append(e, w...), "")
-// }
-
-// func (r BackendResponse) getChunkedNames() (vendorDotJS, bundleDotJS, bundleDotCSS string) {
-// 	for key := range r.Metafile.Vendor["outputs"].(map[string]interface{}) {
-// 		if strings.HasSuffix(key, ".js") {
-// 			vendorDotJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
-// 			break
-// 		}
-// 	}
-// 	for key := range r.Metafile.Bundle["outputs"].(map[string]interface{}) {
-// 		if strings.HasSuffix(key, ".js") {
-// 			bundleDotJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
-// 			if bundleDotCSS != "" { // Check other
-// 				break
-// 			}
-// 		} else if strings.HasSuffix(key, ".css") {
-// 			bundleDotCSS, _ = filepath.Rel(RETRO_OUT_DIR, key)
-// 			if bundleDotJS != "" { // Check other
-// 				break
-// 			}
-// 		}
-// 	}
-// 	return
-// }
-//
+func (r Message) getChunkedNames() entryPoints {
+	// Get the vendor JS filename
+	var entries entryPoints
+	for key := range r.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
+		if strings.HasSuffix(key, ".js") {
+			entries.vendorJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
+			break
+		}
+	}
+	// Get the client CSS and JS filenames
+	for key := range r.Data.Client.Metafile["outputs"].(map[string]interface{}) {
+		if strings.HasSuffix(key, ".css") {
+			entries.clientCSS, _ = filepath.Rel(RETRO_OUT_DIR, key)
+			if entries.clientJS != "" { // Check other
+				break
+			}
+		} else if strings.HasSuffix(key, ".js") {
+			entries.clientJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
+			if entries.clientCSS != "" { // Check other
+				break
+			}
+		}
+	}
+	return entries
+}
