@@ -47,6 +47,7 @@ func NonError(x interface{}) string {
 	case error:
 		str = v.Error()
 	default:
+		// TODO: What the fuck is this?
 		panic("Internal error")
 	}
 	return Pad(Tabs(Accent(str, terminal.Cyan)))
@@ -60,6 +61,7 @@ func Error(x interface{}) string {
 	case error:
 		str = v.Error()
 	default:
+		// TODO: What the fuck is this?
 		panic("Internal error")
 	}
 	arr := strings.Split(str, "\n")

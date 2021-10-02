@@ -1,7 +1,6 @@
 package retro
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -34,7 +33,7 @@ func setEnvImpl(errPointer *error, envKey, defaultValue string) {
 		RETRO_OUT_DIR = envValue
 	}
 	if err := os.Setenv(envKey, envValue); err != nil {
-		*errPointer = fmt.Errorf("os.Setenv: %w", err)
+		*errPointer = decorate(&err, "os.Setenv")
 	}
 }
 

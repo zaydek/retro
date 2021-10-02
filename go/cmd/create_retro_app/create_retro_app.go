@@ -55,10 +55,10 @@ func (r App) CreateApp() error {
 			os.Exit(1)
 		}
 		if err := os.MkdirAll(r.Command.Directory, perm.BitsDirectory); err != nil {
-			return fmt.Errorf("os.MkdirAll: %w", err)
+			return decorate(&err, "os.MkdirAll")
 		}
 		if err := os.Chdir(r.Command.Directory); err != nil {
-			return fmt.Errorf("os.Chdir: %w", err)
+			return decorate(&err, "os.Chdir")
 		}
 		defer os.Chdir("..")
 	}
@@ -75,7 +75,7 @@ func (r App) CreateApp() error {
 		return nil
 	})
 	if err != nil {
-		panic(fmt.Errorf("fs.WalkDir: %w", err))
+		panic(decorate(&err, "fs.WalkDir"))
 	}
 
 	var badPaths []string
@@ -111,19 +111,19 @@ func (r App) CreateApp() error {
 	for _, v := range paths {
 		if dir := filepath.Dir(v); dir != "." {
 			if err := os.MkdirAll(dir, perm.BitsDirectory); err != nil {
-				return fmt.Errorf("os.MkdirAll: %w", err)
+				return decorate(&err, "os.MkdirAll")
 			}
 		}
 		src, err := fsys.Open(v)
 		if err != nil {
-			return fmt.Errorf("fsys.Open: %w", err)
+			return decorate(&err, "fsys.Open")
 		}
 		dst, err := os.Create(v)
 		if err != nil {
-			return fmt.Errorf("os.Create: %w", err)
+			return decorate(&err, "os.Create")
 		}
 		if _, err := io.Copy(dst, src); err != nil {
-			return fmt.Errorf("io.Copy: %w", err)
+			return decorate(&err, "io.Copy")
 		}
 		src.Close()
 		dst.Close()
@@ -132,11 +132,11 @@ func (r App) CreateApp() error {
 	var buf bytes.Buffer
 	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
 	if err := pkg.Execute(&buf, deps.Deps); err != nil {
-		return fmt.Errorf("pkg.Execute: %w", err)
+		return decorate(&err, "pkg.Execute")
 	}
 
 	if err := os.WriteFile("package.json", buf.Bytes(), perm.BitsFile); err != nil {
-		return fmt.Errorf("os.WriteFile: %w", err)
+		return decorate(&err, "os.WriteFile")
 	}
 
 	if r.Command.Directory == "." {
@@ -173,12 +173,12 @@ func Run() {
 		os.Exit(1)
 	default:
 		if err != nil {
-			panic(fmt.Errorf("cli.ParseCLIArguments: %w", err))
+			panic(decorate(&err, "cli.ParseCLIArguments"))
 		}
 	}
 
 	app := &App{Command: command}
 	if err := app.CreateApp(); err != nil {
-		panic(fmt.Errorf("app.CreateApp: %w", err))
+		panic(decorate(&err, "app.CreateApp"))
 	}
 }

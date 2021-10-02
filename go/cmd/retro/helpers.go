@@ -33,19 +33,19 @@ func getFilesystemPath(url string) string {
 	return returnUrl
 }
 
-// // Gets the canonical browser path for a URL (removes `index.html` and `.html`).
-// // Note that `getCanonicalBrowserPath` is inverse to `getFilesystemPath`.
-// func getCanonicalBrowserPath(url string) string {
-// 	returnUrl := url
-// 	if strings.HasSuffix(url, "/index.html") {
-// 		returnUrl = returnUrl[:len(returnUrl)-len("index.html")]
-// 	} else if strings.HasSuffix(url, "/index") {
-// 		returnUrl = returnUrl[:len(returnUrl)-len("index")]
-// 	} else if strings.HasSuffix(url, ".html") {
-// 		returnUrl = returnUrl[:len(returnUrl)-len(".html")]
-// 	}
-// 	return returnUrl
-// }
+// Gets the canonical browser path for a URL (removes `index.html` and `.html`).
+// Note that `getCanonicalBrowserPath` is inverse to `getFilesystemPath`.
+func getCanonicalBrowserPath(url string) string {
+	returnUrl := url
+	if strings.HasSuffix(url, "/index.html") {
+		returnUrl = returnUrl[:len(returnUrl)-len("index.html")]
+	} else if strings.HasSuffix(url, "/index") {
+		returnUrl = returnUrl[:len(returnUrl)-len("index")]
+	} else if strings.HasSuffix(url, ".html") {
+		returnUrl = returnUrl[:len(returnUrl)-len(".html")]
+	}
+	return returnUrl
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -72,7 +72,7 @@ func getDirname() (string, error) {
 func getIP() (net.IP, error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		return nil, fmt.Errorf("net.Dial: %w", err)
+		return nil, decorate(&err, "net.Dial")
 	}
 	defer conn.Close()
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
@@ -120,7 +120,7 @@ func makeBuildSuccess(directory string) (string, error) {
 
 	lsInfos, err := fsUtils.List(directory)
 	if err != nil {
-		return "", fmt.Errorf("fsUtils.List: %w", err)
+		return "", decorate(&err, "fsUtils.List")
 	}
 	sort.Sort(lsInfos)
 

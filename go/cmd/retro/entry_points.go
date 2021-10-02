@@ -28,10 +28,10 @@ func (e EntryPointError) Error() string {
 func copyDefaultIndexHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
-		return fmt.Errorf("os.MkdirAll: %w", err)
+		return decorate(&err, "os.MkdirAll")
 	}
 	if err := os.WriteFile(filename, []byte(indexHTML+"\n"), perm.BitsFile); err != nil {
-		return fmt.Errorf("os.WriteFile: %w", err)
+		return decorate(&err, "os.WriteFile")
 	}
 	return nil
 }
@@ -41,10 +41,10 @@ func copyDefaultIndexHTMLEntryPoint() error {
 func copyDefaultIndexJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
-		return fmt.Errorf("os.MkdirAll: %w", err)
+		return decorate(&err, "os.MkdirAll")
 	}
 	if err := os.WriteFile(filename, []byte(indexJS+"\n"), perm.BitsFile); err != nil {
-		return fmt.Errorf("os.WriteFile: %w", err)
+		return decorate(&err, "os.WriteFile")
 	}
 	return nil
 }
@@ -54,10 +54,10 @@ func copyDefaultIndexJSEntryPoint() error {
 func copyDefaultAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
-		return fmt.Errorf("os.MkdirAll: %w", err)
+		return decorate(&err, "os.MkdirAll")
 	}
 	if err := os.WriteFile(filename, []byte(appJS+"\n"), perm.BitsFile); err != nil {
-		return fmt.Errorf("os.WriteFile: %w", err)
+		return decorate(&err, "os.WriteFile")
 	}
 	return nil
 }
@@ -69,12 +69,12 @@ func copyDefaultAppJSEntryPoint() error {
 // - <script src="/vendor.js"></script>
 // - <script src="/client.js"></script>
 //
-func guardIndexHTMLEntryPoint() error {
+func guardHTMLEntryPoint() error {
 	// Guard `www/index.html`
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexHTMLEntryPoint(); err != nil {
-			return fmt.Errorf("copyDefaultIndexHTMLEntryPoint: %w", err)
+			return decorate(&err, "copyDefaultIndexHTMLEntryPoint")
 		}
 	}
 
@@ -180,11 +180,11 @@ For example:
 }
 
 // Guards for the presence of `src/index.js`
-func guardIndexJSEntryPoint() error {
+func guardJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexJSEntryPoint(); err != nil {
-			return fmt.Errorf("copyDefaultIndexJSEntryPoint: %w", err)
+			return decorate(&err, "copyDefaultIndexJSEntryPoint")
 		}
 	}
 	return nil
@@ -195,7 +195,7 @@ func guardAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultAppJSEntryPoint(); err != nil {
-			return fmt.Errorf("copyDefaultAppJSEntryPoint: %w", err)
+			return decorate(&err, "copyDefaultAppJSEntryPoint")
 		}
 	}
 	return nil
@@ -208,14 +208,14 @@ func guardAppJSEntryPoint() error {
 // - src/App.js
 //
 func guardEntryPoints() error {
-	if err := guardIndexHTMLEntryPoint(); err != nil {
-		return fmt.Errorf("guardIndexHTMLEntryPoint: %w", err)
+	if err := guardHTMLEntryPoint(); err != nil {
+		return decorate(&err, "guardHTMLEntryPoint")
 	}
-	if err := guardIndexJSEntryPoint(); err != nil {
-		return fmt.Errorf("guardIndexJSEntryPoint: %w", err)
+	if err := guardJSEntryPoint(); err != nil {
+		return decorate(&err, "guardJSEntryPoint")
 	}
 	if err := guardAppJSEntryPoint(); err != nil {
-		return fmt.Errorf("guardAppJSEntryPoint: %w", err)
+		return decorate(&err, "guardAppJSEntryPoint")
 	}
 	return nil
 }
@@ -231,7 +231,7 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	bstr, err := os.ReadFile(filename)
 	if err != nil {
-		return fmt.Errorf("os.ReadFile: %w", err)
+		return decorate(&err, "os.ReadFile")
 	}
 	// <link rel="stylesheet" href="/client.css" />
 	contents := string(bstr)
@@ -258,11 +258,11 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	// out/www
 	target := filepath.Join(RETRO_OUT_DIR, filename)
 	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
-		return fmt.Errorf("os.MkdirAll: %w", err)
+		return decorate(&err, "os.MkdirAll")
 	}
 	// out/www/index.html
 	if err := os.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
-		return fmt.Errorf("os.WriteFile: %w", err)
+		return decorate(&err, "os.WriteFile")
 	}
 	return nil
 }

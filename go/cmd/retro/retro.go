@@ -32,7 +32,7 @@ func (a *App) Dev(options DevOptions) error {
 				fmt.Fprintln(os.Stderr, format.Error(err))
 				os.Exit(1)
 			} else {
-				return fmt.Errorf("warmUp: %w", err)
+				return decorate(&err, "warmUp")
 			}
 		}
 	}
@@ -41,7 +41,7 @@ func (a *App) Dev(options DevOptions) error {
 	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		cancel()
-		return fmt.Errorf("ipc.NewCommand: %w", err)
+		return decorate(&err, "ipc.NewCommand")
 	}
 
 	var (
@@ -68,7 +68,7 @@ func (a *App) Dev(options DevOptions) error {
 					once.Do(func() {
 						entries := message.getChunkedEntrypoints()
 						if err := copyIndexHTMLEntryPoint(entries); err != nil {
-							panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
+							panic(decorate(&err, "copyIndexHTMLEntryPoint"))
 						}
 						ready <- struct{}{}
 					})
@@ -85,7 +85,7 @@ func (a *App) Dev(options DevOptions) error {
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
 			if result.Err != nil {
-				panic(fmt.Errorf("watch.Directory: %w", result.Err))
+				panic(decorate(&err, "watch.Directory"))
 			}
 			stdin <- "rebuild"
 		}
@@ -93,7 +93,7 @@ func (a *App) Dev(options DevOptions) error {
 
 	<-ready
 	if err := a.Serve(ServeOptions{WarmUpFlag: false, Dev: dev}); err != nil {
-		return fmt.Errorf("a.Serve: %w", err)
+		return decorate(&err, "a.Serve")
 	}
 
 	return nil
@@ -113,7 +113,7 @@ func (a *App) Build(options BuildOptions) error {
 				fmt.Fprintln(os.Stderr, format.Error(err))
 				os.Exit(1)
 			} else {
-				return fmt.Errorf("warmUp: %w", err)
+				return decorate(&err, "warmUp")
 			}
 		}
 	}
@@ -122,7 +122,7 @@ func (a *App) Build(options BuildOptions) error {
 	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		cancel()
-		return fmt.Errorf("ipc.NewCommand: %w", err)
+		return decorate(&err, "ipc.NewCommand")
 	}
 
 	stdin <- "build"
@@ -144,7 +144,7 @@ loop:
 				}
 				entries := message.getChunkedEntrypoints()
 				if err := copyIndexHTMLEntryPoint(entries); err != nil {
-					return fmt.Errorf("copyIndexHTMLEntryPoint: %w", err)
+					return decorate(&err, "copyIndexHTMLEntryPoint")
 				}
 				break loop
 			}
@@ -157,7 +157,7 @@ loop:
 
 	str, err := makeBuildSuccess(RETRO_OUT_DIR)
 	if err != nil {
-		return fmt.Errorf("buildLog: %w", err)
+		return decorate(&err, "makeBuildSuccess")
 	}
 	fmt.Print(str)
 
@@ -174,7 +174,7 @@ type ServeOptions struct {
 func (a *App) Serve(options ServeOptions) error {
 	if options.WarmUpFlag {
 		if err := setEnv(KindServeCommand); err != nil {
-			return fmt.Errorf("setEnv: %w", err)
+			return decorate(&err, "setEnv")
 		}
 	}
 
@@ -183,7 +183,7 @@ func (a *App) Serve(options ServeOptions) error {
 	if a.getCommandKind() == KindDevCommand {
 		bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 		if err != nil {
-			return fmt.Errorf("os.ReadFile: %w", err)
+			return decorate(&err, "os.ReadFile")
 		}
 		contents = strings.Replace(string(bstr), "</body>", fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub), 1)
 	}
@@ -269,7 +269,7 @@ func (a *App) Serve(options ServeOptions) error {
 				port++
 				continue
 			} else {
-				return fmt.Errorf("http.ListenAndServe: %w", err)
+				return decorate(&err, "http.ListenAndServe")
 			}
 		}
 		break
@@ -286,7 +286,7 @@ func Run() {
 	var err error
 	__dirname, err = getDirname()
 	decorate(&err, "getDirname")
-	check(err)
+	must(err)
 
 	// Parse the CLI arguments and guard errors
 	command, err := cli.ParseCLIArguments()
@@ -307,7 +307,7 @@ func Run() {
 		os.Exit(1)
 	default:
 		decorate(&err, "cli.ParseCLIArguments")
-		check(err)
+		must(err)
 	}
 
 	app := &App{Command: command}
@@ -322,5 +322,5 @@ func Run() {
 		err := app.Serve(ServeOptions{WarmUpFlag: true})
 		decorate(&err, "app.Build")
 	}
-	check(err)
+	must(err)
 }
