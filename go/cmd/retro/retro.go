@@ -153,7 +153,7 @@ loop:
 		}
 	}
 
-	str, err := buildBuildCommandSuccess(RETRO_OUT_DIR)
+	str, err := makeBuildSuccess(RETRO_OUT_DIR)
 	if err != nil {
 		return fmt.Errorf("buildLog: %w", err)
 	}
@@ -186,52 +186,44 @@ func (a *App) Serve(options ServeOptions) error {
 		contents = strings.Replace(string(bstr), "</body>", fmt.Sprintf("\t%s\n\t</body>", serverSentEventsStub), 1)
 	}
 
-	type LogStatus string
-
-	const (
-		LogDirty LogStatus = "dirty"
-		LogClean LogStatus = "clean"
-	)
-
 	var (
 		// Get the build message
 		message = <-options.Dev
 
-		// Describes the log state; dirty or clean. Dirty means an unsuccessful
-		// build was logged, and clean means a successful build was logged.
-		logStatus LogStatus
+		// The logMessage log message
+		logMessage string
 	)
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// 500 Server error
+		// Dedupe the next log message (error)
+		next := makeServeSuccess(a.getPort())
 		if dirty := message.GetDirty(); dirty.IsDirty() {
-			terminal.Clear(os.Stdout)
-			fmt.Fprint(w, dirty.HTML())
-			fmt.Print(dirty.String())
-			logStatus = LogDirty
-			return
+			next = dirty.String()
 		}
-		// 200 OK - Non-HTML resources
+		if next != logMessage {
+			logMessage = next
+			terminal.Clear(os.Stdout)
+			fmt.Println(logMessage)
+			if dirty := message.GetDirty(); dirty.IsDirty() {
+				fmt.Fprintln(w, dirty.HTML())
+				// Eagerly return
+				return
+			}
+		}
+		// Serve non-HTML resources
 		path := getFilesystemPath(r.URL.Path)
 		if extension := filepath.Ext(path); extension != "" && extension != ".html" {
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, path))
 			return
 		}
-		// 200 OK - HTML resources
+		// Serve nTML resources
 		if a.getCommandKind() == KindDevCommand {
 			fmt.Fprint(w, contents)
 		} else {
 			fmt.Println(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
 		}
-		// Dedupe repeat logs
-		if logStatus == LogClean {
-			return
-		}
-		terminal.Clear(os.Stdout)
-		fmt.Println(buildServeCommandSuccess(a.getPort()))
-		logStatus = LogClean
 	})
 
 	// Path for server-sent events (SSE)
@@ -256,17 +248,17 @@ func (a *App) Serve(options ServeOptions) error {
 		})
 	}
 
-	var port = a.getPort()
+	next := makeServeSuccess(a.getPort())
 	if dirty := message.GetDirty(); dirty.IsDirty() {
+		next = dirty.String()
+	}
+	if next != logMessage {
+		logMessage = next
 		terminal.Clear(os.Stdout)
-		fmt.Print(dirty.String())
-		logStatus = LogDirty
-	} else {
-		terminal.Clear(os.Stdout)
-		fmt.Println(buildServeCommandSuccess(port))
-		logStatus = LogClean
+		fmt.Println(logMessage)
 	}
 
+	port := a.getPort()
 	for {
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {

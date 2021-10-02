@@ -1,5 +1,5 @@
 export default function App() {
-	const [state, setState] = React.useSta)
+	const [state, setState] = React.useState(0)
 
 	return (
 		<div>

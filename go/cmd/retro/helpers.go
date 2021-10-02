@@ -79,7 +79,7 @@ func getIP() (net.IP, error) {
 	return localAddr.IP, nil
 }
 
-func buildServeCommandSuccess(port int) string {
+func makeServeSuccess(port int) string {
 	// Get the IP address and a flag describing the user's offline
 	ip, err := getIP()
 	isNetworkUnreachable := err != nil && strings.HasSuffix(
@@ -115,7 +115,7 @@ To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + 
 
 var epoch = time.Now()
 
-func buildBuildCommandSuccess(directory string) (string, error) {
+func makeBuildSuccess(directory string) (string, error) {
 	var str string
 
 	lsInfos, err := fsUtils.List(directory)

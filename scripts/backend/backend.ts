@@ -50,12 +50,12 @@ async function buildVendorBundle(): Promise<t.BundleMetadata> {
 			},
 			outdir: RETRO_OUT_DIR,
 		})
-		if (globalVendorBuildResult.warnings.length > 0) { vendor.Warnings = globalVendorBuildResult.warnings }
 		if (globalVendorBuildResult.errors.length > 0) { vendor.Errors = globalVendorBuildResult.errors }
+		if (globalVendorBuildResult.warnings.length > 0) { vendor.Warnings = globalVendorBuildResult.warnings }
 		vendor.Metafile = globalVendorBuildResult.metafile
 	} catch (caught) {
-		if (caught.warnings.length > 0) { vendor.Warnings = caught.warnings }
 		if (caught.errors.length > 0) { vendor.Errors = caught.errors }
+		if (caught.warnings.length > 0) { vendor.Warnings = caught.warnings }
 	}
 
 	return vendor
@@ -80,12 +80,12 @@ async function buildClientBundle(): Promise<t.BundleMetadata> {
 			},
 			outdir: RETRO_OUT_DIR,
 		})
-		if (globalClientBuildResult.warnings.length > 0) { client.Warnings = globalClientBuildResult.warnings }
 		if (globalClientBuildResult.errors.length > 0) { client.Errors = globalClientBuildResult.errors }
+		if (globalClientBuildResult.warnings.length > 0) { client.Warnings = globalClientBuildResult.warnings }
 		client.Metafile = globalClientBuildResult.metafile
 	} catch (caught) {
-		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
 		if (caught.errors.length > 0) { client.Errors = caught.errors }
+		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
 	}
 
 	return client
@@ -112,12 +112,12 @@ async function rebuildClientBundle(): Promise<t.BundleMetadata> {
 
 	try {
 		const clientResult = await globalClientBuildResult.rebuild()
-		if (clientResult.warnings.length > 0) { client.Warnings = clientResult.warnings }
 		if (clientResult.errors.length > 0) { client.Errors = clientResult.errors }
+		if (clientResult.warnings.length > 0) { client.Warnings = clientResult.warnings }
 		client.Metafile = clientResult.metafile
 	} catch (caught) {
-		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
 		if (caught.errors.length > 0) { client.Errors = caught.errors }
+		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
 	}
 
 	return client

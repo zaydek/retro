@@ -15,7 +15,7 @@ const (
     <script src="/vendor.js"></script>
     <script src="/client.js"></script>
   </body>
-</html>` + "\n"
+</html>`
 
 	// Server-sent events (SSE) stub for the dev command
 	serverSentEventsStub = `<script type="module">const __dev__=new EventSource("/__dev__");__dev__.addEventListener("reload",()=>{localStorage.setItem("__dev__",""+Date.now()),window.location.reload()}),__dev__.addEventListener("error",e=>{try{console.error(JSON.parse(e.data))}catch{}}),window.addEventListener("storage",e=>{e.key==="__dev__"&&window.location.reload()});</script>`
@@ -41,8 +41,7 @@ if (document.getElementById("root").hasChildNodes()) {
 		</React.StrictMode>,
 		document.getElementById("root"),
 	)
-}
-` + "\n"
+}`
 
 	// The JS app entry point
 	appJS = `import "./App.css"
@@ -53,5 +52,5 @@ export default function App() {
       <h1>Hello, world!</h1>
     </div>
   )
-}` + "\n"
+}`
 )

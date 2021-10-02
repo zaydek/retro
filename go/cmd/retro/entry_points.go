@@ -30,7 +30,7 @@ func copyDefaultIndexHTMLEntryPoint() error {
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := os.WriteFile(filename, []byte(indexHTML), perm.BitsFile); err != nil {
+	if err := os.WriteFile(filename, []byte(indexHTML+"\n"), perm.BitsFile); err != nil {
 		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil
@@ -43,7 +43,7 @@ func copyDefaultIndexJSEntryPoint() error {
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := os.WriteFile(filename, []byte(indexJS), perm.BitsFile); err != nil {
+	if err := os.WriteFile(filename, []byte(indexJS+"\n"), perm.BitsFile); err != nil {
 		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil
@@ -56,7 +56,7 @@ func copyDefaultAppJSEntryPoint() error {
 	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := os.WriteFile(filename, []byte(appJS), perm.BitsFile); err != nil {
+	if err := os.WriteFile(filename, []byte(appJS+"\n"), perm.BitsFile); err != nil {
 		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil

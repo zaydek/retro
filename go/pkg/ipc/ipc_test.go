@@ -1,6 +1,7 @@
 package ipc
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestCommandFooFailure(t *testing.T) {
-	_, _, _, err := NewCommand("foo")
+	_, _, _, err := NewCommand(context.Background(), "foo")
 	if err.Error() == `cmd.Start: exec: "foo": executable file not found in $PATH` {
 		// Success
 		return
@@ -20,7 +21,7 @@ func TestCommandFooFailure(t *testing.T) {
 }
 
 func TestCommandEchoSuccess(t *testing.T) {
-	_, stdout, stderr, err := NewCommand("echo", "foo bar")
+	_, stdout, stderr, err := NewCommand(context.Background(), "echo", "foo bar")
 	if err != nil {
 		t.Fatalf("NewCommand: got %q want <nil>", err)
 	}
@@ -58,7 +59,7 @@ func TestNodeSyntaxError(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	_, stdout, stderr, err := NewCommand("node", "ipc_test.go.script.js")
+	_, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
 		log.Fatalf("ipc.NewCommand: %s\n", err)
 	}
@@ -108,7 +109,7 @@ func TestNodeStdoutSuccess(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	_, stdout, stderr, err := NewCommand("node", "ipc_test.go.script.js")
+	_, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
 		log.Fatalf("ipc.NewCommand: %s\n", err)
 	}
@@ -149,7 +150,7 @@ func TestNodeStderrSuccess(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	_, stdout, stderr, err := NewCommand("node", "ipc_test.go.script.js")
+	_, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
 		log.Fatalf("ipc.NewCommand: %s\n", err)
 	}
@@ -210,7 +211,7 @@ func TestNodeStdinSuccess(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	stdin, stdout, stderr, err := NewCommand("node", "ipc_test.go.script.js")
+	stdin, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
 		log.Fatalf("ipc.NewCommand: %s\n", err)
 	}

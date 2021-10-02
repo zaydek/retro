@@ -10,30 +10,30 @@ import (
 
 type BundleResult struct {
 	Metafile map[string]interface{}
-	Warnings []api.Message
 	Errors   []api.Message
+	Warnings []api.Message
 }
 
-func (r BundleResult) IsDirty() bool {
-	return len(r.Warnings) > 0 || len(r.Errors) > 0
+func (b BundleResult) IsDirty() bool {
+	return len(b.Errors) > 0 || len(b.Warnings) > 0
 }
 
-func (r BundleResult) String() string {
-	w := api.FormatMessages(r.Warnings, api.FormatMessagesOptions{
+func (b BundleResult) String() string {
+	w := api.FormatMessages(b.Warnings, api.FormatMessagesOptions{
 		Color:         true,
 		Kind:          api.WarningMessage,
 		TerminalWidth: 80,
 	})
-	e := api.FormatMessages(r.Errors, api.FormatMessagesOptions{
+	e := api.FormatMessages(b.Errors, api.FormatMessagesOptions{
 		Color:         true,
 		Kind:          api.ErrorMessage,
 		TerminalWidth: 80,
 	})
-	return strings.Join(append(e /* Takes precedence */, w...), "")
+	return strings.TrimRight(strings.Join(append(e, w...), ""), "\n")
 }
 
-func (r BundleResult) HTML() string {
-	str := r.String()
+func (b BundleResult) HTML() string {
+	str := b.String()
 
 	return `<!DOCTYPE html>
 <html lang="en">
@@ -80,10 +80,12 @@ a:hover { text-decoration: underline; }
 		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
 		` + serverSentEventsStub + `
 	</body>
-</html>` + "\n"
+</html>`
 }
 
-// Describes a build done message or a rebuild done message
+////////////////////////////////////////////////////////////////////////////////
+
+// Describes a `build_done` message or a `rebuild_done` message
 type Message struct {
 	Kind string
 	Data struct {
@@ -106,7 +108,6 @@ func (m Message) getChunkedEntrypoints() entryPoints {
 	if m.Data.Vendor.Metafile == nil || m.Data.Client.Metafile == nil {
 		return entryPoints{}
 	}
-	// Iterate vendor outputs
 	var entries entryPoints
 	for key := range m.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".js") {
@@ -114,7 +115,6 @@ func (m Message) getChunkedEntrypoints() entryPoints {
 			break
 		}
 	}
-	// Iterate client outputs
 	for key := range m.Data.Client.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".css") {
 			entries.clientCSS, _ = filepath.Rel(RETRO_OUT_DIR, key)
