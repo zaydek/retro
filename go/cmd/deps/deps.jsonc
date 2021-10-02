@@ -2,9 +2,6 @@
 	// "https://github.com/evanw/esbuild/releases",
 	"esbuild": "^0.13.3",
 
-	// "https://github.com/mdx-js/mdx/releases",
-	"mdx": "^1.6.22",
-
 	// "https://github.com/facebook/react/releases",
 	"react": "^17.0.2",
 

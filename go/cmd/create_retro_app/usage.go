@@ -7,7 +7,7 @@ var usage = `
 
 	Create a new Retro app at directory ` + terminal.Bold("[app-name]") + `
 
-		--template=...  ` + terminal.Cyan("starter") + `, ` + terminal.Cyan("sass") + `, or ` + terminal.Cyan("mdx") + ` (default ` + terminal.Cyan("starter") + `)
+		--template=...  ` + terminal.Cyan("starter") + ` or ` + terminal.Cyan("sass") + ` (default ` + terminal.Cyan("starter") + `)
 
 ` + terminal.Bold("Repositories") + `
 

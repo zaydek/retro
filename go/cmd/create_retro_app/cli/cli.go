@@ -34,7 +34,7 @@ func (e CommandError) Error() string {
 	case BadArgument:
 		return fmt.Sprintf("Unsupported argument `%s`.", e.BadArgument)
 	case BadTemplateValue:
-		return "`--template` must be a `starter`, `sass`, or `mdx` (default `starter`)."
+		return "`--template` must be a `starter` or `sass` (default `starter`)."
 	case BadDirectoryValue:
 		cwd, _ := os.Getwd()
 		return fmt.Sprintf("Use `.` explicitly to use `%s`.", filepath.Join("..", filepath.Base(cwd)))
@@ -63,8 +63,6 @@ func ParseCommand(args ...string) (*CreateCommand, error) {
 				command.Template = "starter"
 			case "sass":
 				command.Template = "sass"
-			case "mdx":
-				command.Template = "mdx"
 			default:
 				return nil, CommandError{Kind: BadTemplateValue}
 			}

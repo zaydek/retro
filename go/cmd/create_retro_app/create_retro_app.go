@@ -31,6 +31,7 @@ func (r Runner) getFSAndPkg() (fs.FS, *template.Template) {
 	panic("Internal error")
 }
 
+// TODO: Fix the panics
 func (r Runner) CreateApp() {
 	fsys, pkg := r.getFSAndPkg()
 
