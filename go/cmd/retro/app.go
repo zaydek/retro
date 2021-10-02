@@ -11,12 +11,7 @@ var (
 )
 
 type App struct {
-	// One of:
-	//
-	// - cli.DevCommand
-	// - cli.BuildCommand
-	// - cli.ServeCommand
-	//
+	// Use an empty interface because Go doesn't support type unions
 	Command interface{}
 }
 

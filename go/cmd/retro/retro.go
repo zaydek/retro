@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -43,15 +42,18 @@ func (a *App) Dev(options DevOptions) error {
 		}
 	}
 
-	// Run the Node.js backend
-	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
+	backendJS := filepath.Join(__dirname, "node/backend.esbuild.js")
+	stdin, stdout, stderr, err := ipc.NewCommand("node", backendJS)
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
 
 	var (
+		// Blocks the serve command
 		ready = make(chan struct{})
-		dev   = make(chan Message)
+
+		// Sends messages to `/__dev__` HTTP handler
+		dev = make(chan Message)
 	)
 
 	go func() {
@@ -63,20 +65,20 @@ func (a *App) Dev(options DevOptions) error {
 			case line := <-stdout:
 				var message Message
 				if err := json.Unmarshal([]byte(line), &message); err == nil {
+					// Log unmarshal errs so users can debug plugins, etc.
+					fmt.Println(formatStdoutLine(line))
+				} else {
 					once.Do(func() {
-						entries := entryPoints{clientCSS: "client.css", vendorJS: "vendor.js", clientJS: "client.js"}
+						entries := message.getChunkedEntrypoints()
 						if err := copyIndexHTMLEntryPoint(entries); err != nil {
 							panic(fmt.Errorf("copyIndexHTMLEntryPoint: %w", err))
 						}
 						ready <- struct{}{}
 					})
 					dev <- message
-				} else {
-					// Log unmarshal errs so users can debug plugins, etc.
-					fmt.Println(prettyStdoutLine(line))
 				}
 			case text := <-stderr:
-				fmt.Fprintln(os.Stderr, prettyStderrText(text))
+				fmt.Fprintln(os.Stderr, formatStderrText(text))
 				os.Exit(1)
 			}
 		}
@@ -118,8 +120,8 @@ func (a *App) Build(options BuildOptions) error {
 		}
 	}
 
-	// Run the Node.js backend
-	stdin, stdout, stderr, err := ipc.NewCommand("node", filepath.Join(__dirname, "node/backend.esbuild.js"))
+	backendJS := filepath.Join(__dirname, "node/backend.esbuild.js")
+	stdin, stdout, stderr, err := ipc.NewCommand("node", backendJS)
 	if err != nil {
 		return fmt.Errorf("ipc.NewCommand: %w", err)
 	}
@@ -132,27 +134,26 @@ loop:
 		case line := <-stdout:
 			var message Message
 			if err := json.Unmarshal([]byte(line), &message); err == nil {
-				if bundle := message.GetDirty(); !reflect.ValueOf(bundle).IsZero() {
-					fmt.Fprint(os.Stderr, message.Data.Vendor.String())
+				// Log unmarshal errs so users can debug plugins, etc.
+				fmt.Println(formatStdoutLine(line))
+			} else {
+				if bundle := message.GetDirty(); bundle.IsDirty() {
+					fmt.Print(bundle.String())
 					os.Exit(1)
 				}
-				entries := message.getChunkedNames()
+				entries := message.getChunkedEntrypoints()
 				if err := copyIndexHTMLEntryPoint(entries); err != nil {
 					return fmt.Errorf("copyIndexHTMLEntryPoint: %w", err)
 				}
 				break loop
-			} else {
-				// Log unmarshal errs so users can debug plugins, etc.
-				fmt.Println(prettyStdoutLine(line))
 			}
 		case text := <-stderr:
-			fmt.Fprintln(os.Stderr, prettyStderrText(text))
+			fmt.Fprintln(os.Stderr, formatStderrText(text))
 			os.Exit(1)
 		}
 	}
 
-	// TODO: We are probably going to rename `buildLog`
-	str, err := buildLog(RETRO_OUT_DIR)
+	str, err := buildBuildCommandSuccess(RETRO_OUT_DIR)
 	if err != nil {
 		return fmt.Errorf("buildLog: %w", err)
 	}
@@ -199,39 +200,25 @@ func (a *App) Serve(options ServeOptions) error {
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// 500 Server error
-		if message.Data.Vendor.IsDirty() {
-			// Log mirrored vendor errors and warnings to the browser and stderr
-			terminal.Clear(os.Stderr)
-			fmt.Fprint(w, message.Data.Vendor.HTML())
-			fmt.Fprint(os.Stderr, message.Data.Vendor.String())
-			return
-		} else if message.Data.Client.IsDirty() {
-			// Log mirrored client errors and warnings to the browser and stderr
-			terminal.Clear(os.Stderr)
-			fmt.Fprint(w, message.Data.Client.HTML())
-			fmt.Fprint(os.Stderr, message.Data.Client.String())
-			return
+		if bundle := message.GetDirty(); bundle.IsDirty() {
+			terminal.Clear(os.Stdout)
+			fmt.Print(bundle.HTML())
+			fmt.Print(bundle.String())
 		}
-
-		// 200 OK
+		// 200 OK - Non-HTML resources
 		path := getFilesystemPath(r.URL.Path)
 		if extension := filepath.Ext(path); extension != "" && extension != ".html" {
-			// Non-HTML resources
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, path))
 			return
-		} else if a.getCommandKind() == KindDevCommand {
-			// out/www.index.html + server-sent events (SSE)
-			fmt.Fprint(w, contents)
-			if err := buildSuccess(a.getPort()); err != nil {
-				panic(fmt.Errorf("buildSuccess: %w", err))
-			}
-		} else {
-			// out/www.index.html
-			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
-			if err := buildSuccess(a.getPort()); err != nil {
-				panic(fmt.Errorf("buildSuccess: %w", err))
-			}
 		}
+		// 200 OK - HTML resources
+		if a.getCommandKind() == KindDevCommand {
+			fmt.Fprint(w, contents)
+		} else {
+			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
+		}
+		terminal.Clear(os.Stdout)
+		fmt.Println(buildServeCommandSuccess(a.getPort()))
 	})
 
 	// Path for server-sent events (SSE)
@@ -261,7 +248,8 @@ func (a *App) Serve(options ServeOptions) error {
 
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		buildSuccess(port)
+		terminal.Clear(os.Stdout)
+		fmt.Println(buildServeCommandSuccess(port))
 	}()
 
 	for {

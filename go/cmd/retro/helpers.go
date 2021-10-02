@@ -79,39 +79,28 @@ func getIP() (net.IP, error) {
 	return localAddr.IP, nil
 }
 
-// TODO: Add error-handling
-func buildSuccess(port int) error {
-	// Get the working directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("os.Getwd: %w", err)
-	}
-
+func buildServeCommandSuccess(port int) string {
 	// Get the IP address and a flag describing the user's offline
 	ip, err := getIP()
 	isNetworkUnreachable := err != nil && strings.HasSuffix(
 		err.Error(),
 		"dial udp 8.8.8.8:80: connect: network is unreachable",
 	)
-	if err != nil && !isNetworkUnreachable {
-		return fmt.Errorf("getIP: %w", err)
-	}
 
-	// Log success message; depends on network access
+	cwd, _ := os.Getwd()
 	base := filepath.Base(cwd)
 	if isNetworkUnreachable {
-		terminal.Clear(os.Stdout)
-		fmt.Println(terminal.Green("Compiled successfully!") + `
+		return terminal.Green("Compiled successfully!") + `
 
 You can now view ` + terminal.Bold(base) + ` in the browser.
 
   ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
 
 Note that the development build is not optimized.
-To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.` + "\n")
-	} else {
-		terminal.Clear(os.Stdout)
-		fmt.Println(terminal.Green("Compiled successfully!") + `
+To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.`
+	}
+
+	return terminal.Green("Compiled successfully!") + `
 
 You can now view ` + terminal.Bold(base) + ` in the browser.
 
@@ -119,15 +108,12 @@ You can now view ` + terminal.Bold(base) + ` in the browser.
   ` + terminal.Bold("On Your Network:") + `  ` + fmt.Sprintf("http://%s:%s", ip, terminal.Bold(port)) + `
 
 Note that the development build is not optimized.
-To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.` + "\n")
-	}
-
-	return nil
+To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.`
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func buildLog(directory string) (string, error) {
+func buildBuildCommandSuccess(directory string) (string, error) {
 	var str string
 
 	lsInfos, err := fsUtils.List(directory)

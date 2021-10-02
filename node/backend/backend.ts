@@ -162,13 +162,10 @@ async function main(): Promise<void> {
 				})
 				break
 			}
-			case "done":
-				// NOTE: Use `process.exit(0)` because `return` doesn't stop the Node.js
-				// runtime
-				process.exit(0)
 			default:
 				throw new Error("Internal error")
 		}
+		// Add a micro-delay to prevent high CPU usage in the case of an error
 		await sleep(10)
 	}
 }
