@@ -18,8 +18,6 @@ func quote(str string) string {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Gets the filesystem path for a URL (adds `index.html` and `.html`) Note that
-// `getFilesystemPath` is inverse to `getCanonicalBrowserPath`.
 func getFilesystemPath(url string) string {
 	ret := url
 	if strings.HasSuffix(url, "/") {
@@ -32,9 +30,7 @@ func getFilesystemPath(url string) string {
 	return ret
 }
 
-// Gets the canonical browser path for a URL (removes `index.html` and `.html`).
-// Note that `getCanonicalBrowserPath` is inverse to `getFilesystemPath`.
-func getCanonicalBrowserPath(url string) string {
+func getBrowserPath(url string) string {
 	ret := url
 	if strings.HasSuffix(url, "/index.html") {
 		ret = ret[:len(ret)-len("index.html")]
@@ -48,7 +44,6 @@ func getCanonicalBrowserPath(url string) string {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Like `__dirname` in Node.js; gets the executable's directory
 func getDirname() (string, error) {
 	executable, err := os.Executable()
 	if err != nil {
@@ -67,50 +62,9 @@ func getDirname() (string, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// https://stackoverflow.com/a/37382208
-func getIP() (net.IP, error) {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP, nil
-}
-
-func makeServeSuccess(port int) string {
-	ip, err := getIP()
-	isOffline := err != nil && strings.HasSuffix(err.Error(), "dial udp 8.8.8.8:80: connect: network is unreachable")
-
-	wd, _ := os.Getwd()
-	base := filepath.Base(wd)
-	if isOffline {
-		return terminal.Green("Compiled successfully!") + `
-
-You can now view ` + terminal.Bold(base) + ` in the browser.
-
-  ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
-
-Note that the development build is not optimized.
-To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.`
-	}
-
-	return terminal.Green("Compiled successfully!") + `
-
-You can now view ` + terminal.Bold(base) + ` in the browser.
-
-  ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
-  ` + terminal.Bold("On Your Network:") + `  ` + fmt.Sprintf("http://%s:%s", ip, terminal.Bold(port)) + `
-
-Note that the development build is not optimized.
-To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.`
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 var epoch = time.Now()
 
-func makeBuildSuccess(dir string) (string, error) {
+func buildBuildSuccessString(dir string) (string, error) {
 	var ret string
 	ls, err := unix.List(dir)
 	if err != nil {
@@ -137,6 +91,51 @@ func makeBuildSuccess(dir string) (string, error) {
 			terminal.Dim(unix.HumanReadable(info.Size)))
 	}
 	ret += fmt.Sprintln()
-	ret += fmt.Sprintln(terminal.Dimf("(%dms)", time.Since(epoch).Milliseconds()))
+	ret += fmt.Sprintln(terminal.Dimf("%dms", time.Since(epoch).Milliseconds()))
 	return ret, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// https://stackoverflow.com/a/37382208
+func getIP() (net.IP, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP, nil
+}
+
+func buildServeSucessString(port int, d time.Duration) string {
+	ip, err := getIP()
+	isOffline := err != nil && strings.HasSuffix(err.Error(), "dial udp 8.8.8.8:80: connect: network is unreachable")
+
+	wd, _ := os.Getwd()
+	base := filepath.Base(wd)
+	if isOffline {
+		return terminal.Green("Compiled successfully!") + `
+
+You can now view ` + terminal.Bold(base) + ` in the browser.
+
+  ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
+
+Note that the development build is not optimized.
+To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
+
+` + terminal.Dimf("%dms", d.Milliseconds())
+	}
+
+	return terminal.Green("Compiled successfully!") + `
+
+You can now view ` + terminal.Bold(base) + ` in the browser.
+
+  ` + terminal.Bold("Local:") + `            ` + fmt.Sprintf("http://localhost:%s", terminal.Bold(port)) + `
+  ` + terminal.Bold("On Your Network:") + `  ` + fmt.Sprintf("http://%s:%s", ip, terminal.Bold(port)) + `
+
+Note that the development build is not optimized.
+To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
+
+` + terminal.Dimf("%dms", d.Milliseconds())
 }

@@ -51,6 +51,11 @@ type DevOptions struct {
 	WarmUpFlag bool
 }
 
+type TimedMessage struct {
+	m Message
+	d time.Duration
+}
+
 func (a *App) Dev(options DevOptions) error {
 	if options.WarmUpFlag {
 		var entryPointErr EntryPointError
@@ -75,11 +80,17 @@ func (a *App) Dev(options DevOptions) error {
 		// Blocks the serve command
 		ready = make(chan struct{})
 
+		// // Sends messages to the `/__dev__` HTTP handler
+		// dev = make(chan Message)
+
 		// Sends messages to the `/__dev__` HTTP handler
-		dev = make(chan Message)
+		dev = make(chan TimedMessage)
 	)
 
+	var t time.Time
+
 	go func() {
+		t = time.Now()
 		stdin <- "build"
 		defer cancel()
 
@@ -97,7 +108,11 @@ func (a *App) Dev(options DevOptions) error {
 						must(copyIndexHTMLEntryPoint(entries))
 						ready <- struct{}{}
 					})
-					dev <- message
+					dev <- TimedMessage{
+						m: message,
+						d: time.Since(t),
+					}
+					t = time.Now()
 				}
 			case text := <-stderr:
 				fmt.Fprintln(os.Stderr, formatStderrText(text))
@@ -110,6 +125,7 @@ func (a *App) Dev(options DevOptions) error {
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
 			must(result.Err)
+			t = time.Now()
 			stdin <- "rebuild"
 		}
 	}()
@@ -178,7 +194,7 @@ loop:
 		}
 	}
 
-	str, err := makeBuildSuccess(RETRO_OUT_DIR)
+	str, err := buildBuildSuccessString(RETRO_OUT_DIR)
 	if err != nil {
 		return err
 	}
@@ -191,7 +207,7 @@ loop:
 
 type ServeOptions struct {
 	WarmUpFlag bool
-	Dev        chan Message
+	Dev        chan TimedMessage
 }
 
 func (a *App) Serve(options ServeOptions) error {
@@ -212,25 +228,25 @@ func (a *App) Serve(options ServeOptions) error {
 	}
 
 	var (
-		message    = <-options.Dev
-		logMessage string
+		timedMessage = <-options.Dev
+		logMessage   string
 	)
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Log message to stdout or the browser
 		var next string
-		if dirty := message.GetDirty(); dirty.IsDirty() {
+		if dirty := timedMessage.m.GetDirty(); dirty.IsDirty() {
 			next = dirty.String()
 		} else {
-			next = makeServeSuccess(a.getPort())
+			next = buildServeSucessString(a.getPort(), timedMessage.d)
 		}
 		if logMessage != next { // For stdout
 			logMessage = next
 			terminal.Clear(os.Stdout)
 			fmt.Println(logMessage)
 		}
-		if dirty := message.GetDirty(); dirty.IsDirty() { // For the browser
+		if dirty := timedMessage.m.GetDirty(); dirty.IsDirty() { // For the browser
 			fmt.Fprintln(w, dirty.HTML())
 			return
 		}
@@ -260,7 +276,7 @@ func (a *App) Serve(options ServeOptions) error {
 			}
 			for {
 				select {
-				case message = <-options.Dev:
+				case timedMessage = <-options.Dev:
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-r.Context().Done():
@@ -272,10 +288,10 @@ func (a *App) Serve(options ServeOptions) error {
 
 	// Log message to stdout
 	var next string
-	if dirty := message.GetDirty(); dirty.IsDirty() {
+	if dirty := timedMessage.m.GetDirty(); dirty.IsDirty() {
 		next = dirty.String()
 	} else {
-		next = makeServeSuccess(a.getPort())
+		next = buildServeSucessString(a.getPort(), timedMessage.d)
 	}
 	if logMessage != next {
 		logMessage = next
