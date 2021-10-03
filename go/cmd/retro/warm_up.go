@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zaydek/retro/go/cmd/perm"
 	"github.com/zaydek/retro/go/cmd/retro/unix"
 )
 
@@ -22,7 +21,7 @@ func warmUp(commandKind CommandKind) error {
 		return err
 	}
 	// Create `RETRO_OUT_DIR` directgory
-	if err := os.MkdirAll(RETRO_OUT_DIR, perm.BitsDirectory); err != nil {
+	if err := os.MkdirAll(RETRO_OUT_DIR, 0755); err != nil {
 		return err
 	}
 	// Copy `RETRO_WWW_DIR` directory recursively

@@ -7,6 +7,9 @@ import (
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
+// TODO: This needs to be reworked; it's not clear what this package is doing or
+// what packages are using it
+
 func Pad(str string) string {
 	arr := strings.Split(str, "\n")
 	for x, v := range arr {
