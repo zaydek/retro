@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zaydek/retro/go/pkg/sys"
+	"github.com/zaydek/retro/go/cmd/retro/unix"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
@@ -114,37 +114,54 @@ To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + 
 
 var epoch = time.Now()
 
-func makeBuildSuccess(directory string) (string, error) {
+func makeBuildSuccess(dir string) (string, error) {
 	var str string
 
-	lsInfos, err := sys.List(directory)
+	ls, err := unix.List(dir)
 	if err != nil {
 		return "", err
 	}
-	sort.Sort(lsInfos)
+	sort.Sort(ls)
 
-	var sum int64
-	for _, lsInfo := range lsInfos {
-		var color = terminal.Normal
-		if strings.HasSuffix(lsInfo.Path, ".html") {
-			color = terminal.Normal
-		} else if strings.HasSuffix(lsInfo.Path, ".js") || strings.HasSuffix(lsInfo.Path, ".js.map") {
-			color = terminal.Yellow
-		} else if strings.HasSuffix(lsInfo.Path, ".css") || strings.HasSuffix(lsInfo.Path, ".css.map") {
-			color = terminal.Cyan
-		} else {
+	var (
+		htmlByteCount int64
+		cssByteCount  int64
+		jsByteCount   int64
+	)
+
+	for _, info := range ls {
+		var (
 			color = terminal.Dim
+			ext   = filepath.Ext(info.Path)
+		)
+		switch ext {
+		case ".html":
+			htmlByteCount += info.Size
+			color = terminal.Normal
+		case ".js":
+			jsByteCount += info.Size
+			jsByteCount += info.Size
+			fallthrough
+		case ".js.map":
+			color = terminal.Yellow
+		case ".css":
+			cssByteCount += info.Size
+			fallthrough
+		case ".css.map":
+			color = terminal.Cyan
 		}
-		str += fmt.Sprintf("%v%s%v\n", color(lsInfo.Path), strings.Repeat(" ", 40-len(lsInfo.Path)),
-			terminal.Dimf("(%s)", sys.ByteCountIEC(lsInfo.Size)))
-		if !strings.HasSuffix(lsInfo.Path, ".map") {
-			sum += lsInfo.Size
-		}
+		str += fmt.Sprintf("%v%s%v\n", color(info.Path), strings.Repeat(" ", 40-len(info.Path)),
+			terminal.Dim(unix.HumanReadable(info.Size)))
 	}
 
-	str += fmt.Sprintln(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", sys.ByteCountIEC(sum)))
+	// str += fmt.Sprintln()
+	// str += fmt.Sprintln(terminal.Normal("HTML") + " " + terminal.Dim(unix.HumanReadable(htmlByteCount)))
+	// str += fmt.Sprintln(terminal.Yellow("CSS") + "  " + terminal.Dim(unix.HumanReadable(cssByteCount)))
+	// str += fmt.Sprintln(terminal.Cyan("JS") + "   " + terminal.Dim(unix.HumanReadable(jsByteCount)))
+	// str += fmt.Sprintln()
+
 	str += fmt.Sprintln()
-	str += fmt.Sprintln(terminal.Dimf("(%s)", time.Since(epoch)))
+	str += fmt.Sprintln(terminal.Dimf("(%dms)", time.Since(epoch).Milliseconds()))
 
 	return str, nil
 }

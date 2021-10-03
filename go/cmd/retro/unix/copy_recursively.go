@@ -1,4 +1,4 @@
-package sys
+package unix
 
 import (
 	"io"
@@ -17,11 +17,11 @@ type copyInfo struct {
 func CopyRecursively(source, target string, excludes []string) error {
 	// Sweep for sources and targets
 	var copyInfos []copyInfo
-	err := filepath.WalkDir(source, func(path string, directoryEntry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(source, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if directoryEntry.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
 		for _, exclude := range excludes {

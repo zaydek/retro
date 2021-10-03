@@ -1,29 +1,34 @@
-package sys
+package unix
 
 import (
 	"io/fs"
 	"path/filepath"
 )
 
-type FileType int
+type fileKind int
 
 const (
-	File      FileType = 0
-	Directory FileType = 1
+	kindFile      fileKind = 0
+	kindDirectory fileKind = 1
 )
 
 type lsInfo struct {
-	Type FileType
+	// Unexported
+	kind fileKind
+
+	// Exported
 	Path string
 	Size int64
 }
 
+func (l lsInfo) IsDir() bool {
+	return l.kind == kindDirectory
+}
+
 type ls []lsInfo
 
-func (a ls) Len() int      { return len(a) }
-func (a ls) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-
-// Sort by name
+func (a ls) Len() int           { return len(a) }
+func (a ls) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ls) Less(i, j int) bool { return a[i].Path < a[j].Path }
 
 func List(dir string) (ls, error) {
@@ -32,15 +37,15 @@ func List(dir string) (ls, error) {
 		if err != nil {
 			return err
 		}
-		var typ FileType
-		if !d.IsDir() {
-			typ = File
+		var kind fileKind
+		if d.IsDir() {
+			kind = kindDirectory
 		} else {
-			typ = Directory
+			kind = kindFile
 		}
 		info, _ := d.Info()
 		ls = append(ls, lsInfo{
-			Type: typ,
+			kind: kind,
 			Path: root,
 			Size: info.Size(),
 		})

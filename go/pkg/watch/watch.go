@@ -10,18 +10,16 @@ type WatchResult struct {
 	Err error
 }
 
-// Directory creates a new watcher for directory dir.
 func Directory(dir string, poll time.Duration) <-chan WatchResult {
 	var (
-		ch       = make(chan WatchResult)
-		mtimeMap = map[string]time.Time{}
+		ch         = make(chan WatchResult)
+		modTimeMap = map[string]time.Time{}
 	)
 
 	go func() {
 		defer close(ch)
 
-		// Use time.NewTicker(poll) not time.Tick(poll); time.NewTicker(poll)
-		// starts eagerly (see https://stackoverflow.com/a/47448177)
+		//https://stackoverflow.com/a/47448177
 		ticker := time.NewTicker(poll)
 		defer ticker.Stop()
 		for ; true; <-ticker.C {
@@ -29,11 +27,11 @@ func Directory(dir string, poll time.Duration) <-chan WatchResult {
 				if err != nil {
 					return err
 				}
-				if prev, ok := mtimeMap[path]; !ok {
-					mtimeMap[path] = info.ModTime()
+				if prev, ok := modTimeMap[path]; !ok {
+					modTimeMap[path] = info.ModTime()
 				} else {
 					if next := info.ModTime(); prev != next {
-						mtimeMap[path] = next
+						modTimeMap[path] = next
 						ch <- WatchResult{nil}
 					}
 				}

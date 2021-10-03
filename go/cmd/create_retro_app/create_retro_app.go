@@ -64,12 +64,12 @@ func (r App) CreateApp() error {
 
 	// Add package.json
 	paths := []string{"package.json"}
-	err := fs.WalkDir(fsys, ".", func(path string, dirEntry fs.DirEntry, err error) error {
+	err := fs.WalkDir(fsys, ".", func(root string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !dirEntry.IsDir() {
-			paths = append(paths, path)
+		if !d.IsDir() {
+			paths = append(paths, root)
 		}
 		return nil
 	})
