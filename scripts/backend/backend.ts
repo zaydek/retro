@@ -88,6 +88,27 @@ async function buildClientBundle(): Promise<t.BundleMetadata> {
 		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
 	}
 
+	try {
+		await esbuild.build({
+			...buildClientConfiguration(globalUserConfiguration),
+			// entryNames: NODE_ENV !== "production"
+			// 	? undefined
+			// 	: "[dir]/[name]__[hash]",
+			// entryPoints: {
+			// 	"client": path.join(RETRO_SRC_DIR, "index.js"),
+			// },
+			entryPoints: [path.join(RETRO_SRC_DIR, "App.js")],
+			outdir: path.join(RETRO_OUT_DIR, ".retro"),
+			platform: "node",
+		})
+		// if (globalClientBuildResult.errors.length > 0) { client.Errors = globalClientBuildResult.errors }
+		// if (globalClientBuildResult.warnings.length > 0) { client.Warnings = globalClientBuildResult.warnings }
+		// client.Metafile = globalClientBuildResult.metafile
+	} catch (caught) {
+		// if (caught.errors.length > 0) { client.Errors = caught.errors }
+		// if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
+	}
+
 	return client
 }
 
@@ -163,7 +184,7 @@ async function main(): Promise<void> {
 			default:
 				throw new Error("Internal error")
 		}
-		// Add a micro-delay to prevent high CPU usage in the case of an error
+		// Add a micro-delay to prevent high CPU usage
 		await sleep(10)
 	}
 }
