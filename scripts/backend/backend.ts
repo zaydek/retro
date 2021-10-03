@@ -11,6 +11,7 @@ import {
 
 import {
 	NODE_ENV,
+	RETRO_CMD,
 	RETRO_OUT_DIR,
 	RETRO_SRC_DIR,
 } from "./env"
@@ -22,25 +23,26 @@ function stdout(message:
 	console.log(JSON.stringify(message))
 }
 
-// Describes `retro.config.js`
+// retro.config.js
 let globalUserConfiguration: esbuild.BuildOptions | null = null
 
-// Describes the bundled vendor esbuild result
-let globalVendorBuildResult: esbuild.BuildResult | null = null
+// react, react-dom, react-dom/server
+let globalVendorEntryPoint: esbuild.BuildResult | null = null
 
-// Describes the bundled client esbuild result
-let globalClientBuildResult: esbuild.BuildResult | esbuild.BuildIncremental | null = null
+// src/index.js
+let globalClientEntryPoint: esbuild.BuildResult | esbuild.BuildIncremental | null = null
 
-// Builds the vendor bundle (e.g. React) and sets the global vendor variable
-async function buildVendorBundle(): Promise<t.BundleMetadata> {
-	const vendor: t.BundleMetadata = {
+////////////////////////////////////////////////////////////////////////////////
+
+async function buildVendorBundle(): Promise<t.BundleInfo> {
+	const vendor: t.BundleInfo = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
 
 	try {
-		globalVendorBuildResult = await esbuild.build({
+		globalVendorEntryPoint = await esbuild.build({
 			...baseConfiguration,
 			entryNames: NODE_ENV !== "production"
 				? undefined
@@ -50,9 +52,9 @@ async function buildVendorBundle(): Promise<t.BundleMetadata> {
 			},
 			outdir: RETRO_OUT_DIR,
 		})
-		if (globalVendorBuildResult.errors.length > 0) { vendor.Errors = globalVendorBuildResult.errors }
-		if (globalVendorBuildResult.warnings.length > 0) { vendor.Warnings = globalVendorBuildResult.warnings }
-		vendor.Metafile = globalVendorBuildResult.metafile
+		if (globalVendorEntryPoint.errors.length > 0) { vendor.Errors = globalVendorEntryPoint.errors }
+		if (globalVendorEntryPoint.warnings.length > 0) { vendor.Warnings = globalVendorEntryPoint.warnings }
+		vendor.Metafile = globalVendorEntryPoint.metafile
 	} catch (caught) {
 		if (caught.errors.length > 0) { vendor.Errors = caught.errors }
 		if (caught.warnings.length > 0) { vendor.Warnings = caught.warnings }
@@ -61,16 +63,21 @@ async function buildVendorBundle(): Promise<t.BundleMetadata> {
 	return vendor
 }
 
-// Builds the client bundle (e.g. Retro) and sets the global client variable
-async function buildClientBundle(): Promise<t.BundleMetadata> {
-	const client: t.BundleMetadata = {
+async function buildClientBundle(): Promise<[t.BundleInfo, t.BundleInfo]> {
+	const client: t.BundleInfo = {
+		Metafile: null,
+		Warnings: [],
+		Errors: [],
+	}
+
+	const clientAppOnly: t.BundleInfo = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
 
 	try {
-		globalClientBuildResult = await esbuild.build({
+		globalClientEntryPoint = await esbuild.build({
 			...buildClientConfiguration(globalUserConfiguration),
 			entryNames: NODE_ENV !== "production"
 				? undefined
@@ -80,59 +87,53 @@ async function buildClientBundle(): Promise<t.BundleMetadata> {
 			},
 			outdir: RETRO_OUT_DIR,
 		})
-		if (globalClientBuildResult.errors.length > 0) { client.Errors = globalClientBuildResult.errors }
-		if (globalClientBuildResult.warnings.length > 0) { client.Warnings = globalClientBuildResult.warnings }
-		client.Metafile = globalClientBuildResult.metafile
+		if (globalClientEntryPoint.errors.length > 0) { client.Errors = globalClientEntryPoint.errors }
+		if (globalClientEntryPoint.warnings.length > 0) { client.Warnings = globalClientEntryPoint.warnings }
+		client.Metafile = globalClientEntryPoint.metafile
 	} catch (caught) {
 		if (caught.errors.length > 0) { client.Errors = caught.errors }
 		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
 	}
 
-	try {
-		await esbuild.build({
-			...buildClientConfiguration(globalUserConfiguration),
-			// entryNames: NODE_ENV !== "production"
-			// 	? undefined
-			// 	: "[dir]/[name]__[hash]",
-			// entryPoints: {
-			// 	"client": path.join(RETRO_SRC_DIR, "index.js"),
-			// },
-			entryPoints: [path.join(RETRO_SRC_DIR, "App.js")],
-			outdir: path.join(RETRO_OUT_DIR, ".retro"),
-			platform: "node",
-		})
-		// if (globalClientBuildResult.errors.length > 0) { client.Errors = globalClientBuildResult.errors }
-		// if (globalClientBuildResult.warnings.length > 0) { client.Warnings = globalClientBuildResult.warnings }
-		// client.Metafile = globalClientBuildResult.metafile
-	} catch (caught) {
-		// if (caught.errors.length > 0) { client.Errors = caught.errors }
-		// if (caught.warnings.length > 0) { client.Warnings = caught.warnings }
+	if (RETRO_CMD === "build") {
+		try {
+			const clientAppEntryPoint = await esbuild.build({
+				...buildClientConfiguration(globalUserConfiguration),
+				entryPoints: [path.join(RETRO_SRC_DIR, "App.js")],
+				outdir: path.join(RETRO_OUT_DIR, ".retro"),
+				platform: "node",
+			})
+			if (clientAppEntryPoint.errors.length > 0) { clientAppOnly.Errors = clientAppEntryPoint.errors }
+			if (clientAppEntryPoint.warnings.length > 0) { clientAppOnly.Warnings = clientAppEntryPoint.warnings }
+			clientAppOnly.Metafile = clientAppEntryPoint.metafile
+		} catch (caught) {
+			if (caught.errors.length > 0) { clientAppOnly.Errors = caught.errors }
+			if (caught.warnings.length > 0) { clientAppOnly.Warnings = caught.warnings }
+		}
 	}
 
-	return client
+	return [client, clientAppOnly]
 }
 
-// Builds the vendor and client bundles
-async function buildVendorAndClientBundles(): Promise<[t.BundleMetadata, t.BundleMetadata]> {
+async function buildVendorAndClientBundles(): Promise<{ vendor: t.BundleInfo, client: t.BundleInfo, clientAppOnly: t.BundleInfo }> {
 	const vendor = await buildVendorBundle()
-	const client = await buildClientBundle()
-	return [vendor, client]
+	const [client, clientAppOnly] = await buildClientBundle()
+	return { vendor, client, clientAppOnly }
 }
 
-// Builds or rebuild the client bundle
-async function rebuildClientBundle(): Promise<t.BundleMetadata> {
-	if (globalClientBuildResult === null || globalClientBuildResult.rebuild === undefined) {
-		return await buildClientBundle()
+async function rebuildClientBundle(): Promise<t.BundleInfo> {
+	if (globalClientEntryPoint === null || globalClientEntryPoint.rebuild === undefined) {
+		return await buildClientBundle()[0]
 	}
 
-	const client: t.BundleMetadata = {
+	const client: t.BundleInfo = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
 
 	try {
-		const clientResult = await globalClientBuildResult.rebuild()
+		const clientResult = await globalClientEntryPoint.rebuild()
 		if (clientResult.errors.length > 0) { client.Errors = clientResult.errors }
 		if (clientResult.warnings.length > 0) { client.Warnings = clientResult.warnings }
 		client.Metafile = clientResult.metafile
@@ -162,12 +163,13 @@ async function main(): Promise<void> {
 		const action = await readline()
 		switch (action) {
 			case "build":
-				const [vendor, client] = await buildVendorAndClientBundles()
+				const { vendor, client, clientAppOnly } = await buildVendorAndClientBundles()
 				stdout({
 					Kind: "build_done",
 					Data: {
 						Vendor: vendor,
 						Client: client,
+						ClientAppOnly: clientAppOnly,
 					},
 				})
 				break

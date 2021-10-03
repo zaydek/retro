@@ -71,10 +71,9 @@ func buildBuildSuccessString(dir string) (string, error) {
 		return "", err
 	}
 	for _, info := range ls {
-		// Step over the hidden directory for SSG / SSR
-		if strings.HasPrefix(info.Path, filepath.Join(RETRO_OUT_DIR, ".retro")) {
-			continue
-		}
+		// if strings.HasPrefix(info.Path, filepath.Join(RETRO_OUT_DIR, ".retro")) {
+		// 	continue
+		// }
 		var (
 			color = terminal.Dim
 			ext   = filepath.Ext(info.Path)

@@ -1,25 +1,23 @@
 import * as esbuild from "esbuild"
 
-// Bundle metadata and structured warnings and errors
-export interface BundleMetadata {
+export interface BundleInfo {
 	Metafile: esbuild.Metafile
 	Warnings: esbuild.Message[]
 	Errors: esbuild.Message[]
 }
 
-// Message for completed build vendor and client events
 export interface BuildVendorAndClientDoneMessage {
 	Kind: "build_done"
 	Data: {
-		Vendor: BundleMetadata
-		Client: BundleMetadata
+		Vendor: BundleInfo
+		Client: BundleInfo
+		ClientAppOnly: BundleInfo
 	}
 }
 
-// Message for completed rebuild client events
 export interface RebuildClientDoneMessage {
 	Kind: "rebuild_done"
 	Data: {
-		Client: BundleMetadata
+		Client: BundleInfo
 	}
 }

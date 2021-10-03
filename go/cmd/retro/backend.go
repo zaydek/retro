@@ -8,17 +8,17 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 )
 
-type BundleResult struct {
+type BundleInfo struct {
 	Metafile map[string]interface{}
 	Errors   []api.Message
 	Warnings []api.Message
 }
 
-func (b BundleResult) IsDirty() bool {
+func (b BundleInfo) IsDirty() bool {
 	return len(b.Errors) > 0 || len(b.Warnings) > 0
 }
 
-func (b BundleResult) String() string {
+func (b BundleInfo) String() string {
 	w := api.FormatMessages(b.Warnings, api.FormatMessagesOptions{
 		Color:         true,
 		Kind:          api.WarningMessage,
@@ -32,7 +32,7 @@ func (b BundleResult) String() string {
 	return strings.TrimRight(strings.Join(append(e, w...), ""), "\n")
 }
 
-func (b BundleResult) HTML() string {
+func (b BundleInfo) HTML() string {
 	str := b.String()
 
 	return `<!DOCTYPE html>
@@ -95,25 +95,28 @@ a:hover { text-decoration: underline; }
 type Message struct {
 	Kind string
 	Data struct {
-		Vendor BundleResult
-		Client BundleResult
+		Vendor        BundleInfo
+		Client        BundleInfo
+		ClientAppOnly BundleInfo
 	}
 }
 
-func (m Message) GetDirty() BundleResult {
+func (m Message) GetDirty() BundleInfo {
 	if m.Data.Vendor.IsDirty() {
 		return m.Data.Vendor
 	} else if m.Data.Client.IsDirty() {
 		return m.Data.Client
+	} else if m.Data.ClientAppOnly.IsDirty() {
+		return m.Data.ClientAppOnly
 	}
-	return BundleResult{}
+	return BundleInfo{}
 }
 
 func (m Message) getChunkedEntrypoints() entryPoints {
-	if m.Data.Vendor.Metafile == nil || m.Data.Client.Metafile == nil {
-		// Because we don't know the values of the entry points, use the default
-		// values as a fallback
-		return entryPoints{"client.css", "vendor.js", "client.js"}
+	if RETRO_CMD == string(KindDevCommand) {
+		if m.Data.Vendor.Metafile == nil || m.Data.Client.Metafile == nil {
+			return entryPoints{"client.css", "vendor.js", "client.js"}
+		}
 	}
 	var entries entryPoints
 	for key := range m.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
