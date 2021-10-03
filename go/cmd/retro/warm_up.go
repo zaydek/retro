@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/zaydek/retro/go/cmd/perm"
-	"github.com/zaydek/retro/go/pkg/fsUtils"
+	"github.com/zaydek/retro/go/pkg/sys"
 )
 
 func warmUp(commandKind CommandKind) error {
@@ -27,7 +27,7 @@ func warmUp(commandKind CommandKind) error {
 	}
 	// Copy `RETRO_WWW_DIR` directory recursively
 	target := filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR)
-	if err := fsUtils.CopyRecursively(RETRO_WWW_DIR, target, []string{filepath.Join(RETRO_WWW_DIR, "index.html")}); err != nil {
+	if err := sys.CopyRecursively(RETRO_WWW_DIR, target, []string{filepath.Join(RETRO_WWW_DIR, "index.html")}); err != nil {
 		return err
 	}
 	return nil

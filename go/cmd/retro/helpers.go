@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zaydek/retro/go/pkg/fsUtils"
+	"github.com/zaydek/retro/go/pkg/sys"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
@@ -22,29 +22,29 @@ func backtick(str string) string {
 // Gets the filesystem path for a URL (adds `index.html` and `.html`) Note that
 // `getFilesystemPath` is inverse to `getCanonicalBrowserPath`.
 func getFilesystemPath(url string) string {
-	returnUrl := url
+	ret := url
 	if strings.HasSuffix(url, "/") {
-		returnUrl += "index.html"
+		ret += "index.html"
 	} else if strings.HasSuffix(url, "/index") {
-		returnUrl += ".html"
-	} else if extension := filepath.Ext(url); extension == "" {
-		returnUrl += ".html"
+		ret += ".html"
+	} else if ext := filepath.Ext(url); ext == "" {
+		ret += ".html"
 	}
-	return returnUrl
+	return ret
 }
 
 // Gets the canonical browser path for a URL (removes `index.html` and `.html`).
 // Note that `getCanonicalBrowserPath` is inverse to `getFilesystemPath`.
 func getCanonicalBrowserPath(url string) string {
-	returnUrl := url
+	ret := url
 	if strings.HasSuffix(url, "/index.html") {
-		returnUrl = returnUrl[:len(returnUrl)-len("index.html")]
+		ret = ret[:len(ret)-len("index.html")]
 	} else if strings.HasSuffix(url, "/index") {
-		returnUrl = returnUrl[:len(returnUrl)-len("index")]
+		ret = ret[:len(ret)-len("index")]
 	} else if strings.HasSuffix(url, ".html") {
-		returnUrl = returnUrl[:len(returnUrl)-len(".html")]
+		ret = ret[:len(ret)-len(".html")]
 	}
-	return returnUrl
+	return ret
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,8 +86,8 @@ func makeServeSuccess(port int) string {
 		"dial udp 8.8.8.8:80: connect: network is unreachable",
 	)
 
-	workingDirectory, _ := os.Getwd()
-	base := filepath.Base(workingDirectory)
+	wd, _ := os.Getwd()
+	base := filepath.Base(wd)
 	if isOffline {
 		return terminal.Green("Compiled successfully!") + `
 
@@ -117,7 +117,7 @@ var epoch = time.Now()
 func makeBuildSuccess(directory string) (string, error) {
 	var str string
 
-	lsInfos, err := fsUtils.List(directory)
+	lsInfos, err := sys.List(directory)
 	if err != nil {
 		return "", err
 	}
@@ -136,13 +136,13 @@ func makeBuildSuccess(directory string) (string, error) {
 			color = terminal.Dim
 		}
 		str += fmt.Sprintf("%v%s%v\n", color(lsInfo.Path), strings.Repeat(" ", 40-len(lsInfo.Path)),
-			terminal.Dimf("(%s)", fsUtils.ByteCountIEC(lsInfo.Size)))
+			terminal.Dimf("(%s)", sys.ByteCountIEC(lsInfo.Size)))
 		if !strings.HasSuffix(lsInfo.Path, ".map") {
 			sum += lsInfo.Size
 		}
 	}
 
-	str += fmt.Sprintln(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", fsUtils.ByteCountIEC(sum)))
+	str += fmt.Sprintln(strings.Repeat(" ", 40) + terminal.Dimf("(%s sum)", sys.ByteCountIEC(sum)))
 	str += fmt.Sprintln()
 	str += fmt.Sprintln(terminal.Dimf("(%s)", time.Since(epoch)))
 

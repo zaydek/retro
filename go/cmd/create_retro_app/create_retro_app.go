@@ -36,8 +36,8 @@ func (r App) CreateApp() error {
 
 	appName := r.Command.Directory
 	if r.Command.Directory == "." {
-		cwd, _ := os.Getwd()
-		appName = filepath.Base(cwd)
+		wd, _ := os.Getwd()
+		appName = filepath.Base(wd)
 	}
 
 	if r.Command.Directory != "." {

@@ -209,7 +209,7 @@ func (a *App) Serve(options ServeOptions) error {
 		}
 		// Serve non-HTML resources
 		path := getFilesystemPath(r.URL.Path)
-		if extension := filepath.Ext(path); extension != "" && extension != ".html" {
+		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, path))
 			return
 		}

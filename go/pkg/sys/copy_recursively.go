@@ -1,4 +1,4 @@
-package fsUtils
+package sys
 
 import (
 	"io"
@@ -14,10 +14,7 @@ type copyInfo struct {
 	target string
 }
 
-// Copies a directory recursively
 func CopyRecursively(source, target string, excludes []string) error {
-	// TODO: Do we want to guard for non-directory sources and or destinations?
-
 	// Sweep for sources and targets
 	var copyInfos []copyInfo
 	err := filepath.WalkDir(source, func(path string, directoryEntry fs.DirEntry, err error) error {
@@ -41,7 +38,6 @@ func CopyRecursively(source, target string, excludes []string) error {
 	if err != nil {
 		return err
 	}
-
 	// Copy sources to targets
 	for _, copyInfo := range copyInfos {
 		// FIXME: It's not obvious what this does
@@ -64,6 +60,5 @@ func CopyRecursively(source, target string, excludes []string) error {
 		sourceFile.Close()
 		targetFile.Close()
 	}
-
 	return nil
 }

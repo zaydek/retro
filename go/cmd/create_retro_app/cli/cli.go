@@ -36,8 +36,8 @@ func (e CommandError) Error() string {
 	case BadTemplateValue:
 		return "`--template` must be a `starter` or `sass` (default `starter`)."
 	case BadDirectoryValue:
-		cwd, _ := os.Getwd()
-		return fmt.Sprintf("Use `.` explicitly to use the working directory `%s`.", filepath.Base(cwd))
+		wd, _ := os.Getwd()
+		return fmt.Sprintf("Use `.` explicitly to use the working directory `%s`.", filepath.Base(wd))
 	}
 	panic("Internal error")
 }
