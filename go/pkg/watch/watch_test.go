@@ -2,7 +2,6 @@ package watch
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"testing"
@@ -11,20 +10,18 @@ import (
 	"github.com/zaydek/retro/go/pkg/expect"
 )
 
-func check(t *testing.T, err error) {
+func must(t *testing.T, err error) {
 	if err == nil {
 		return
 	}
-	t.Fatalf("check: %s", err)
+	t.Fatal(err)
 }
 
 func TestDirectory(t *testing.T) {
 	var count int
 
 	dir, err := ioutil.TempDir(".", "tmp_")
-	if err != nil {
-		log.Fatal(err)
-	}
+	must(t, err)
 	defer os.RemoveAll(dir)
 
 	ch := Directory(dir, 10*time.Millisecond)
@@ -34,11 +31,11 @@ func TestDirectory(t *testing.T) {
 		}
 	}()
 
-	check(t, os.WriteFile(path.Join(dir, "a"), []byte("Hello, world!\n"), 0644))
+	must(t, os.WriteFile(path.Join(dir, "a"), []byte("Hello, world!\n"), 0644))
 	time.Sleep(10 * time.Millisecond)
-	check(t, os.WriteFile(path.Join(dir, "b"), []byte("Hello, world!\n"), 0644))
+	must(t, os.WriteFile(path.Join(dir, "b"), []byte("Hello, world!\n"), 0644))
 	time.Sleep(10 * time.Millisecond)
-	check(t, os.WriteFile(path.Join(dir, "c"), []byte("Hello, world!\n"), 0644))
+	must(t, os.WriteFile(path.Join(dir, "c"), []byte("Hello, world!\n"), 0644))
 	time.Sleep(10 * time.Millisecond)
 
 	expect.DeepEqual(t, count, 3)

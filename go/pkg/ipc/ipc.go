@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+func must(err error) {
+	if err == nil {
+		return
+	}
+	panic(err)
+}
+
 // Starts a long-lived IPC process. stdout messages are read line-by-line
 // whereas stderr messages are read once.
 func NewCommand(ctx context.Context, commandArgs ...string) (stdin, stdout, stderr chan string, err error) {

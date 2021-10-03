@@ -6,11 +6,11 @@ import (
 	"github.com/zaydek/retro/go/pkg/expect"
 )
 
-func check(t *testing.T, err error) {
+func must(t *testing.T, err error) {
 	if err == nil {
 		return
 	}
-	t.Fatalf("check: %s", err)
+	t.Fatal(err)
 }
 
 func TestParseCommand(t *testing.T) {
@@ -20,21 +20,21 @@ func TestParseCommand(t *testing.T) {
 	)
 
 	command, err = ParseCommand(".")
-	check(t, err)
+	must(t, err)
 	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: ".",
 	})
 
 	command, err = ParseCommand(".", "--template=starter")
-	check(t, err)
+	must(t, err)
 	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: ".",
 	})
 
 	command, err = ParseCommand(".", "--template=sass")
-	check(t, err)
+	must(t, err)
 	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "sass",
 		Directory: ".",
@@ -43,21 +43,21 @@ func TestParseCommand(t *testing.T) {
 	//////////////////////////////////////////////////////////////////////////////
 
 	command, err = ParseCommand("app")
-	check(t, err)
+	must(t, err)
 	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: "app",
 	})
 
 	command, err = ParseCommand("app", "--template=starter")
-	check(t, err)
+	must(t, err)
 	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "starter",
 		Directory: "app",
 	})
 
 	command, err = ParseCommand("app", "--template=sass")
-	check(t, err)
+	must(t, err)
 	expect.DeepEqual(t, command, CreateCommand{
 		Template:  "sass",
 		Directory: "app",

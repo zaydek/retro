@@ -28,6 +28,13 @@ var (
 	SassFS    fs.FS
 )
 
+func must(err error) {
+	if err == nil {
+		return
+	}
+	panic(err)
+}
+
 func init() {
 	var err error
 	StarterFS, err = fs.Sub(starterFS, "starter")

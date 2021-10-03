@@ -17,7 +17,15 @@ import (
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
+// TODO: Can we deprecate this?
 var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
+
+func must(err error) {
+	if err == nil {
+		return
+	}
+	panic(err)
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
