@@ -88,7 +88,7 @@ func guardHTMLEntryPoint() error {
 	// <link rel="stylesheet" href="/client.css" />
 	if !strings.Contains(contents, `<link rel="stylesheet" href="/client.css" />`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<link rel="stylesheet" href="/client.css" />`)), terminal.Magenta(backtick(`<head>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<link rel="stylesheet" href="/client.css" />`)), terminal.Magenta(quote(`<head>`))) + `.
 
 For example:
 
@@ -110,7 +110,7 @@ For example:
 	// <div id="root"></div>
 	if !strings.Contains(contents, `<div id="root"></div>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<div id="root"></div>`)), terminal.Magenta(backtick(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<div id="root"></div>`)), terminal.Magenta(quote(`<body>`))) + `.
 
 For example:
 
@@ -132,7 +132,7 @@ For example:
 	// <script src="/vendor.js"></script>
 	if !strings.Contains(contents, `<script src="/vendor.js"></script>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<script src="/vendor.js"></script>`)), terminal.Magenta(backtick(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<script src="/vendor.js"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
 
 For example:
 
@@ -155,7 +155,7 @@ For example:
 	// <script src="/client.js"></script>
 	if !strings.Contains(contents, `<script src="/client.js"></script>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(backtick(`<script src="/client.js"></script>`)), terminal.Magenta(backtick(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<script src="/client.js"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
 
 For example:
 

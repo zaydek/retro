@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
-func backtick(str string) string {
+func quote(str string) string {
 	return "`" + str + "`"
 }
 
@@ -81,10 +80,7 @@ func getIP() (net.IP, error) {
 
 func makeServeSuccess(port int) string {
 	ip, err := getIP()
-	isOffline := err != nil && strings.HasSuffix(
-		err.Error(),
-		"dial udp 8.8.8.8:80: connect: network is unreachable",
-	)
+	isOffline := err != nil && strings.HasSuffix(err.Error(), "dial udp 8.8.8.8:80: connect: network is unreachable")
 
 	wd, _ := os.Getwd()
 	base := filepath.Base(wd)
@@ -115,20 +111,11 @@ To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + 
 var epoch = time.Now()
 
 func makeBuildSuccess(dir string) (string, error) {
-	var str string
-
+	var ret string
 	ls, err := unix.List(dir)
 	if err != nil {
 		return "", err
 	}
-	sort.Sort(ls)
-
-	var (
-		htmlByteCount int64
-		cssByteCount  int64
-		jsByteCount   int64
-	)
-
 	for _, info := range ls {
 		var (
 			color = terminal.Dim
@@ -136,32 +123,20 @@ func makeBuildSuccess(dir string) (string, error) {
 		)
 		switch ext {
 		case ".html":
-			htmlByteCount += info.Size
 			color = terminal.Normal
 		case ".js":
-			jsByteCount += info.Size
-			jsByteCount += info.Size
 			fallthrough
 		case ".js.map":
 			color = terminal.Yellow
 		case ".css":
-			cssByteCount += info.Size
 			fallthrough
 		case ".css.map":
 			color = terminal.Cyan
 		}
-		str += fmt.Sprintf("%v%s%v\n", color(info.Path), strings.Repeat(" ", 40-len(info.Path)),
+		ret += fmt.Sprintf("%v%s%v\n", color(info.Path), strings.Repeat(" ", 40-len(info.Path)),
 			terminal.Dim(unix.HumanReadable(info.Size)))
 	}
-
-	// str += fmt.Sprintln()
-	// str += fmt.Sprintln(terminal.Normal("HTML") + " " + terminal.Dim(unix.HumanReadable(htmlByteCount)))
-	// str += fmt.Sprintln(terminal.Yellow("CSS") + "  " + terminal.Dim(unix.HumanReadable(cssByteCount)))
-	// str += fmt.Sprintln(terminal.Cyan("JS") + "   " + terminal.Dim(unix.HumanReadable(jsByteCount)))
-	// str += fmt.Sprintln()
-
-	str += fmt.Sprintln()
-	str += fmt.Sprintln(terminal.Dimf("(%dms)", time.Since(epoch).Milliseconds()))
-
-	return str, nil
+	ret += fmt.Sprintln()
+	ret += fmt.Sprintln(terminal.Dimf("(%dms)", time.Since(epoch).Milliseconds()))
+	return ret, nil
 }
