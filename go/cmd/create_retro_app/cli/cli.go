@@ -19,7 +19,6 @@ type ErrorKind int
 
 const (
 	BadArgument ErrorKind = iota
-	BadTemplateValue
 	BadDirectoryValue
 )
 
@@ -33,8 +32,6 @@ func (e CommandError) Error() string {
 	switch e.Kind {
 	case BadArgument:
 		return fmt.Sprintf("Unsupported argument `%s`.", e.BadArgument)
-	case BadTemplateValue:
-		return "`--template` must be a `starter` or `sass` (default `starter`)."
 	case BadDirectoryValue:
 		wd, _ := os.Getwd()
 		return fmt.Sprintf("Use `.` explicitly to use the working directory `%s`.", filepath.Base(wd))
@@ -47,26 +44,11 @@ func (e CommandError) Unwrap() error {
 }
 
 func ParseCommand(args ...string) (CreateCommand, error) {
-	command := CreateCommand{
-		Template:  "starter",
-		Directory: "",
-	}
+	var command = CreateCommand{}
 	var once sync.Once
 	for _, arg := range args {
 		err := CommandError{Kind: BadArgument, BadArgument: arg}
-		if strings.HasPrefix(arg, "--template") {
-			if len(arg) <= len("--template=") {
-				return CreateCommand{}, CommandError{Kind: BadTemplateValue}
-			}
-			switch strings.ToLower(arg[len("--template="):]) {
-			case "starter":
-				command.Template = "starter"
-			case "sass":
-				command.Template = "sass"
-			default:
-				return CreateCommand{}, CommandError{Kind: BadTemplateValue}
-			}
-		} else if !strings.HasPrefix(arg, "--") {
+		if !strings.HasPrefix(arg, "--") {
 			once.Do(func() {
 				command.Directory = arg
 			})
@@ -90,8 +72,6 @@ func ParseCLIArguments() (CreateCommand, error) {
 		err     error
 	)
 
-	// TODO: Previously --port was not passed as an option to the dev server. It’s
-	// not clear whether this is because of os.Args[2:] or something else.
 	if cmdArg := os.Args[1]; cmdArg == "version" || cmdArg == "--version" || cmdArg == "-v" {
 		return CreateCommand{}, ErrVersion
 	} else if cmdArg == "usage" || cmdArg == "--usage" {

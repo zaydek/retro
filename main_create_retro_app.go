@@ -9,8 +9,13 @@ import (
 	"github.com/zaydek/retro/go/cmd/create_retro_app"
 )
 
-//go:embed version.txt
-var RETRO_VERSION string
+var (
+	//go:embed package.json
+	pkg string
+
+	//go:embed version.txt
+	RETRO_VERSION string
+)
 
 func must(err error) {
 	if err == nil {
@@ -33,9 +38,7 @@ func main() {
 		} `json:"devDependencies"`
 	}
 
-	bstr, err := os.ReadFile("package.json")
-	must(err)
-	err = json.Unmarshal(bstr, &deps)
+	err := json.Unmarshal([]byte(pkg), &deps)
 	must(err)
 
 	err = os.Setenv("ESBUILD_VERSION", deps.DevDependencies.Esbuild)

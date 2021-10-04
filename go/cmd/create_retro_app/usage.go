@@ -3,9 +3,9 @@ package create_retro_app
 import "github.com/zaydek/retro/go/pkg/terminal"
 
 var usage = `
-` + terminal.Bold("create-retro-app [app-name]") + `
+` + terminal.Bold("create-retro-app [dir]") + `
 
-	Create a Retro app at directory ` + terminal.Bold("[app-name]") + `
+	Create a Retro app at directory ` + terminal.Bold("[dir]") + `
 
 ` + terminal.Bold("Repositories") + `
 

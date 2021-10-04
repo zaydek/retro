@@ -22,8 +22,6 @@ func (e EntryPointError) Error() string {
 	return e.err.Error()
 }
 
-// TODO: In theory we can also access default values from
-// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
@@ -35,8 +33,6 @@ func copyDefaultIndexHTMLEntryPoint() error {
 	return nil
 }
 
-// TODO: In theory we can also access default values from
-// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
@@ -48,8 +44,6 @@ func copyDefaultIndexJSEntryPoint() error {
 	return nil
 }
 
-// TODO: In theory we can also access default values from
-// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {

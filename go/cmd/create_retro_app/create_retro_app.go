@@ -19,6 +19,10 @@ var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 //go:embed static/*
 var staticFS embed.FS
 
+type App struct {
+	Command cli.CreateCommand
+}
+
 func (r App) CreateApp() error {
 	if r.Command.Directory != "." {
 		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
@@ -50,35 +54,34 @@ func (r App) CreateApp() error {
 		return err
 	}
 
-	dirName := r.Command.Directory
+	dir := r.Command.Directory
 	if r.Command.Directory == "." {
 		wd, _ := os.Getwd()
-		dirName = filepath.Base(wd)
+		dir = filepath.Base(wd)
 	}
 
 	var badCopyPaths []string
 	for _, path := range copyPaths {
-		path := filepath.Join(dirName, path)
+		path := filepath.Join(dir, path)
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			badCopyPaths = append(badCopyPaths, path)
 		}
 	}
 
 	if len(badCopyPaths) > 0 {
-		var badPathsStr string
-		for badPathIndex, badPath := range badCopyPaths {
-			var sep string
-			if badPathIndex > 0 {
-				sep = "\n"
+		var badCopyPathsStr string
+		for _, badCopyPath := range badCopyPaths {
+			if badCopyPathsStr != "" {
+				badCopyPathsStr += "\n"
 			}
-			badPathsStr += sep + "- " + badPath
+			badCopyPathsStr += "- " + badCopyPath
 		}
 		fmt.Fprintln(
 			os.Stderr,
 			format.Error(
 				fmt.Sprintf(
 					"Refusing to overwrite files and or directories.\n\n"+
-						badPathsStr,
+						badCopyPathsStr,
 				),
 			),
 		)
@@ -86,7 +89,7 @@ func (r App) CreateApp() error {
 	}
 
 	for _, copyPath := range copyPaths {
-		path := filepath.Join(dirName, copyPath)
+		path := filepath.Join(dir, copyPath)
 		if dir := filepath.Dir(path); dir != "." {
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				return err
@@ -129,7 +132,7 @@ func (r App) CreateApp() error {
 		os.Getenv("RETRO_VERSION"),
 	)
 
-	if err := os.WriteFile(filepath.Join(dirName, "package.json"), []byte(pkg+"\n"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "package.json"), []byte(pkg+"\n"), 0644); err != nil {
 		return err
 	}
 
@@ -138,14 +141,10 @@ func (r App) CreateApp() error {
 		fmt.Println(format.Tabs(createSuccessStr))
 	} else {
 		// TODO: Clean this up?
-		fmt.Println(format.Tabs(fmt.Sprintf(createSuccessDirStr, dirName)))
+		fmt.Println(format.Tabs(fmt.Sprintf(createSuccessDirStr, dir)))
 	}
 
 	return nil
-}
-
-type App struct {
-	Command cli.CreateCommand
 }
 
 func Run() {
