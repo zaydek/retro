@@ -22,7 +22,7 @@ func TestParseCommand(t *testing.T) {
 	command, err = ParseCommand(".")
 	must(t, err)
 	expect.DeepEqual(t, command, CreateCommand{
-		Directory: "retro",
+		Directory: ".",
 	})
 
 	command, err = ParseCommand("app")

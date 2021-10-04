@@ -1,7 +1,7 @@
 package watch
 
 import (
-	"os"
+	"io/fs"
 	"path/filepath"
 	"time"
 )
@@ -23,15 +23,16 @@ func Directory(dir string, poll time.Duration) <-chan WatchResult {
 		ticker := time.NewTicker(poll)
 		defer ticker.Stop()
 		for ; true; <-ticker.C {
-			err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			err := filepath.WalkDir(dir, func(root string, d fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
-				if prev, ok := modTimeMap[path]; !ok {
-					modTimeMap[path] = info.ModTime()
+				info, _ := d.Info()
+				if prev, ok := modTimeMap[root]; !ok {
+					modTimeMap[root] = info.ModTime()
 				} else {
 					if next := info.ModTime(); prev != next {
-						modTimeMap[path] = next
+						modTimeMap[root] = next
 						ch <- WatchResult{nil}
 					}
 				}
