@@ -45,19 +45,21 @@ func getFilesystemPath(url string) string {
 ////////////////////////////////////////////////////////////////////////////////
 
 func getDirname() (string, error) {
-	executable, err := os.Executable()
+	exe, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
-	// Edge-case for local development: When running `go run main-*.go`, get the
-	// working directory. `main-*` works as heuristic because the entry point
-	// filenames are `main_create_retro_app.go` and `main_retro.go`.
-	if strings.HasPrefix(filepath.Base(executable), "main_") {
-		return os.Getwd()
+	exe, err = filepath.EvalSymlinks(exe)
+	if err != nil {
+		return "", err
 	}
-	// Follows symlinks; get `node_modules/.bin/@zaydek/bin/retro` not
-	// `node_modules/.bin/retro`
-	return filepath.EvalSymlinks(executable)
+	dir := filepath.Dir(exe)
+	tmpDir := os.TempDir()
+	if dir != "" && tmpDir != "" && strings.HasPrefix(dir, tmpDir) {
+		wd, _ := os.Getwd()
+		return wd, nil
+	}
+	return dir, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -71,8 +71,11 @@ test:
 # Builds Go binaries and creates a placeholder executable for the post-
 # installation script
 build-create-retro-app:
-	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/darwin-64 main_create_retro_app.go
-	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/linux-64 main_create_retro_app.go
+	rm -rf npm/create_retro_app/bin
+	mkdir -p npm/create_retro_app/bin
+
+	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/darwin-64      main_create_retro_app.go
+	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/linux-64       main_create_retro_app.go
 	GOOS=windows GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/windows-64.exe main_create_retro_app.go
 
 	touch npm/create-retro-app/bin/create-retro-app
@@ -80,16 +83,22 @@ build-create-retro-app:
 # Builds Go binaries and creates a placeholder executable for the post-
 # installation script
 build-retro:
+	rm -rf npm/retro/bin
+	mkdir -p npm/retro/bin/scripts
+
 	make bundle
 
-	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/darwin-64 main_retro.go
-	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64 main_retro.go
+	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/darwin-64      main_retro.go
+	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64       main_retro.go
 	GOOS=windows GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/windows-64.exe main_retro.go
 
-	rm -rf         npm/retro/bin
-	cp -rf scripts npm/retro/bin
-	rm -rf         npm/retro/bin/backend
-	touch          npm/retro/bin/retro
+	cp \
+		scripts/backend.esbuild.js \
+		scripts/backend.esbuild.js.map \
+		scripts/require.js \
+		scripts/vendor.js \
+		npm/retro/bin/scripts
+	touch npm/retro/bin/retro
 
 # Makes all builds in parallel
 build:
@@ -129,11 +138,3 @@ publish:
 	make build && \
 		make version && \
 		make release
-
-################################################################################
-
-clean:
-	rm scripts/backend.esbuild.js
-	rm scripts/backend.esbuild.js.map
-	rm ~/github/bin/create-retro-app
-	rm ~/github/bin/retro
