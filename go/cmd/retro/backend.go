@@ -49,7 +49,7 @@ func (b BundleInfo) HTML() string {
 }
 
 code {
-	font: 19px / 1.4
+	font: 18px / 1.45
 		"Consolas", /* Windows */
 		"Monaco",   /* macOS */
 		monospace;
