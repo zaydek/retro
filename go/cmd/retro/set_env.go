@@ -35,8 +35,7 @@ func setEnvImpl(errPointer *error, envKey, defaultValue string) {
 	*errPointer = os.Setenv(envKey, envValue)
 }
 
-// Propagates environmental variables or sets default values
-func setEnv(commandKind CommandKind) error {
+func setEnvAndGlobalVariables(commandKind CommandKind) error {
 	var err error
 	switch commandKind {
 	case KindDevCommand:

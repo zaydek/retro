@@ -6,12 +6,9 @@ import (
 )
 
 func NotDeepEqual(t *testing.T, x, y interface{}) {
-	// Test passes
 	if !reflect.DeepEqual(x, y) {
 		return
 	}
-
-	// Test does not pass
 	s1, t1 := x.(string)
 	s2, t2 := y.(string)
 	if t1 && t2 {
@@ -21,12 +18,9 @@ func NotDeepEqual(t *testing.T, x, y interface{}) {
 }
 
 func DeepEqual(t *testing.T, x, y interface{}) {
-	// Test passes
 	if reflect.DeepEqual(x, y) {
 		return
 	}
-
-	// Test does not pass
 	s1, t1 := x.(string)
 	s2, t2 := y.(string)
 	if t1 && t2 {

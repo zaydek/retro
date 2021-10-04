@@ -135,10 +135,10 @@ func (r App) CreateApp() error {
 
 	if r.Command.Directory == "." {
 		// TODO: Clean this up?
-		fmt.Println(format.Tabs(successFmt))
+		fmt.Println(format.Tabs(createSuccessStr))
 	} else {
 		// TODO: Clean this up?
-		fmt.Println(format.Tabs(fmt.Sprintf(successDirFmt, dirName)))
+		fmt.Println(format.Tabs(fmt.Sprintf(createSuccessDirStr, dirName)))
 	}
 
 	return nil

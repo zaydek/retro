@@ -13,7 +13,7 @@ import (
 
 func TestCommandFooFailure(t *testing.T) {
 	_, _, _, err := NewCommand(context.Background(), "foo")
-	if err.Error() == `cmd.Start: exec: "foo": executable file not found in $PATH` {
+	if err.Error() == `exec: "foo": executable file not found in $PATH` {
 		// Success
 		return
 	}

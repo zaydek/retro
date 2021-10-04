@@ -5,9 +5,7 @@ import "github.com/zaydek/retro/go/pkg/terminal"
 var usage = `
 ` + terminal.Bold("create-retro-app [app-name]") + `
 
-	Create a new Retro app at directory ` + terminal.Bold("[app-name]") + `
-
-		--template=...  ` + terminal.Cyan("starter") + ` or ` + terminal.Cyan("sass") + ` (default ` + terminal.Cyan("starter") + `)
+	Create a Retro app at directory ` + terminal.Bold("[app-name]") + `
 
 ` + terminal.Bold("Repositories") + `
 
@@ -15,7 +13,7 @@ var usage = `
 	` + terminal.Underline("https://github.com/evanw/esbuild") + `
 `
 
-var successFmt = terminal.Cyan("Success!") + `
+var createSuccessStr = terminal.Cyan("Success!") + `
 
   npm:
 
@@ -29,7 +27,7 @@ var successFmt = terminal.Cyan("Success!") + `
 
 Happy hacking!`
 
-var successDirFmt = terminal.Cyan("Success!") + `
+var createSuccessDirStr = terminal.Cyan("Success!") + `
 
   npm:
 

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zaydek/retro/go/cmd/perm"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
@@ -27,10 +26,10 @@ func (e EntryPointError) Error() string {
 // `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
-	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filename, []byte(htmlEntryPoint+"\n"), perm.BitsFile); err != nil {
+	if err := os.WriteFile(filename, []byte(htmlEntryPoint+"\n"), 0644); err != nil {
 		return err
 	}
 	return nil
@@ -40,10 +39,10 @@ func copyDefaultIndexHTMLEntryPoint() error {
 // `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
-	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filename, []byte(jsEntryPoint+"\n"), perm.BitsFile); err != nil {
+	if err := os.WriteFile(filename, []byte(jsEntryPoint+"\n"), 0644); err != nil {
 		return err
 	}
 	return nil
@@ -53,10 +52,10 @@ func copyDefaultIndexJSEntryPoint() error {
 // `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
-	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filename, []byte(appJSEntryPoint+"\n"), perm.BitsFile); err != nil {
+	if err := os.WriteFile(filename, []byte(appJSEntryPoint+"\n"), 0644); err != nil {
 		return err
 	}
 	return nil
@@ -256,12 +255,12 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 		1,
 	)
 	// out/www
-	target := filepath.Join(RETRO_OUT_DIR, filename)
-	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
+	path := filepath.Join(RETRO_OUT_DIR, filename)
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
 	// out/www/index.html
-	if err := os.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
+	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
 		return err
 	}
 	return nil

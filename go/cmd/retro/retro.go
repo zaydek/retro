@@ -20,15 +20,6 @@ import (
 	"github.com/zaydek/retro/go/pkg/watch"
 )
 
-func must(err error) {
-	if err == nil {
-		return
-	}
-	panic(err)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 type DevOptions struct {
 	WarmUpFlag bool
 }
@@ -194,7 +185,7 @@ type ServeOptions struct {
 
 func (a *App) Serve(options ServeOptions) error {
 	if options.WarmUpFlag {
-		if err := setEnv(KindServeCommand); err != nil {
+		if err := setEnvAndGlobalVariables(KindServeCommand); err != nil {
 			return err
 		}
 	}
