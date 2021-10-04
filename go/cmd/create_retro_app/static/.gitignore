@@ -1,0 +1,10 @@
+# http://git-scm.com/docs/gitignore
+
+# macOS
+.DS_Store
+
+# NPM
+/node_modules/
+
+# Production
+/out/

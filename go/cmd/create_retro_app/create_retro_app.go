@@ -1,51 +1,29 @@
 package create_retro_app
 
 import (
-	"bytes"
+	"embed"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"text/template"
 
 	"github.com/zaydek/retro/go/cmd/create_retro_app/cli"
-	"github.com/zaydek/retro/go/cmd/create_retro_app/embeds"
-	"github.com/zaydek/retro/go/cmd/deps"
 	"github.com/zaydek/retro/go/cmd/format"
-	"github.com/zaydek/retro/go/cmd/perm"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
 // TODO: Can we deprecate this?
 var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 
-func must(err error) {
-	if err == nil {
-		return
-	}
-	panic(err)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-func (r App) mustGetFSAndPKG() (fs.FS, *template.Template) {
-	switch r.Command.Template {
-	case "starter":
-		return embeds.StarterFS, embeds.StarterPackage
-	case "sass":
-		return embeds.SassFS, embeds.SassPackage
-	}
-	panic("Internal error")
-}
+//go:embed static/*
+var staticFS embed.FS
 
 func (r App) CreateApp() error {
-	fsys, pkg := r.mustGetFSAndPKG()
-
-	appName := r.Command.Directory
+	dirName := r.Command.Directory
 	if r.Command.Directory == "." {
 		wd, _ := os.Getwd()
-		appName = filepath.Base(wd)
+		dirName = filepath.Base(wd)
 	}
 
 	if r.Command.Directory != "." {
@@ -61,23 +39,24 @@ func (r App) CreateApp() error {
 			)
 			os.Exit(1)
 		}
-		if err := os.MkdirAll(r.Command.Directory, perm.BitsDirectory); err != nil {
-			return err
-		}
-		if err := os.Chdir(r.Command.Directory); err != nil {
-			return err
-		}
-		defer os.Chdir("..")
+		// if err := os.MkdirAll(r.Command.Directory, 0755); err != nil {
+		// 	return err
+		// }
+		// // FIXME: We shouldn't need this at all
+		// if err := os.Chdir(r.Command.Directory); err != nil {
+		// 	return err
+		// }
+		// defer os.Chdir("..")
 	}
 
-	// Add package.json
-	paths := []string{"package.json"}
-	err := fs.WalkDir(fsys, ".", func(root string, d fs.DirEntry, err error) error {
+	var paths []string
+	err := fs.WalkDir(staticFS, ".", func(root string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
-			paths = append(paths, root)
+			rel, _ := filepath.Rel("static", root)
+			paths = append(paths, rel)
 		}
 		return nil
 	})
@@ -86,26 +65,26 @@ func (r App) CreateApp() error {
 	}
 
 	var badPaths []string
-	for _, v := range paths {
-		if _, err := os.Stat(v); !os.IsNotExist(err) {
-			badPaths = append(badPaths, v)
+	for _, path := range paths {
+		if _, err := os.Stat(filepath.Join("static", path)); !os.IsNotExist(err) {
+			badPaths = append(badPaths, path)
 		}
 	}
 
 	if len(badPaths) > 0 {
 		var badPathsStr string
-		for x, v := range badPaths {
+		for badPathIndex, badPath := range badPaths {
 			var sep string
-			if x > 0 {
+			if badPathIndex > 0 {
 				sep = "\n"
 			}
-			badPathsStr += sep + "- " + v
+			badPathsStr += sep + "- " + badPath
 		}
 		fmt.Fprintln(
 			os.Stderr,
 			format.Error(
 				fmt.Sprintf(
-					"Refusing to overwrite paths. Use `rm -r [...paths]` to remove them or `mv [src] [dst]` to rename them.\n\n"+
+					"Refusing to overwrite files and or directories.\n\n"+
 						badPathsStr,
 				),
 			),
@@ -113,19 +92,17 @@ func (r App) CreateApp() error {
 		os.Exit(1)
 	}
 
-	// Remove package.json
-	paths = paths[1:]
-	for _, v := range paths {
-		if dir := filepath.Dir(v); dir != "." {
-			if err := os.MkdirAll(dir, perm.BitsDirectory); err != nil {
+	for _, path := range paths {
+		if dir := filepath.Dir(filepath.Join("static")); dir != "." {
+			if err := os.MkdirAll(dir, 0755); err != nil {
 				return err
 			}
 		}
-		src, err := fsys.Open(v)
+		src, err := staticFS.Open(filepath.Join("static", path))
 		if err != nil {
 			return err
 		}
-		dst, err := os.Create(v)
+		dst, err := os.Create(path)
 		if err != nil {
 			return err
 		}
@@ -136,26 +113,42 @@ func (r App) CreateApp() error {
 		dst.Close()
 	}
 
-	var buf bytes.Buffer
-	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
-	if err := pkg.Execute(&buf, deps.Deps); err != nil {
-		return err
+	pkg := fmt.Sprintf(
+		`{
+	"scripts": {
+		"dev": "retro dev",
+		"build": "retro build",
+		"serve": "retro serve"
+	},
+	"dependencies": {
+		"react": "%[2]s",
+		"react-dom": "%[3]s"
+	},
+	"devDependencies": {
+		"@zaydek/retro": "%[4]s",
+		"esbuild": "%[1]s"
 	}
+}`,
+		os.Getenv("ESBUILD_VERSION"),
+		os.Getenv("REACT_VERSION"),
+		os.Getenv("REACTDOM_VERSION"),
+		os.Getenv("RETRO_VERSION"),
+	)
 
-	if err := os.WriteFile("package.json", buf.Bytes(), perm.BitsFile); err != nil {
+	if err := os.WriteFile("package.json", []byte(pkg+"\n"), 0644); err != nil {
 		return err
 	}
 
 	if r.Command.Directory == "." {
+		// TODO: Clean this up?
 		fmt.Println(format.Tabs(successFmt))
 	} else {
-		fmt.Println(format.Tabs(fmt.Sprintf(successDirFmt, appName)))
+		// TODO: Clean this up?
+		fmt.Println(format.Tabs(fmt.Sprintf(successDirFmt, dirName)))
 	}
 
 	return nil
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 type App struct {
 	Command cli.CreateCommand
