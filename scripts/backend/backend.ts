@@ -16,13 +16,6 @@ import {
 	RETRO_SRC_DIR,
 } from "./env"
 
-function stdout(message:
-	| t.BuildVendorAndClientDoneMessage
-	| t.RebuildClientDoneMessage
-): void {
-	console.log(JSON.stringify(message))
-}
-
 // retro.config.js
 let globalUserConfiguration: esbuild.BuildOptions | null = null
 
@@ -31,8 +24,6 @@ let globalVendorEntryPoint: esbuild.BuildResult | null = null
 
 // src/index.js
 let globalClientEntryPoint: esbuild.BuildResult | esbuild.BuildIncremental | null = null
-
-////////////////////////////////////////////////////////////////////////////////
 
 async function buildVendorBundle(): Promise<t.BundleInfo> {
 	const vendor: t.BundleInfo = {
@@ -145,16 +136,6 @@ async function rebuildClientBundle(): Promise<t.BundleInfo> {
 	return client
 }
 
-function sleep(durationMs: number): Promise<void> {
-	return new Promise(resolve => setTimeout(resolve, durationMs))
-}
-
-// This becomes a Node.js IPC process, from Go to JavaScript. Messages are sent
-// as plaintext strings (actions) and received as JSON-encoded payloads.
-//
-// stdout messages that aren't encoded should be logged regardless because
-// plugins can implement logging. stderr messages are exceptions and should
-// terminate the Node.js runtime.
 async function main(): Promise<void> {
 	esbuild.initialize({})
 	globalUserConfiguration = await resolveUserConfiguration()
@@ -164,30 +145,36 @@ async function main(): Promise<void> {
 		switch (action) {
 			case "build":
 				const { vendor, client, clientAppOnly } = await buildVendorAndClientBundles()
-				stdout({
-					Kind: "build_done",
-					Data: {
-						Vendor: vendor,
-						Client: client,
-						ClientAppOnly: clientAppOnly,
-					},
-				})
+				console.log(
+					JSON.stringify(
+						{
+							Kind: "build_done",
+							Data: {
+								Vendor: vendor,
+								Client: client,
+								ClientAppOnly: clientAppOnly,
+							},
+						},
+					),
+				)
 				break
 			case "rebuild": {
 				const client = await rebuildClientBundle()
-				stdout({
-					Kind: "rebuild_done",
-					Data: {
-						Client: client,
-					},
-				})
+				console.log(
+					JSON.stringify(
+						{
+							Kind: "rebuild_done",
+							Data: {
+								Client: client,
+							},
+						},
+					),
+				)
 				break
 			}
 			default:
 				throw new Error("Internal error")
 		}
-		// Add a micro-delay to prevent high CPU usage
-		await sleep(10)
 	}
 }
 

@@ -46,7 +46,7 @@ func (e CommandError) Error() string {
 	case BadSourcemapValue:
 		return "`--sourcemap` must be a `true` or `false` or empty (default `true`)."
 	case BadPortRange:
-		return fmt.Sprintf("`--port` must be between `1000` and `10_000`; used `%d`.", e.BadPort)
+		return fmt.Sprintf("`--port` must be between `1000` and `10000`; used `%d`.", e.BadPort)
 	}
 	panic("Internal error")
 }

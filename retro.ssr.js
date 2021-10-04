@@ -2,7 +2,7 @@ const React = require("react")
 const ReactDOMServer = require("react-dom/server")
 
 // After `retro build`, run `node retro.ssr.js` to render `src/App.js` as a
-// string on the server (your computer).
+// string on the server.
 //
 // The name of this script is arbitrary. Modify this script to support static-
 // site generation (SSG) or server-side rendering (SSR) more generally.

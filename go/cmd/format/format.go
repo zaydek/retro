@@ -1,45 +1,16 @@
 package format
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
-func Pad(str string) string {
-	arr := strings.Split(str, "\n")
-	for x, v := range arr {
-		arr[x] = " " + v
-	}
-	return strings.Join(arr, "\n")
-}
+var accentRegex = regexp.MustCompile("`([^`]+)`")
 
-func Tabs(str string) string {
-	arr := strings.Split(str, "\n")
-	for x := range arr {
-		if arr[x] == "" {
-			continue
-		}
-		arr[x] = strings.ReplaceAll(arr[x], "\t", "  ")
-	}
-	return strings.Join(arr, "\n")
-}
-
-var accentRe = regexp.MustCompile("`([^`]+)`")
-
-func Accent(str string, accent func(args ...interface{}) string) string {
-	arr := strings.Split(str, "\n")
-	for x := range arr {
-		if arr[x] == "" {
-			continue
-		}
-		arr[x] = accentRe.ReplaceAllString(arr[x], accent("`$1`"))
-	}
-	return strings.Join(arr, "\n")
-}
-
-func NonError(x interface{}) string {
+func Stdout(x interface{}) string {
 	var str string
 	switch v := x.(type) {
 	case string:
@@ -47,13 +18,23 @@ func NonError(x interface{}) string {
 	case error:
 		str = v.Error()
 	default:
-		// TODO: What the fuck is this?
 		panic("Internal error")
 	}
-	return Pad(Tabs(Accent(str, terminal.Cyan)))
+	arr := strings.Split(str, "\n")
+	for arrIndex, el := range arr {
+		if el == "" {
+			continue
+		}
+		arr[arrIndex] =
+			accentRegex.ReplaceAllString(
+				strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
+				terminal.Cyan("`$1`"),              // Accent
+			)
+	}
+	return strings.Join(arr, "\n")
 }
 
-func Error(x interface{}) string {
+func Stderr(x interface{}) string {
 	var str string
 	switch v := x.(type) {
 	case string:
@@ -61,10 +42,36 @@ func Error(x interface{}) string {
 	case error:
 		str = v.Error()
 	default:
-		// TODO: What the fuck is this?
 		panic("Internal error")
 	}
 	arr := strings.Split(str, "\n")
-	arr[0] = terminal.Boldf("%s %s", terminal.Red("error:"), Accent(arr[0], terminal.Magenta))
+	for arrIndex, el := range arr {
+		if el == "" {
+			continue
+		}
+		arr[arrIndex] =
+			terminal.BoldRed("error:") + " " +
+				accentRegex.ReplaceAllString(
+					strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
+					terminal.Magenta("`$1`"),           // Accent
+				)
+	}
 	return strings.Join(arr, "\n")
+}
+
+func StderrIPC(str string) string {
+	var ret string
+	split := strings.Split(strings.TrimRight(str, "\n"), "\n")
+	for lineIndex, line := range split {
+		if lineIndex > 0 {
+			ret += "\n"
+		}
+		ret +=
+			fmt.Sprintf("%s %s  %s",
+				terminal.Dim("(retro:node)"),
+				terminal.BoldRed("stderr"),
+				line,
+			)
+	}
+	return ret
 }

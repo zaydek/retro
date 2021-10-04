@@ -10,11 +10,7 @@ import (
 
 	"github.com/zaydek/retro/go/cmd/create_retro_app/cli"
 	"github.com/zaydek/retro/go/cmd/format"
-	"github.com/zaydek/retro/go/pkg/terminal"
 )
-
-// TODO: Can we deprecate this?
-var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 
 //go:embed static/*
 var staticFS embed.FS
@@ -26,15 +22,8 @@ type App struct {
 func (r App) CreateApp() error {
 	if r.Command.Directory != "." {
 		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
-			fmt.Fprintln(
-				os.Stderr,
-				format.Error(
-					fmt.Sprintf(
-						"Refusing to overwrite directory `%s`.",
-						r.Command.Directory,
-					),
-				),
-			)
+			errStr := fmt.Sprintf("Refusing to overwrite directory `%s`.", r.Command.Directory)
+			fmt.Fprintln(os.Stderr, errStr)
 			os.Exit(1)
 		}
 	}
@@ -76,15 +65,8 @@ func (r App) CreateApp() error {
 			}
 			badCopyPathsStr += "- " + badCopyPath
 		}
-		fmt.Fprintln(
-			os.Stderr,
-			format.Error(
-				fmt.Sprintf(
-					"Refusing to overwrite files and or directories.\n\n"+
-						badCopyPathsStr,
-				),
-			),
-		)
+		errStr := format.Stderr(fmt.Sprintf("Refusing to overwrite files and or directories.\n\n%s", badCopyPathsStr))
+		fmt.Fprintln(os.Stderr, errStr)
 		os.Exit(1)
 	}
 
@@ -137,11 +119,9 @@ func (r App) CreateApp() error {
 	}
 
 	if r.Command.Directory == "." {
-		// TODO: Clean this up?
-		fmt.Println(format.Tabs(createSuccessStr))
+		fmt.Println(createSuccessStr)
 	} else {
-		// TODO: Clean this up?
-		fmt.Println(format.Tabs(fmt.Sprintf(createSuccessDirStr, dir)))
+		fmt.Println(fmt.Sprintf(createSuccessDirStr, dir))
 	}
 
 	return nil
@@ -157,14 +137,14 @@ func Run() {
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
-		fmt.Println(format.Pad(format.Tabs(cyan(usage))))
+		fmt.Println(format.Stdout(usage))
 		return
 	}
 
 	// Command errors
 	switch err.(type) {
 	case cli.CommandError:
-		fmt.Fprintln(os.Stderr, format.Error(err))
+		fmt.Fprintln(os.Stderr, format.Stderr(err))
 		os.Exit(1)
 	default:
 		must(err)

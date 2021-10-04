@@ -30,17 +30,17 @@ func getFilesystemPath(url string) string {
 	return ret
 }
 
-func getBrowserPath(url string) string {
-	ret := url
-	if strings.HasSuffix(url, "/index.html") {
-		ret = ret[:len(ret)-len("index.html")]
-	} else if strings.HasSuffix(url, "/index") {
-		ret = ret[:len(ret)-len("index")]
-	} else if strings.HasSuffix(url, ".html") {
-		ret = ret[:len(ret)-len(".html")]
-	}
-	return ret
-}
+// func getBrowserPath(url string) string {
+// 	ret := url
+// 	if strings.HasSuffix(url, "/index.html") {
+// 		ret = ret[:len(ret)-len("index.html")]
+// 	} else if strings.HasSuffix(url, "/index") {
+// 		ret = ret[:len(ret)-len("index")]
+// 	} else if strings.HasSuffix(url, ".html") {
+// 		ret = ret[:len(ret)-len(".html")]
+// 	}
+// 	return ret
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -71,9 +71,6 @@ func buildBuildSuccessString(dir string) (string, error) {
 		return "", err
 	}
 	for _, info := range ls {
-		// if strings.HasPrefix(info.Path, filepath.Join(RETRO_OUT_DIR, ".retro")) {
-		// 	continue
-		// }
 		var (
 			color = terminal.Dim
 			ext   = filepath.Ext(info.Path)

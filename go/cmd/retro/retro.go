@@ -25,8 +25,8 @@ type DevOptions struct {
 }
 
 type TimedMessage struct {
-	m Message
-	d time.Duration
+	message  Message
+	duration time.Duration
 }
 
 func (a *App) Dev(options DevOptions) error {
@@ -34,7 +34,7 @@ func (a *App) Dev(options DevOptions) error {
 		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
 			if errors.As(err, &entryPointErr) {
-				fmt.Fprintln(os.Stderr, format.Error(err))
+				fmt.Fprintln(os.Stderr, format.Stderr(err))
 				os.Exit(1)
 			} else {
 				return err
@@ -50,20 +50,14 @@ func (a *App) Dev(options DevOptions) error {
 	}
 
 	var (
-		// Blocks the serve command
 		ready = make(chan struct{})
-
-		// // Sends messages to the `/__dev__` HTTP handler
-		// dev = make(chan Message)
-
-		// Sends messages to the `/__dev__` HTTP handler
-		dev = make(chan TimedMessage)
+		dev   = make(chan TimedMessage)
 	)
 
-	var t time.Time
+	var tm time.Time
 
 	go func() {
-		t = time.Now()
+		tm = time.Now()
 		stdin <- "build"
 		defer cancel()
 
@@ -73,7 +67,7 @@ func (a *App) Dev(options DevOptions) error {
 			case line := <-stdout:
 				var message Message
 				if err := json.Unmarshal([]byte(line), &message); err != nil {
-					// // Log unmarshal errs so users can debug plugins, etc.
+					// // Log unmarshal errors so users can debug plugins, etc.
 					// fmt.Println(formatStdoutLine(line))
 				} else {
 					once.Do(func() {
@@ -82,13 +76,13 @@ func (a *App) Dev(options DevOptions) error {
 						ready <- struct{}{}
 					})
 					dev <- TimedMessage{
-						m: message,
-						d: time.Since(t),
+						message:  message,
+						duration: time.Since(tm),
 					}
-					t = time.Now()
+					tm = time.Now()
 				}
 			case text := <-stderr:
-				fmt.Fprintln(os.Stderr, formatStderrText(text))
+				fmt.Fprintln(os.Stderr, format.StderrIPC(text))
 				cancel()
 				os.Exit(1)
 			}
@@ -98,7 +92,7 @@ func (a *App) Dev(options DevOptions) error {
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
 			must(result.Err)
-			t = time.Now()
+			tm = time.Now()
 			stdin <- "rebuild"
 		}
 	}()
@@ -122,7 +116,7 @@ func (a *App) Build(options BuildOptions) error {
 		var entryPointErr EntryPointError
 		if err := warmUp(a.getCommandKind()); err != nil {
 			if errors.As(err, &entryPointErr) {
-				fmt.Fprintln(os.Stderr, format.Error(err))
+				fmt.Fprintln(os.Stderr, format.Stderr(err))
 				os.Exit(1)
 			} else {
 				return err
@@ -146,7 +140,7 @@ loop:
 		case line := <-stdout:
 			var message Message
 			if err := json.Unmarshal([]byte(line), &message); err != nil {
-				// // Log unmarshal errs so users can debug plugins, etc.
+				// // Log unmarshal errors so users can debug plugins, etc.
 				// fmt.Println(formatStdoutLine(line))
 			} else {
 				if dirty := message.GetDirty(); dirty.IsDirty() {
@@ -161,7 +155,7 @@ loop:
 				break loop
 			}
 		case text := <-stderr:
-			fmt.Fprintln(os.Stderr, formatStderrText(text))
+			fmt.Fprintln(os.Stderr, format.StderrIPC(text))
 			cancel()
 			os.Exit(1)
 		}
@@ -209,17 +203,17 @@ func (a *App) Serve(options ServeOptions) error {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Log message to stdout or the browser
 		var next string
-		if dirty := timedMessage.m.GetDirty(); dirty.IsDirty() {
+		if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() {
 			next = dirty.String()
 		} else {
-			next = buildServeSucessString(a.getPort(), timedMessage.d)
+			next = buildServeSucessString(a.getPort(), timedMessage.duration)
 		}
 		if logMessage != next { // For stdout
 			logMessage = next
 			terminal.Clear(os.Stdout)
 			fmt.Println(logMessage)
 		}
-		if dirty := timedMessage.m.GetDirty(); dirty.IsDirty() { // For the browser
+		if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() { // For the browser
 			fmt.Fprintln(w, dirty.HTML())
 			return
 		}
@@ -261,10 +255,10 @@ func (a *App) Serve(options ServeOptions) error {
 
 	// Log message to stdout
 	var next string
-	if dirty := timedMessage.m.GetDirty(); dirty.IsDirty() {
+	if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() {
 		next = dirty.String()
 	} else {
-		next = buildServeSucessString(a.getPort(), timedMessage.d)
+		next = buildServeSucessString(a.getPort(), timedMessage.duration)
 	}
 	if logMessage != next {
 		logMessage = next
@@ -306,14 +300,14 @@ func Run() {
 	case cli.ErrUsage:
 		fallthrough
 	case cli.ErrHelp:
-		fmt.Println(format.NonError(usage))
+		fmt.Println(format.Stdout(usage))
 		os.Exit(0)
 	}
 
 	// Command errors
 	switch err.(type) {
 	case cli.CommandError:
-		fmt.Fprintln(os.Stderr, format.Error(err))
+		fmt.Fprintln(os.Stderr, format.Stderr(err))
 		os.Exit(1)
 	default:
 		must(err)
