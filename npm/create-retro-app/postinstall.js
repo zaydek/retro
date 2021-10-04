@@ -1,6 +1,6 @@
 // This is a post-installation script that resolves the canonical binary
 
-const fs = require("fs")
+const fsPromises = require("fs/promises")
 const os = require("os")
 const path = require("path")
 
@@ -26,12 +26,12 @@ async function main() {
 	const binaryFilename = supported[architectureKey]
 	if (binaryFilename === undefined) {
 		throw new Error(`postinstall.js: Architecture key \`${architectureKey}\` not supported. ` +
-			`Please create an issue at https://github.com/zaydek/retro.`)
+			`Create an issue at https://github.com/zaydek/retro.`)
 	}
 	const src = path.join(__dirname, "bin", binaryFilename)
 	const dst = path.join(__dirname, "bin", CANONICAL_BINARY_FILENAME)
-	await fs.promises.copyFile(src, dst)
-	await fs.promises.chmod(dst, 0o755)
+	await fsPromises.copyFile(src, dst)
+	await fsPromises.chmod(dst, 0o755)
 }
 
 main()

@@ -26,7 +26,7 @@ async function main() {
 	const binaryFilename = supported[architectureKey]
 	if (binaryFilename === undefined) {
 		throw new Error(`postinstall.js: Architecture key \`${architectureKey}\` not supported. ` +
-			`Please create an issue at https://github.com/zaydek/retro.`)
+			`Create an issue at https://github.com/zaydek/retro.`)
 	}
 	const src = path.join(__dirname, "bin", binaryFilename)
 	const dst = path.join(__dirname, "bin", CANONICAL_BINARY_FILENAME)

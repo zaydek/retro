@@ -86,10 +86,10 @@ build-retro:
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/linux-64 main_retro.go
 	GOOS=windows GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/retro/bin/windows-64.exe main_retro.go
 
-	rm -rf npm/retro/bin
+	rm -rf         npm/retro/bin
 	cp -rf scripts npm/retro/bin
-	cp -rf scripts npm/retro/bin/backend
-	touch npm/retro/bin/retro
+	rm -rf         npm/retro/bin/backend
+	touch          npm/retro/bin/retro
 
 # Makes all builds in parallel
 build:
