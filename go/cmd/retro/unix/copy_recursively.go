@@ -5,16 +5,19 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/zaydek/retro/go/cmd/perm"
 )
 
-type cpInfo struct {
-	srcPath string
-	dstPath string
+type copyInfo struct {
+	source string
+	target string
 }
 
-func CopyRecursively(srcDir, dstDir string, excludes []string) error {
-	var cp []cpInfo
-	err := filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, err error) error {
+func CopyRecursively(source, target string, excludes []string) error {
+	// Sweep for sources and targets
+	var copyInfos []copyInfo
+	err := filepath.WalkDir(source, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -26,34 +29,36 @@ func CopyRecursively(srcDir, dstDir string, excludes []string) error {
 				return nil
 			}
 		}
-		cp = append(cp, cpInfo{
-			srcPath: path,
-			dstPath: filepath.Join(dstDir, filepath.Base(path)),
+		copyInfos = append(copyInfos, copyInfo{
+			source: path,
+			target: filepath.Join(target, filepath.Base(path)),
 		})
 		return nil
 	})
 	if err != nil {
 		return err
 	}
-	for _, info := range cp {
-		if filename := filepath.Dir(info.dstPath); filename != "." {
-			if err := os.MkdirAll(filename, 0755); err != nil {
+	// Copy sources to targets
+	for _, copyInfo := range copyInfos {
+		// FIXME: It's not obvious what this does
+		if filename := filepath.Dir(copyInfo.target); filename != "." {
+			if err := os.MkdirAll(filename, perm.BitsDirectory); err != nil {
 				return err
 			}
 		}
-		src, err := os.Open(info.srcPath)
+		sourceFile, err := os.Open(copyInfo.source)
 		if err != nil {
 			return err
 		}
-		dst, err := os.Create(info.dstPath)
+		targetFile, err := os.Create(copyInfo.target)
 		if err != nil {
 			return err
 		}
-		if _, err := io.Copy(dst, src); err != nil {
+		if _, err := io.Copy(targetFile, sourceFile); err != nil {
 			return err
 		}
-		src.Close()
-		dst.Close()
+		sourceFile.Close()
+		targetFile.Close()
 	}
 	return nil
 }
