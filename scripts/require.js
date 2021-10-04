@@ -1,5 +1,5 @@
 if (typeof window === "undefined") {
-	// For static-side generation (SSG) and server-side rendering (SSR)
+	// For static-site generation (SSG) and server-side rendering (SSR)
 	React = require("react")
 	ReactDOM = require("react-dom")
 	ReactDOMServer = require("react-dom/server")

@@ -2,9 +2,10 @@ import "env"
 
 import App from "./App"
 
-import "./index.css"
+import "./reset.css"
 
 if (document.getElementById("root").hasChildNodes()) {
+	// For static-site generation (SSG) and server-side rendering (SSR)
 	ReactDOM.hydrate(
 		<React.StrictMode>
 			<App />
@@ -12,6 +13,7 @@ if (document.getElementById("root").hasChildNodes()) {
 		document.getElementById("root"),
 	)
 } else {
+	// For client-side rendering (CSR)
 	ReactDOM.render(
 		<React.StrictMode>
 			<App />

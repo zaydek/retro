@@ -26,7 +26,7 @@ const (
 import "./reset.css"
 
 if (document.getElementById("root").hasChildNodes()) {
-	// For static-side generation (SSG) and server-side rendering (SSR)
+	// For static-site generation (SSG) and server-side rendering (SSR)
 	ReactDOM.hydrate(
 		<React.StrictMode>
 			<App />
