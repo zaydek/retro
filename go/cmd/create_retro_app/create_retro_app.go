@@ -20,12 +20,6 @@ var cyan = func(str string) string { return format.Accent(str, terminal.Cyan) }
 var staticFS embed.FS
 
 func (r App) CreateApp() error {
-	dirName := r.Command.Directory
-	if r.Command.Directory == "." {
-		wd, _ := os.Getwd()
-		dirName = filepath.Base(wd)
-	}
-
 	if r.Command.Directory != "." {
 		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
 			fmt.Fprintln(
@@ -39,24 +33,16 @@ func (r App) CreateApp() error {
 			)
 			os.Exit(1)
 		}
-		// if err := os.MkdirAll(r.Command.Directory, 0755); err != nil {
-		// 	return err
-		// }
-		// // FIXME: We shouldn't need this at all
-		// if err := os.Chdir(r.Command.Directory); err != nil {
-		// 	return err
-		// }
-		// defer os.Chdir("..")
 	}
 
-	var paths []string
+	var copyPaths []string
 	err := fs.WalkDir(staticFS, ".", func(root string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
 			rel, _ := filepath.Rel("static", root)
-			paths = append(paths, rel)
+			copyPaths = append(copyPaths, rel)
 		}
 		return nil
 	})
@@ -64,16 +50,23 @@ func (r App) CreateApp() error {
 		return err
 	}
 
-	var badPaths []string
-	for _, path := range paths {
-		if _, err := os.Stat(filepath.Join("static", path)); !os.IsNotExist(err) {
-			badPaths = append(badPaths, path)
+	dirName := r.Command.Directory
+	if r.Command.Directory == "." {
+		wd, _ := os.Getwd()
+		dirName = filepath.Base(wd)
+	}
+
+	var badCopyPaths []string
+	for _, path := range copyPaths {
+		path := filepath.Join(dirName, path)
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			badCopyPaths = append(badCopyPaths, path)
 		}
 	}
 
-	if len(badPaths) > 0 {
+	if len(badCopyPaths) > 0 {
 		var badPathsStr string
-		for badPathIndex, badPath := range badPaths {
+		for badPathIndex, badPath := range badCopyPaths {
 			var sep string
 			if badPathIndex > 0 {
 				sep = "\n"
@@ -92,18 +85,18 @@ func (r App) CreateApp() error {
 		os.Exit(1)
 	}
 
-	for _, path := range paths {
-		dirNamePath := filepath.Join(dirName, path)
-		if dir := filepath.Dir(dirNamePath); dir != "." {
+	for _, copyPath := range copyPaths {
+		path := filepath.Join(dirName, copyPath)
+		if dir := filepath.Dir(path); dir != "." {
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				return err
 			}
 		}
-		src, err := staticFS.Open(dirNamePath)
+		src, err := staticFS.Open(filepath.Join("static", copyPath))
 		if err != nil {
 			return err
 		}
-		dst, err := os.Create(dirNamePath)
+		dst, err := os.Create(path)
 		if err != nil {
 			return err
 		}

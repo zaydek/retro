@@ -20,15 +20,17 @@ func must(err error) {
 }
 
 func init() {
-	RETRO_VERSION = strings.TrimRight(RETRO_VERSION, "\n")
+	RETRO_VERSION = strings.Replace(strings.TrimRight(RETRO_VERSION, "\n"), "v", "^", 1)
 }
 
 func main() {
 	var deps struct {
-		Esbuild  string
-		React    string
-		ReactDOM string
-		Retro    string
+		DevDependencies struct {
+			Esbuild  string `json:"esbuild"`
+			React    string `json:"react"`
+			ReactDOM string `json:"react-dom"`
+			Retro    string
+		} `json:"devDependencies"`
 	}
 
 	bstr, err := os.ReadFile("package.json")
@@ -36,11 +38,11 @@ func main() {
 	err = json.Unmarshal(bstr, &deps)
 	must(err)
 
-	err = os.Setenv("ESBUILD_VERSION", deps.Esbuild)
+	err = os.Setenv("ESBUILD_VERSION", deps.DevDependencies.Esbuild)
 	must(err)
-	err = os.Setenv("REACT_VERSION", deps.React)
+	err = os.Setenv("REACT_VERSION", deps.DevDependencies.React)
 	must(err)
-	err = os.Setenv("REACTDOM_VERSION", deps.ReactDOM)
+	err = os.Setenv("REACTDOM_VERSION", deps.DevDependencies.ReactDOM)
 	must(err)
 	err = os.Setenv("RETRO_VERSION", RETRO_VERSION)
 	must(err)
