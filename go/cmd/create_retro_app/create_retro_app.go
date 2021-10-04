@@ -122,31 +122,27 @@ func (r App) CreateApp() error {
 	if r.Command.Directory == "." {
 		fmt.Println(terminal.Cyan("Success!") + `
 
-  npm:
+ npm:
+   1. npm
+   2. npm run dev
 
-    1. npm
-    2. npm run dev
-
-  yarn:
-
-    1. yarn
-    2. yarn dev
+ yarn:
+   1. yarn
+   2. yarn dev
 
 Happy hacking!`)
 	} else {
 		fmt.Println(fmt.Sprintf(terminal.Cyan("Success!")+`
 
-  npm:
+ npm:
+   1. cd %[1]s
+   2. npm i
+   3. npm run dev
 
-    1. cd %[1]s
-    2. npm i
-    3. npm run dev
-
-  yarn:
-
-    1. cd %[1]s
-    2. yarn
-    3. yarn dev
+ yarn:
+   1. cd %[1]s
+   2. yarn
+   3. yarn dev
 
 Happy hacking!`, dir))
 	}
