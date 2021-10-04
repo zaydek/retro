@@ -10,6 +10,7 @@
 	},
 	"devDependencies": {
 		"@zaydek/retro": "{{ .RetroVersion }}",
-		"esbuild": "{{ .EsbuildVersion }}"
+		"esbuild": "{{ .EsbuildVersion }}",
+		"sass": "{{ .SassVersion }}"
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/zaydek/retro/go/cmd/perm"
 )
 
 type copyInfo struct {
@@ -40,7 +42,7 @@ func CopyRecursively(source, target string, excludes []string) error {
 	for _, copyInfo := range copyInfos {
 		// FIXME: It's not obvious what this does
 		if filename := filepath.Dir(copyInfo.target); filename != "." {
-			if err := os.MkdirAll(filename, 0755); err != nil {
+			if err := os.MkdirAll(filename, perm.BitsDirectory); err != nil {
 				return err
 			}
 		}

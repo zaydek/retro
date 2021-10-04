@@ -10,7 +10,7 @@ var (
 	//go:embed package.json
 	pkg string
 
-	//go:embed package-sass.json
+	//go:embed package.sass.json
 	sassPkg string
 
 	StarterPackage = template.Must(template.New("package.json").Parse(pkg))

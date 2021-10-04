@@ -7,12 +7,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/zaydek/retro/go/cmd/create_retro_app/cli"
 	"github.com/zaydek/retro/go/cmd/create_retro_app/embeds"
+	"github.com/zaydek/retro/go/cmd/deps"
 	"github.com/zaydek/retro/go/cmd/format"
+	"github.com/zaydek/retro/go/cmd/perm"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
@@ -39,20 +40,6 @@ func (r App) mustGetFSAndPKG() (fs.FS, *template.Template) {
 }
 
 func (r App) CreateApp() error {
-	versions := struct {
-		Retro string
-
-		Esbuild string
-		React   string
-		Sass    string
-	}{
-		Retro: strings.Replace(os.Getenv("RETRO_VERSION"), "v", "^", 1),
-
-		Esbuild: "^0.13.3",
-		React:   "^17.0.2",
-		Sass:    "^1.42.1",
-	}
-
 	fsys, pkg := r.mustGetFSAndPKG()
 
 	appName := r.Command.Directory
@@ -74,7 +61,7 @@ func (r App) CreateApp() error {
 			)
 			os.Exit(1)
 		}
-		if err := os.MkdirAll(r.Command.Directory, 0755); err != nil {
+		if err := os.MkdirAll(r.Command.Directory, perm.BitsDirectory); err != nil {
 			return err
 		}
 		if err := os.Chdir(r.Command.Directory); err != nil {
@@ -130,7 +117,7 @@ func (r App) CreateApp() error {
 	paths = paths[1:]
 	for _, v := range paths {
 		if dir := filepath.Dir(v); dir != "." {
-			if err := os.MkdirAll(dir, 0755); err != nil {
+			if err := os.MkdirAll(dir, perm.BitsDirectory); err != nil {
 				return err
 			}
 		}
@@ -150,11 +137,12 @@ func (r App) CreateApp() error {
 	}
 
 	var buf bytes.Buffer
-	if err := pkg.Execute(&buf, versions); err != nil {
+	deps.Deps.RetroVersion = os.Getenv("RETRO_VERSION") // Add @zaydek/retro
+	if err := pkg.Execute(&buf, deps.Deps); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile("package.json", buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile("package.json", buf.Bytes(), perm.BitsFile); err != nil {
 		return err
 	}
 

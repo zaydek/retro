@@ -12,8 +12,6 @@ import (
 var RETRO_VERSION string
 
 func main() {
-	if err := os.Setenv("RETRO_VERSION", strings.TrimSpace(RETRO_VERSION)); err != nil {
-		panic(err)
-	}
+	os.Setenv("RETRO_VERSION", strings.TrimSpace(RETRO_VERSION))
 	create_retro_app.Run()
 }

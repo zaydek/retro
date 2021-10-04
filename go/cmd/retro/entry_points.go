@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/zaydek/retro/go/cmd/perm"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
@@ -22,41 +23,54 @@ func (e EntryPointError) Error() string {
 	return e.err.Error()
 }
 
+// TODO: In theory we can also access default values from
+// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexHTMLEntryPoint() error {
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
-	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filename, []byte(htmlEntryPoint+"\n"), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(htmlEntryPoint+"\n"), perm.BitsFile); err != nil {
 		return err
 	}
 	return nil
 }
 
+// TODO: In theory we can also access default values from
+// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultIndexJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
-	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filename, []byte(jsEntryPoint+"\n"), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(jsEntryPoint+"\n"), perm.BitsFile); err != nil {
 		return err
 	}
 	return nil
 }
 
+// TODO: In theory we can also access default values from
+// `create_retro_app/embeds`. However, this is more self-contained.
 func copyDefaultAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
-	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), perm.BitsDirectory); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filename, []byte(appJSEntryPoint+"\n"), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(appJSEntryPoint+"\n"), perm.BitsFile); err != nil {
 		return err
 	}
 	return nil
 }
 
+// Guards for the presence of `www/index.js` and:
+//
+// - <link rel="stylesheet" href="/client.css" />
+// - <div id="root"></div>
+// - <script src="/vendor.js"></script>
+// - <script src="/client.js"></script>
+//
 func guardHTMLEntryPoint() error {
-	// www/index.html (1 of 2)
+	// Guard `www/index.html`
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexHTMLEntryPoint(); err != nil {
@@ -64,7 +78,7 @@ func guardHTMLEntryPoint() error {
 		}
 	}
 
-	// www/index.html (2 of 2)
+	// www/index.html
 	bstr, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -243,11 +257,11 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	)
 	// out/www
 	target := filepath.Join(RETRO_OUT_DIR, filename)
-	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(target), perm.BitsDirectory); err != nil {
 		return err
 	}
 	// out/www/index.html
-	if err := os.WriteFile(target, []byte(contents), 0644); err != nil {
+	if err := os.WriteFile(target, []byte(contents), perm.BitsFile); err != nil {
 		return err
 	}
 	return nil

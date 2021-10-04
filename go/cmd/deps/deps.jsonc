@@ -1,0 +1,10 @@
+{
+	// "https://github.com/evanw/esbuild/releases",
+	"esbuild": "^0.13.3",
+
+	// "https://github.com/facebook/react/releases",
+	"react": "^17.0.2",
+
+	// "https://github.com/sass/dart-sass/releases",
+	"sass": "^1.32.8"
+}
