@@ -50,8 +50,8 @@ func (b BundleInfo) HTML() string {
 
 code {
 	font: 18px / 1.45
-		"Consolas", /* Windows */
 		"Monaco",   /* macOS */
+		"Consolas", /* Windows */
 		monospace;
 }
 
