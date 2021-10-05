@@ -95,19 +95,19 @@ func (r App) CreateApp() error {
 
 	pkg := fmt.Sprintf(
 		`{
-	"scripts": {
-		"dev": "retro dev",
-		"build": "retro build",
-		"serve": "retro serve"
-	},
-	"dependencies": {
-		"react": "%[2]s",
-		"react-dom": "%[3]s"
-	},
-	"devDependencies": {
-		"@zaydek/retro": "%[4]s",
-		"esbuild": "%[1]s"
-	}
+  "scripts": {
+    "dev": "retro dev",
+    "build": "retro build",
+    "serve": "retro serve"
+  },
+  "dependencies": {
+    "react": "%[2]s",
+    "react-dom": "%[3]s"
+  },
+  "devDependencies": {
+    "@zaydek/retro": "%[4]s",
+    "esbuild": "%[1]s"
+  }
 }`,
 		os.Getenv("ESBUILD_VERSION"),
 		os.Getenv("REACT_VERSION"),
@@ -123,10 +123,12 @@ func (r App) CreateApp() error {
 		fmt.Println(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_V_VERSION"))) + `
 
  npm:
+   code .
    npm i
    npm run dev
 
  yarn:
+   code .
    yarn
    yarn dev
 
@@ -136,11 +138,13 @@ func (r App) CreateApp() error {
 
  npm:
    cd %[1]s
+   code .
    npm i
    npm run dev
 
  yarn:
    cd %[1]s
+   code .
    yarn
    yarn dev
 
