@@ -1,8 +1,6 @@
 package retro
 
-import (
-	"os"
-)
+import "os"
 
 var (
 	NODE_ENV      = ""

@@ -7,14 +7,19 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/zaydek/retro/go/cmd/create_retro_app/cli"
 	"github.com/zaydek/retro/go/cmd/format"
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
-//go:embed static/*
-var staticFS embed.FS
+var (
+	VERSION = strings.Replace(strings.TrimRight(os.Getenv("RETRO_VERSION"), "\n"), "^", "v", 1)
+
+	//go:embed static/*
+	staticFS embed.FS
+)
 
 type App struct {
 	Command cli.CreateCommand
@@ -120,7 +125,7 @@ func (r App) CreateApp() error {
 	}
 
 	if r.Command.Directory == "." {
-		fmt.Println(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_VERSION"))) + `
+		fmt.Println(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", VERSION)) + `
 
  npm:
    1. npm
@@ -132,7 +137,7 @@ func (r App) CreateApp() error {
 
 Happy hacking!`)
 	} else {
-		fmt.Println(fmt.Sprintf(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_VERSION")))+`
+		fmt.Println(fmt.Sprintf(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", VERSION))+`
 
  npm:
    1. cd %[1]s
@@ -155,7 +160,7 @@ func Run() {
 	command, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.ErrVersion:
-		fmt.Println(os.Getenv("RETRO_VERSION"))
+		fmt.Println(VERSION)
 		return
 	case cli.ErrUsage:
 		fallthrough
