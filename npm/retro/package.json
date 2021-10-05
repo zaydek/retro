@@ -1,6 +1,6 @@
 {
 	"name": "@zaydek/retro",
-	"version": "0.1.0-alpha.3",
+	"version": "0.1.0-alpha.4",
 	"description": "Back to the future web apps 👾",
 	"repository": "https://github.com/zaydek/retro",
 	"license": "MIT",
@@ -9,7 +9,10 @@
 	},
 	"files": [
 		"bin",
-		"postinstall.js"
+		"postinstall.js",
+		"router.js",
+		"store.js",
+		"transition.js"
 	],
 	"scripts": {
 		"postinstall": "node postinstall.js"

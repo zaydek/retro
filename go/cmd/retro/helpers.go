@@ -55,7 +55,7 @@ func getDirname() (string, error) {
 	}
 	dir := filepath.Dir(exe)
 	tmpDir := os.TempDir()
-	if dir != "" && tmpDir != "" && strings.HasPrefix(dir, tmpDir) {
+	if dir != "" && tmpDir != "" && strings.Contains(dir, tmpDir) {
 		wd, _ := os.Getwd()
 		return wd, nil
 	}

@@ -71,8 +71,8 @@ test:
 # Builds Go binaries and creates a placeholder executable for the post-
 # installation script
 build-create-retro-app:
-	rm -rf npm/create_retro_app/bin
-	mkdir -p npm/create_retro_app/bin
+	rm -rf npm/create-retro-app/bin
+	mkdir -p npm/create-retro-app/bin
 
 	GOOS=darwin  GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/darwin-64      main_create_retro_app.go
 	GOOS=linux   GOARCH=amd64 go build "-ldflags=-s -w" -o=npm/create-retro-app/bin/linux-64       main_create_retro_app.go

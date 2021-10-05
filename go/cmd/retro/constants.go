@@ -17,7 +17,28 @@ const (
 	</body>
 </html>`
 
+	// 	htmlServerSentEvents = `<script type="module">
+	// 	const dev = new EventSource("/__dev__")
+	// 	dev.addEventListener("reload", () => {
+	// 		localStorage.setItem("__dev__", "" + Date.now())
+	// 		window.location.reload()
+	// 	})
+	// 	dev.addEventListener("error", e => {
+	// 		try {
+	// 			console.error(JSON.parse(e.data))
+	// 		} catch { /* No-op */ }
+	// 	})
+	// 	window.addEventListener("storage", e => {
+	// 		if (e.key === "__dev__") {
+	// 			window.location.reload()
+	// 		}
+	// 	})
+	// </script>`
+
 	// Server-sent events (SSE) for the dev command
+	//
+	// https://github.com/evanw/esbuild/issues/802#issuecomment-778852594
+	// https://github.com/evanw/esbuild/issues/802#issuecomment-803297488
 	htmlServerSentEvents = `<script type="module">const __dev__=new EventSource("/__dev__");__dev__.addEventListener("reload",()=>{localStorage.setItem("__dev__",""+Date.now()),window.location.reload()}),__dev__.addEventListener("error",e=>{try{console.error(JSON.parse(e.data))}catch{}}),window.addEventListener("storage",e=>{e.key==="__dev__"&&window.location.reload()});</script>`
 
 	// The JS entry point
