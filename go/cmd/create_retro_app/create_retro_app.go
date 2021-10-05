@@ -120,7 +120,7 @@ func (r App) CreateApp() error {
 	}
 
 	if r.Command.Directory == "." {
-		fmt.Println(terminal.Cyan("Success!") + `
+		fmt.Println(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_VERSION"))) + `
 
  npm:
    1. npm
@@ -132,7 +132,7 @@ func (r App) CreateApp() error {
 
 Happy hacking!`)
 	} else {
-		fmt.Println(fmt.Sprintf(terminal.Cyan("Success!")+`
+		fmt.Println(fmt.Sprintf(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_VERSION")))+`
 
  npm:
    1. cd %[1]s
