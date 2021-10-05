@@ -206,7 +206,7 @@ func (a *App) Serve(options ServeOptions) error {
 		if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() {
 			next = dirty.String()
 		} else {
-			next = buildServeSucessString(a.getPort(), timedMessage.duration)
+			next = buildServeSuccessString(a.getPort(), timedMessage.duration)
 		}
 		if logMessage != next { // For stdout
 			logMessage = next
@@ -258,7 +258,7 @@ func (a *App) Serve(options ServeOptions) error {
 	if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() {
 		next = dirty.String()
 	} else {
-		next = buildServeSucessString(a.getPort(), timedMessage.duration)
+		next = buildServeSuccessString(a.getPort(), timedMessage.duration)
 	}
 	if logMessage != next {
 		logMessage = next

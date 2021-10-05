@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/zaydek/retro/go/cmd/create_retro_app/cli"
 	"github.com/zaydek/retro/go/cmd/format"
@@ -21,6 +22,8 @@ type App struct {
 }
 
 func (r App) CreateApp() error {
+	start := time.Now()
+
 	if r.Command.Directory != "." {
 		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
 			errStr := fmt.Sprintf("Refusing to overwrite directory `%s`.", r.Command.Directory)
@@ -119,6 +122,7 @@ func (r App) CreateApp() error {
 		return err
 	}
 
+	dur := time.Since(start).Milliseconds()
 	if r.Command.Directory == "." {
 		fmt.Println(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_V_VERSION"))) + `
 
@@ -130,7 +134,7 @@ func (r App) CreateApp() error {
    1. yarn
    2. yarn dev
 
-Happy hacking!`)
+` + terminal.Dimf("%dms", dur))
 	} else {
 		fmt.Println(fmt.Sprintf(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_V_VERSION")))+`
 
@@ -144,7 +148,9 @@ Happy hacking!`)
    2. yarn
    3. yarn dev
 
-Happy hacking!`, dir))
+Happy hacking!
+
+`+terminal.Dimf("%dms", dur), dir))
 	}
 
 	return nil
