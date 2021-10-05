@@ -20,8 +20,6 @@ import (
 	"github.com/zaydek/retro/go/pkg/watch"
 )
 
-var VERSION = strings.Replace(strings.TrimRight(os.Getenv("RETRO_VERSION"), "\n"), "^", "v", 1)
-
 type DevOptions struct {
 	WarmUpFlag bool
 }
@@ -297,7 +295,7 @@ func Run() {
 	command, err := cli.ParseCLIArguments()
 	switch err {
 	case cli.ErrVersion:
-		fmt.Println(VERSION)
+		fmt.Println(os.Getenv("RETRO_V_VERSION"))
 		os.Exit(0)
 	case cli.ErrUsage:
 		fallthrough

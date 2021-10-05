@@ -14,7 +14,10 @@ var (
 	pkg string
 
 	//go:embed version.txt
-	RETRO_VERSION string
+	RETRO_V_VERSION string // v0.0.0
+
+	//go:embed version.txt
+	RETRO_VERSION string // ^0.0.0
 )
 
 func must(err error) {
@@ -25,6 +28,7 @@ func must(err error) {
 }
 
 func init() {
+	RETRO_V_VERSION = strings.TrimRight(RETRO_VERSION, "\n")
 	RETRO_VERSION = strings.Replace(strings.TrimRight(RETRO_VERSION, "\n"), "v", "^", 1)
 }
 
@@ -46,6 +50,9 @@ func main() {
 	err = os.Setenv("REACT_VERSION", deps.DevDependencies.React)
 	must(err)
 	err = os.Setenv("REACTDOM_VERSION", deps.DevDependencies.ReactDOM)
+	must(err)
+
+	err = os.Setenv("RETRO_V_VERSION", RETRO_V_VERSION)
 	must(err)
 	err = os.Setenv("RETRO_VERSION", RETRO_VERSION)
 	must(err)
