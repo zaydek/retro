@@ -1,4 +1,9 @@
 {
+	"scripts": {
+		"dev": "RETRO_SRC_DIR=examples go run main_retro.go dev",
+		"build": "RETRO_SRC_DIR=examples go run main_retro.go build",
+		"serve": "RETRO_SRC_DIR=examples go run main_retro.go serve"
+	},
 	"devDependencies": {
 		"@types/node": "^16.10.2",
 		"esbuild": "^0.13.3",

@@ -7,20 +7,17 @@ var usage = `
 
    Start the dev server
 
-     --port=...       Use port (default ` + terminal.Cyan("8000") + `)
-     --sourcemap=...  Add source maps (default ` + terminal.Cyan("true") + `)
+     --port=...  Use port (default ` + terminal.Cyan("8000") + `)
 
  ` + terminal.Bold("retro build") + `
 
    Build the production-ready build
 
-     --sourcemap=...  Add source maps (default ` + terminal.Cyan("true") + `)
-
  ` + terminal.Bold("retro serve") + `
 
    Serve the production-ready build
 
-     --port=...       Use port (default ` + terminal.Cyan("8000") + `)
+     --port=...  Use port (default ` + terminal.Cyan("8000") + `)
 
  ` + terminal.Bold("Repositories") + `
 
