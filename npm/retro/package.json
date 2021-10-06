@@ -1,6 +1,6 @@
 {
 	"name": "@zaydek/retro",
-	"version": "0.1.0-alpha.14",
+	"version": "0.1.0-alpha.15",
 	"description": "Back to the future web apps 👾",
 	"repository": "https://github.com/zaydek/retro",
 	"license": "MIT",
@@ -9,6 +9,7 @@
 	},
 	"files": [
 		"bin/",
+		"plugins/",
 		"postinstall.js",
 		"router/",
 		"store/",
