@@ -113,8 +113,8 @@ async function buildVendorAndClientBundles(): Promise<{ vendor: t.BundleInfo, cl
 }
 
 async function rebuildClientBundle(): Promise<t.BundleInfo> {
-	if (globalClientEntryPoint === null || globalClientEntryPoint.rebuild === undefined) {
-		return await buildClientBundle()[0]
+	if (globalClientEntryPoint === null) {
+		return (await buildClientBundle())[0]
 	}
 
 	const client: t.BundleInfo = {
@@ -124,10 +124,10 @@ async function rebuildClientBundle(): Promise<t.BundleInfo> {
 	}
 
 	try {
-		const clientResult = await globalClientEntryPoint.rebuild()
-		if (clientResult.errors.length > 0) { client.Errors = clientResult.errors }
-		if (clientResult.warnings.length > 0) { client.Warnings = clientResult.warnings }
-		client.Metafile = clientResult.metafile
+		await globalClientEntryPoint.rebuild()
+		if (globalClientEntryPoint.errors.length > 0) { client.Errors = globalClientEntryPoint.errors }
+		if (globalClientEntryPoint.warnings.length > 0) { client.Warnings = globalClientEntryPoint.warnings }
+		client.Metafile = globalClientEntryPoint.metafile
 	} catch (caught) {
 		if (caught.errors.length > 0) { client.Errors = caught.errors }
 		if (caught.warnings.length > 0) { client.Warnings = caught.warnings }

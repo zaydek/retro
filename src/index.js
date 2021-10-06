@@ -2,7 +2,7 @@ import {
 	App,
 } from "./App"
 
-import "./reset.css"
+import "./reset.css
 
 ReactDOM.render(
 	<React.StrictMode>
