@@ -152,23 +152,21 @@ func New(codes ...string) Formatter {
 }
 
 func (f Formatter) Sprintf(format string, args ...interface{}) string {
-	var str string
-	str = fmt.Sprintf(format, args...)
+	ret := fmt.Sprintf(format, args...)
 	if f.code == "" || (format == "" && len(args) == 0) {
 		return ""
 	}
-	str = f.code + strings.ReplaceAll(str, NormalCode, NormalCode+f.code) + NormalCode
-	return str
+	ret = f.code + strings.ReplaceAll(ret, NormalCode, NormalCode+f.code) + NormalCode
+	return ret
 }
 
 func (f Formatter) Sprint(args ...interface{}) string {
-	var str string
-	str = fmt.Sprint(args...)
-	if f.code == "" || str == "" {
+	ret := fmt.Sprint(args...)
+	if f.code == "" || ret == "" {
 		return ""
 	}
-	str = f.code + strings.ReplaceAll(str, NormalCode, NormalCode+f.code) + NormalCode
-	return str
+	ret = f.code + strings.ReplaceAll(ret, NormalCode, NormalCode+f.code) + NormalCode
+	return ret
 }
 
 // https://stackoverflow.com/a/22892171

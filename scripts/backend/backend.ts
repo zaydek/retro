@@ -1,6 +1,5 @@
 import * as esbuild from "esbuild"
 import * as path from "path"
-import * as t from "./types"
 import readline from "./readline"
 
 import {
@@ -15,110 +14,96 @@ import {
 
 let globalClientBundle: esbuild.BuildResult | esbuild.BuildIncremental | null = null
 
-////////////////////////////////////////////////////////////////////////////////
+interface BundleInfo {
+	Metafile: esbuild.Metafile
+	Errors: esbuild.Message[]
+	Warnings: esbuild.Message[]
+}
 
-async function buildVendorBundle(): Promise<t.BundleInfo> {
-	const vendorInfo: t.BundleInfo = {
+async function buildVendorBundle(): Promise<BundleInfo> {
+	const vendorInfo: BundleInfo = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
-
 	try {
 		const bundle = await esbuild.build(vendorConfig)
+		vendorInfo.Metafile = bundle.metafile
 		if (bundle.errors.length > 0) { vendorInfo.Errors = bundle.errors }
 		if (bundle.warnings.length > 0) { vendorInfo.Warnings = bundle.warnings }
-		vendorInfo.Metafile = bundle.metafile
 	} catch (caught) {
 		if (caught.errors.length > 0) { vendorInfo.Errors = caught.errors }
 		if (caught.warnings.length > 0) { vendorInfo.Warnings = caught.warnings }
 	}
-
 	return vendorInfo
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-async function buildClientBundle(config: esbuild.BuildOptions): Promise<{ clientInfo: t.BundleInfo, clientAppInfo: t.BundleInfo }> {
-	const clientInfo: t.BundleInfo = {
+async function buildClientBundle(userConfig: esbuild.BuildOptions): Promise<{ clientInfo: BundleInfo, clientAppInfo: BundleInfo }> {
+	const clientInfo: BundleInfo = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
-
-	const clientAppInfo: t.BundleInfo = {
+	const clientAppInfo: BundleInfo = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
-
 	try {
-		globalClientBundle = await esbuild.build(clientConfigFromUserConfig(config))
+		globalClientBundle = await esbuild.build(clientConfigFromUserConfig(userConfig))
+		clientInfo.Metafile = globalClientBundle.metafile
 		if (globalClientBundle.errors.length > 0) { clientInfo.Errors = globalClientBundle.errors }
 		if (globalClientBundle.warnings.length > 0) { clientInfo.Warnings = globalClientBundle.warnings }
-		clientInfo.Metafile = globalClientBundle.metafile
 	} catch (caught) {
 		if (caught.errors.length > 0) { clientInfo.Errors = caught.errors }
 		if (caught.warnings.length > 0) { clientInfo.Warnings = caught.warnings }
 	}
-
 	if (RETRO_CMD !== "build") {
 		return { clientInfo, clientAppInfo }
 	}
-
 	try {
-		const bundle = await esbuild.build(clientAppConfigFromUserConfig(config))
+		const bundle = await esbuild.build(clientAppConfigFromUserConfig(userConfig))
+		clientAppInfo.Metafile = bundle.metafile
 		if (bundle.errors.length > 0) { clientAppInfo.Errors = bundle.errors }
 		if (bundle.warnings.length > 0) { clientAppInfo.Warnings = bundle.warnings }
-		clientAppInfo.Metafile = bundle.metafile
 	} catch (caught) {
 		if (caught.errors.length > 0) { clientAppInfo.Errors = caught.errors }
 		if (caught.warnings.length > 0) { clientAppInfo.Warnings = caught.warnings }
 	}
-
 	return { clientInfo, clientAppInfo }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-async function buildVendorAndClientBundles(config): Promise<{ vendorInfo: t.BundleInfo, clientInfo: t.BundleInfo, clientAppInfo: t.BundleInfo }> {
+async function buildVendorAndClientBundles(userConfig: esbuild.BuildOptions): Promise<{ vendorInfo: BundleInfo, clientInfo: BundleInfo, clientAppInfo: BundleInfo }> {
 	const vendorInfo = await buildVendorBundle()
-	const { clientInfo, clientAppInfo } = await buildClientBundle(config)
+	const { clientInfo, clientAppInfo } = await buildClientBundle(userConfig)
 	return { vendorInfo, clientInfo, clientAppInfo }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-async function rebuildClientBundle(config: esbuild.BuildOptions): Promise<t.BundleInfo> {
+async function rebuildClientBundle(userConfig: esbuild.BuildOptions): Promise<BundleInfo> {
 	if (globalClientBundle === null) {
-		return (await buildClientBundle(config)).clientInfo
+		return (await buildClientBundle(userConfig)).clientInfo
 	}
-
-	const clientInfo: t.BundleInfo = {
+	const clientInfo: BundleInfo = {
 		Metafile: null,
 		Warnings: [],
 		Errors: [],
 	}
-
 	try {
 		await globalClientBundle.rebuild()
+		clientInfo.Metafile = globalClientBundle.metafile
 		if (globalClientBundle.errors.length > 0) { clientInfo.Errors = globalClientBundle.errors }
 		if (globalClientBundle.warnings.length > 0) { clientInfo.Warnings = globalClientBundle.warnings }
-		clientInfo.Metafile = globalClientBundle.metafile
 	} catch (caught) {
 		if (caught.errors.length > 0) { clientInfo.Errors = caught.errors }
 		if (caught.warnings.length > 0) { clientInfo.Warnings = caught.warnings }
 	}
-
 	return clientInfo
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 async function main(): Promise<void> {
-	let config: esbuild.BuildOptions = {}
+	let userConfig: esbuild.BuildOptions = {}
 	try {
-		config = require(path.join(process.cwd(), "retro.config"))
+		userConfig = require(path.join(process.cwd(), "retro.config"))
 	} catch { }
 
 	esbuild.initialize({})
@@ -126,7 +111,7 @@ async function main(): Promise<void> {
 		const action = await readline()
 		switch (action) {
 			case "build":
-				const { vendorInfo, clientInfo, clientAppInfo } = await buildVendorAndClientBundles(config)
+				const { vendorInfo, clientInfo, clientAppInfo } = await buildVendorAndClientBundles(userConfig)
 				console.log(
 					JSON.stringify(
 						{
@@ -138,7 +123,7 @@ async function main(): Promise<void> {
 				)
 				break
 			case "rebuild": {
-				const clientInfo = await rebuildClientBundle(config)
+				const clientInfo = await rebuildClientBundle(userConfig)
 				console.log(
 					JSON.stringify(
 						{

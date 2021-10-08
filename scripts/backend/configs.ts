@@ -11,10 +11,6 @@ import {
 
 export const vendorConfig: esbuild.BuildOptions = {
 	bundle: true,
-	// TODO
-	// define: {
-	// 	"process.env.NODE_ENV": NODE_ENV,
-	// },
 	entryNames: NODE_ENV !== "production"
 		? undefined
 		: "[dir]/[name]__[hash]",
@@ -43,7 +39,7 @@ export const clientConfigFromUserConfig = (userConfig: esbuild.BuildOptions): es
 		: "[dir]/[name]__[hash]",
 	entryPoints: {
 		...userConfig.entryPoints,
-		"client": path.join("examples", "index.js"),
+		"client": path.join(RETRO_SRC_DIR, "index.js"),
 	},
 	external: [
 		// Only React APIs are shimmed
@@ -69,6 +65,7 @@ export const clientConfigFromUserConfig = (userConfig: esbuild.BuildOptions): es
 
 export const clientAppConfigFromUserConfig = (userConfig: esbuild.BuildOptions): esbuild.BuildOptions => ({
 	...clientConfigFromUserConfig(userConfig),
+	entryNames: undefined, // No-op
 	entryPoints: {
 		...userConfig.entryPoints,
 		"App.js": path.join(RETRO_SRC_DIR, "App.js"),

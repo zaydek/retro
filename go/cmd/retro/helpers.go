@@ -64,9 +64,7 @@ func getDirname() (string, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-var epoch = time.Now()
-
-func buildBuildSuccessString(dir string) (string, error) {
+func buildBuildSuccessString(dir string, dur time.Duration) (string, error) {
 	var ret string
 	ls, err := unix.List(dir)
 	if err != nil {
@@ -77,23 +75,25 @@ func buildBuildSuccessString(dir string) (string, error) {
 			color = terminal.Dim
 			ext   = filepath.Ext(info.Path)
 		)
+		if info.IsDir() || strings.HasSuffix(ext, ".map") {
+			continue
+		}
 		switch ext {
 		case ".html":
 			color = terminal.Normal
-		case ".js":
-			fallthrough
-		case ".js.map":
-			color = terminal.Yellow
 		case ".css":
-			fallthrough
-		case ".css.map":
 			color = terminal.Cyan
+		case ".js":
+			color = terminal.Yellow
 		}
-		ret += fmt.Sprintf("%v%s%v\n", color(info.Path), strings.Repeat(" ", 40-len(info.Path)),
-			terminal.Dim(unix.HumanReadable(info.Size)))
+		ret += fmt.Sprintf("%v%s%v\n",
+			color(info.Path),
+			strings.Repeat(" ", 60-len("XXX.X KB")-len(info.Path)),
+			terminal.Dim(unix.HumanReadable(info.Size)),
+		)
 	}
 	ret += fmt.Sprintln()
-	ret += fmt.Sprintln(terminal.Dimf("%dms", time.Since(epoch).Milliseconds()))
+	ret += fmt.Sprintln(terminal.Dimf("%dms", dur.Milliseconds()))
 	return ret, nil
 }
 

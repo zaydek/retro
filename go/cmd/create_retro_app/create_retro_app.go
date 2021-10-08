@@ -93,8 +93,7 @@ func (r App) CreateApp() error {
 		dst.Close()
 	}
 
-	pkg := fmt.Sprintf(
-		`{
+	pkg := fmt.Sprintf(`{
   "scripts": {
     "dev": "retro dev",
     "build": "retro build",

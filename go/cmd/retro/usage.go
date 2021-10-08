@@ -5,9 +5,9 @@ import "github.com/zaydek/retro/go/pkg/terminal"
 var usage = `
  ` + terminal.Bold("retro dev") + `
 
-   Start the dev server
+   Start the development server
 
-     --port=...  Use port (default ` + terminal.Cyan("8000") + `)
+     --port=...  Use port number (default ` + terminal.Cyan("8000") + `)
 
  ` + terminal.Bold("retro build") + `
 
@@ -17,7 +17,7 @@ var usage = `
 
    Serve the production-ready build
 
-     --port=...  Use port (default ` + terminal.Cyan("8000") + `)
+     --port=...  Use port number (default ` + terminal.Cyan("8000") + `)
 
  ` + terminal.Bold("Repositories") + `
 

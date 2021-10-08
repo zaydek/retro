@@ -123,9 +123,10 @@ func (a *App) Build(options BuildOptions) error {
 		cancel()
 		return err
 	}
-
-	stdin <- "build"
 	defer cancel()
+
+	tm := time.Now()
+	stdin <- "build"
 
 loop:
 	for {
@@ -133,8 +134,6 @@ loop:
 		case line := <-stdout:
 			var message Message
 			if err := json.Unmarshal([]byte(line), &message); err != nil {
-				// // Log unmarshal errors so users can debug plugins, etc.
-				// fmt.Println(formatStdoutLine(line))
 				return err
 			}
 			// Log to stdout and crash
@@ -155,7 +154,7 @@ loop:
 		}
 	}
 
-	str, err := buildBuildSuccessString(RETRO_OUT_DIR)
+	str, err := buildBuildSuccessString(RETRO_OUT_DIR, time.Since(tm))
 	if err != nil {
 		return err
 	}
