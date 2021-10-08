@@ -7,7 +7,6 @@ import (
 	"io"
 	"os/exec"
 	"strings"
-	"time"
 )
 
 func must(err error) {
@@ -66,20 +65,20 @@ func NewPersistentCommand(ctx context.Context, args ...string) (chan string, <-c
 	}
 
 	go func() {
-		defer func() {
-			stdinPipe.Close()
-			close(stdin)
-		}()
+		// defer func() {
+		// 	stdinPipe.Close()
+		// 	close(stdin)
+		// }()
 		for arg := range stdin {
 			fmt.Fprintln(stdinPipe, arg)
 		}
 	}()
 
 	go func() {
-		defer func() {
-			stdoutPipe.Close()
-			close(stdout)
-		}()
+		// defer func() {
+		// 	stdoutPipe.Close()
+		// 	close(stdout)
+		// }()
 		scanner := bufio.NewScanner(stdoutPipe)
 		scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
 		for scanner.Scan() {
@@ -91,19 +90,19 @@ func NewPersistentCommand(ctx context.Context, args ...string) (chan string, <-c
 	}()
 
 	go func() {
-		defer func() {
-			stderrPipe.Close()
-			close(stderr)
-		}()
+		// defer func() {
+		// 	stderrPipe.Close()
+		// 	close(stderr)
+		// }()
 		scanner := bufio.NewScanner(stderrPipe)
 		scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 			return len(data), data, nil
 		})
 		scanner.Scan()
-		// NOTE: As of Sass v1.42.1, deprecation warnings are uncontrollable. To
-		// suppress these warnings, add a micro-delay and guard for deprecation
-		// warnings.
-		time.Sleep(50 * time.Millisecond)
+		// // NOTE: As of Sass v1.42.1, deprecation warnings are uncontrollable. To
+		// // suppress these warnings, add a micro-delay and guard for deprecation
+		// // warnings.
+		// time.Sleep(50 * time.Millisecond)
 		if text := scanner.Text(); text != "" {
 			if !strings.HasPrefix(text, "DEPRECATION WARNING") {
 				stderr <- strings.TrimRight(text, "\n")

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/zaydek/retro/go/cmd/format"
@@ -24,8 +25,8 @@ type DevOptions struct {
 }
 
 type TimedMessage struct {
-	message  Message
-	duration time.Duration
+	msg Message
+	dur time.Duration
 }
 
 func (a *App) Dev(options DevOptions) error {
@@ -42,51 +43,44 @@ func (a *App) Dev(options DevOptions) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
+	stdin, stdout, stderr, err := ipc.NewPersistentCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		cancel()
 		return err
 	}
+	defer cancel()
 
 	var (
-		ready = make(chan struct{})
 		dev   = make(chan TimedMessage)
+		ready = make(chan struct{})
 	)
 
-	// go func() {
-	stdin <- "build"
-	// defer cancel()
-
-	// var once sync.Once
-	// for {
-	tm := time.Now()
-	select {
-	case line := <-stdout:
-		var message Message
-		if err := json.Unmarshal([]byte(line), &message); err != nil {
-			// // Log unmarshal errors so users can debug plugins, etc.
-			// fmt.Println(formatStdoutLine(line))
-			cancel()
-			return err
+	var tm time.Time
+	go func() {
+		tm = time.Now()
+		stdin <- "build"
+		var once sync.Once
+		for {
+			select {
+			case line := <-stdout:
+				var msg Message
+				must(json.Unmarshal([]byte(line), &msg))
+				once.Do(func() {
+					entries := msg.getChunkedEntrypoints()
+					must(copyIndexHTMLEntryPoint(entries))
+					ready <- struct{}{}
+				})
+				dev <- TimedMessage{
+					msg: msg,
+					dur: time.Since(tm),
+				}
+			case text := <-stderr:
+				fmt.Fprintln(os.Stderr, format.StderrIPC(text))
+				cancel()
+				os.Exit(1)
+			}
 		}
-		// once.Do(func() {
-		entries := message.getChunkedEntrypoints()
-		must(copyIndexHTMLEntryPoint(entries))
-		ready <- struct{}{}
-		// })
-		dev <- TimedMessage{
-			message:  message,
-			duration: time.Since(tm),
-		}
-		// // TODO: Shouldn't we reset at the start of the select-statement?
-		// tm = time.Now()
-	case text := <-stderr:
-		fmt.Fprintln(os.Stderr, format.StderrIPC(text))
-		// cancel()
-		// os.Exit(1)
-	}
-	// }
-	// }()
+	}()
 
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
@@ -124,7 +118,7 @@ func (a *App) Build(options BuildOptions) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	stdin, stdout, stderr, err := ipc.NewCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
+	stdin, stdout, stderr, err := ipc.NewPersistentCommand(ctx, "node", filepath.Join(__dirname, "scripts/backend.esbuild.js"))
 	if err != nil {
 		cancel()
 		return err
@@ -141,18 +135,19 @@ loop:
 			if err := json.Unmarshal([]byte(line), &message); err != nil {
 				// // Log unmarshal errors so users can debug plugins, etc.
 				// fmt.Println(formatStdoutLine(line))
-			} else {
-				if dirty := message.GetDirty(); dirty.IsDirty() {
-					fmt.Print(dirty.String())
-					cancel()
-					os.Exit(1)
-				}
-				entries := message.getChunkedEntrypoints()
-				if err := copyIndexHTMLEntryPoint(entries); err != nil {
-					return err
-				}
-				break loop
+				return err
 			}
+			// Log to stdout and crash
+			if dirty := message.GetDirty(); dirty.IsDirty() {
+				fmt.Print(dirty.String())
+				cancel()
+				os.Exit(1)
+			}
+			entries := message.getChunkedEntrypoints()
+			if err := copyIndexHTMLEntryPoint(entries); err != nil {
+				return err
+			}
+			break loop
 		case text := <-stderr:
 			fmt.Fprintln(os.Stderr, format.StderrIPC(text))
 			cancel()
@@ -194,35 +189,36 @@ func (a *App) Serve(options ServeOptions) error {
 	}
 
 	var (
-		timedMessage = <-options.Dev
-		logMessage   string
+		timedMsg = <-options.Dev
+		logMsg   string
 	)
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Log message to stdout or the browser
-		var next string
-		if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() {
-			next = dirty.String()
+		// Log to stdout
+		var nextLogMsg string
+		if dirty := timedMsg.msg.GetDirty(); dirty.IsDirty() {
+			nextLogMsg = dirty.String()
 		} else {
-			next = buildServeSuccessString(a.getPort(), timedMessage.duration)
+			nextLogMsg = buildServeSuccessString(a.getPort(), timedMsg.dur)
 		}
-		if logMessage != next { // For stdout
-			logMessage = next
+		if logMsg != nextLogMsg {
+			logMsg = nextLogMsg
 			terminal.Clear(os.Stdout)
-			fmt.Println(logMessage)
+			fmt.Println(logMsg)
 		}
-		if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() { // For the browser
+		// Log to the browser and eagerly return
+		if dirty := timedMsg.msg.GetDirty(); dirty.IsDirty() {
 			fmt.Fprintln(w, dirty.HTML())
 			return
 		}
-		// Serve non-HTML resources
+		// Serve non-HTML
 		path := getFilesystemPath(r.URL.Path)
 		if ext := filepath.Ext(path); ext != "" && ext != ".html" {
 			http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, path))
 			return
 		}
-		// Serve HTML resources
+		// Serve HTML
 		if a.getCommandKind() == KindDevCommand {
 			fmt.Fprint(w, contents)
 			return
@@ -242,7 +238,7 @@ func (a *App) Serve(options ServeOptions) error {
 			}
 			for {
 				select {
-				case timedMessage = <-options.Dev:
+				case timedMsg = <-options.Dev:
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-r.Context().Done():
@@ -252,17 +248,17 @@ func (a *App) Serve(options ServeOptions) error {
 		})
 	}
 
-	// Log message to stdout
-	var next string
-	if dirty := timedMessage.message.GetDirty(); dirty.IsDirty() {
-		next = dirty.String()
+	// Log to stdout
+	var nextLogMsg string
+	if dirty := timedMsg.msg.GetDirty(); dirty.IsDirty() {
+		nextLogMsg = dirty.String()
 	} else {
-		next = buildServeSuccessString(a.getPort(), timedMessage.duration)
+		nextLogMsg = buildServeSuccessString(a.getPort(), timedMsg.dur)
 	}
-	if logMessage != next {
-		logMessage = next
+	if logMsg != nextLogMsg {
+		logMsg = nextLogMsg
 		terminal.Clear(os.Stdout)
-		fmt.Println(logMessage)
+		fmt.Println(logMsg)
 	}
 
 	port := a.getPort()

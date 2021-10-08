@@ -34,6 +34,9 @@ func (b BundleInfo) String() string {
 
 func (b BundleInfo) HTML() string {
 	str := b.String()
+	// str = strings.ReplaceAll(str, "╷", "|") // For Sass errors
+	// str = strings.ReplaceAll(str, "│", "|")
+	// str = strings.ReplaceAll(str, "╵", "|")
 
 	return `<!DOCTYPE html>
 <html lang="en">
@@ -91,41 +94,37 @@ a:hover { text-decoration: underline; }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Describes a `build_done` or `rebuild_done` message from the Node.js backend
 type Message struct {
-	Kind string
-	Data struct {
-		Vendor        BundleInfo
-		Client        BundleInfo
-		ClientAppOnly BundleInfo
-	}
+	VendorInfo    BundleInfo
+	ClientInfo    BundleInfo
+	ClientAppInfo BundleInfo
 }
 
 func (m Message) GetDirty() BundleInfo {
-	if m.Data.Vendor.IsDirty() {
-		return m.Data.Vendor
-	} else if m.Data.Client.IsDirty() {
-		return m.Data.Client
-	} else if m.Data.ClientAppOnly.IsDirty() {
-		return m.Data.ClientAppOnly
+	if m.VendorInfo.IsDirty() {
+		return m.VendorInfo
+	} else if m.ClientInfo.IsDirty() {
+		return m.ClientInfo
+	} else if m.ClientAppInfo.IsDirty() {
+		return m.ClientAppInfo
 	}
 	return BundleInfo{}
 }
 
 func (m Message) getChunkedEntrypoints() entryPoints {
 	if RETRO_CMD == string(KindDevCommand) {
-		if m.Data.Vendor.Metafile == nil || m.Data.Client.Metafile == nil {
+		if m.VendorInfo.Metafile == nil || m.ClientInfo.Metafile == nil {
 			return entryPoints{"client.css", "vendor.js", "client.js"}
 		}
 	}
 	var entries entryPoints
-	for key := range m.Data.Vendor.Metafile["outputs"].(map[string]interface{}) {
+	for key := range m.VendorInfo.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".js") {
 			entries.vendorJS, _ = filepath.Rel(RETRO_OUT_DIR, key)
 			break
 		}
 	}
-	for key := range m.Data.Client.Metafile["outputs"].(map[string]interface{}) {
+	for key := range m.ClientInfo.Metafile["outputs"].(map[string]interface{}) {
 		if strings.HasSuffix(key, ".css") {
 			entries.clientCSS, _ = filepath.Rel(RETRO_OUT_DIR, key)
 			if entries.clientJS != "" { // Check other

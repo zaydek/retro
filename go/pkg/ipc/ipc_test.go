@@ -12,18 +12,18 @@ import (
 )
 
 func TestCommandFooFailure(t *testing.T) {
-	_, _, _, err := NewCommand(context.Background(), "foo")
+	_, _, _, err := NewPersistentCommand(context.Background(), "foo")
 	if err.Error() == `exec: "foo": executable file not found in $PATH` {
 		// Success
 		return
 	}
-	t.Fatalf("NewCommand: got %q want %q", err, `exec: "foo": executable file not found in $PATH`)
+	t.Fatalf("NewPersistentCommand: got %q want %q", err, `exec: "foo": executable file not found in $PATH`)
 }
 
 func TestCommandEchoSuccess(t *testing.T) {
-	_, stdout, stderr, err := NewCommand(context.Background(), "echo", "foo bar")
+	_, stdout, stderr, err := NewPersistentCommand(context.Background(), "echo", "foo bar")
 	if err != nil {
-		t.Fatalf("NewCommand: got %q want <nil>", err)
+		t.Fatalf("NewPersistentCommand: got %q want <nil>", err)
 	}
 	select {
 	case stdoutLine := <-stdout:
@@ -59,9 +59,9 @@ func TestNodeSyntaxError(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	_, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
+	_, stdout, stderr, err := NewPersistentCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
-		log.Fatalf("ipc.NewCommand: %s\n", err)
+		log.Fatalf("ipc.NewPersistentCommand: %s\n", err)
 	}
 
 	var out string
@@ -109,9 +109,9 @@ func TestNodeStdoutSuccess(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	_, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
+	_, stdout, stderr, err := NewPersistentCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
-		log.Fatalf("ipc.NewCommand: %s\n", err)
+		log.Fatalf("ipc.NewPersistentCommand: %s\n", err)
 	}
 
 	var out string
@@ -150,9 +150,9 @@ func TestNodeStderrSuccess(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	_, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
+	_, stdout, stderr, err := NewPersistentCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
-		log.Fatalf("ipc.NewCommand: %s\n", err)
+		log.Fatalf("ipc.NewPersistentCommand: %s\n", err)
 	}
 
 	var out string
@@ -211,9 +211,9 @@ func TestNodeStdinSuccess(t *testing.T) {
 	}
 	defer os.Remove("ipc_test.go.script.js")
 
-	stdin, stdout, stderr, err := NewCommand(context.Background(), "node", "ipc_test.go.script.js")
+	stdin, stdout, stderr, err := NewPersistentCommand(context.Background(), "node", "ipc_test.go.script.js")
 	if err != nil {
-		log.Fatalf("ipc.NewCommand: %s\n", err)
+		log.Fatalf("ipc.NewPersistentCommand: %s\n", err)
 	}
 
 	var out string

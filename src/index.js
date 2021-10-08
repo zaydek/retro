@@ -1,0 +1,23 @@
+import "./reset.css"
+
+import {
+	App,
+} from "./App"
+
+if (document.getElementById("root").hasChildNodes()) {
+	// For static-site generation (SSG) and server-side rendering (SSR)
+	ReactDOM.hydrate(
+		<React.StrictMode>
+			<App />
+		</React.StrictMode>,
+		document.getElementById("root"),
+	)
+} else {
+	// For client-side rendering (CSR)
+	ReactDOM.render(
+		<React.StrictMode>
+			<App />
+		</React.StrictMode>,
+		document.getElementById("root"),
+	)
+}

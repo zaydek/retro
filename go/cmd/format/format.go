@@ -67,8 +67,7 @@ func StderrIPC(str string) string {
 			ret += "\n"
 		}
 		ret +=
-			fmt.Sprintf("%s %s  %s",
-				terminal.Dim("(retro:node)"),
+			fmt.Sprintf("%s  %s",
 				terminal.BoldRed("stderr"),
 				line,
 			)
