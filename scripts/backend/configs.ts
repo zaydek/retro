@@ -50,7 +50,7 @@ export const clientConfigFromUserConfig = (userConfig: esbuild.BuildOptions): es
 	incremental: RETRO_CMD === "dev",
 	inject: [
 		// Only React APIs are shimmed
-		path.join("scripts", "require.js"),
+		path.join(__dirname, "require.js"),
 	],
 	loader: {
 		...userConfig.loader,
