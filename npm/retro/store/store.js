@@ -1,13 +1,17 @@
 import {
 	isFunction,
+	isSelector,
 	isStore,
-	isValidSelector,
-	query,
+	querySelector,
 } from "./helpers"
 
 import {
 	STORE_KEY,
 } from "./store-key"
+
+const ERR_BAD_STORE = originator => `${originator}: Bad store; expected \`createStore({ ... })\`.`
+const ERR_BAD_REDUCER = originator => `${originator}: Bad reducer; expected \`function reducer(state, action) { ... }\`.`
+const ERR_BAD_SELECTOR = (originator, selector) => `${originator}: Bad selector; want \`["foo", "bar", ...]\` got ${JSON.stringify(selector)}.`
 
 export function createStore(initialStateOrInitializer) {
 	const initializerIsFunction = isFunction(initialStateOrInitializer)
@@ -18,26 +22,24 @@ export function createStore(initialStateOrInitializer) {
 	}
 
 	return {
-		// Reference for checking whether a store is a store
-		key: STORE_KEY,
-		// Subscriptions for all setters (`setState`)
+		$$key: STORE_KEY,
+		// Component subscriptions
 		subscriptions: new Map(),
 		// Initial state
 		initialState: initialState,
-		// Initializer
+		// Initial state initializer
 		initializer: !initializerIsFunction
 			? () => initialState
 			: initialStateOrInitializer,
-		// Cached state
+		// Current cached state
 		cachedState: initialState,
 	}
 }
 
-function useStateImpl(store, { flagIncludeState, flagIncludeSetState }) {
+function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState }) {
 	React.useMemo(() => {
 		if (!isStore(store)) {
-			throw new Error("useState: First argument is not a store. " +
-				"Use `createStore` to create a store.")
+			throw new Error(ERR_BAD_STORE(originator))
 		}
 	}, [])
 
@@ -63,10 +65,10 @@ function useStateImpl(store, { flagIncludeState, flagIncludeSetState }) {
 		for (const [otherSetState, otherSelector] of store.subscriptions) {
 			// Dedupe `setState`
 			if (otherSetState !== setState) {
-				if (isValidSelector(otherSelector)) {
+				if (isSelector(otherSelector)) {
 					// Suppress useless rerenders
-					const currSelected = query(currState, otherSelector)
-					const nextSelected = query(nextState, otherSelector)
+					const currSelected = querySelector(currState, otherSelector)
+					const nextSelected = querySelector(nextState, otherSelector)
 					if (currSelected !== nextSelected) {
 						otherSetState(nextState)
 					}
@@ -75,6 +77,7 @@ function useStateImpl(store, { flagIncludeState, flagIncludeSetState }) {
 				}
 			}
 		}
+
 		// Cache the current state
 		store.cachedState = nextState
 	}, [])
@@ -85,15 +88,14 @@ function useStateImpl(store, { flagIncludeState, flagIncludeSetState }) {
 	]
 }
 
-function useReducerImpl(store, reducer, { flagIncludeState, flagIncludeSetState }) {
+function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncludeSetState }) {
 	React.useMemo(() => {
 		if (!isStore(store)) {
-			throw new Error("useReducer: First argument is not a store. " +
-				"Use `createStore` to create a store.")
+			throw new Error(ERR_BAD_STORE(originator))
 		}
 		if (!flagIncludeState) {
 			if (!isFunction(reducer)) {
-				throw new Error("useReducer: Second argument is not a reducer.")
+				throw new Error(ERR_BAD_REDUCER(originator))
 			}
 		}
 	}, [])
@@ -117,10 +119,10 @@ function useReducerImpl(store, reducer, { flagIncludeState, flagIncludeSetState 
 		for (const [otherSetState, otherSelector] of store.subscriptions) {
 			// Dedupe `setState`
 			if (otherSetState !== setState) {
-				if (isValidSelector(otherSelector)) {
+				if (isSelector(otherSelector)) {
 					// Suppress useless rerenders
-					const currSelected = query(currState, otherSelector)
-					const nextSelected = query(nextState, otherSelector)
+					const currSelected = querySelector(currState, otherSelector)
+					const nextSelected = querySelector(nextState, otherSelector)
 					if (currSelected !== nextSelected) {
 						otherSetState(nextState)
 					}
@@ -129,6 +131,7 @@ function useReducerImpl(store, reducer, { flagIncludeState, flagIncludeSetState 
 				}
 			}
 		}
+
 		// Cache the current state
 		store.cachedState = nextState
 	}, [])
@@ -139,26 +142,25 @@ function useReducerImpl(store, reducer, { flagIncludeState, flagIncludeSetState 
 	]
 }
 
-function useSelectorImpl(store, selector) {
+function useSelectorImpl(store, selector, { originator }) {
 	React.useMemo(() => {
 		if (!isStore(store)) {
-			throw new Error("useSelector: First argument is not a store. " +
-				"Use `createStore` to create a store.")
+			throw new Error(ERR_BAD_STORE(originator))
 		}
-		if (!isValidSelector(selector)) {
-			throw new Error("useSelector: Second argument is not a selector.")
+		if (!isSelector(selector)) {
+			throw new Error(ERR_BAD_SELECTOR(originator))
 		}
 		let focus = store.cachedState
 		for (const id of selector) {
 			if (!(id in focus)) {
-				throw new Error(`useSelector: Selector path \`[${selector.join(", ")}]\` is unreachable.`)
+				throw new Error(ERR_BAD_SELECTOR(originator))
 			}
 			focus = focus[id]
 		}
 	}, [])
 
 	const [state, setState] = React.useState(store.cachedState)
-	const valueOrReference = query(state, selector)
+	const valueOrReference = querySelector(state, selector)
 
 	// Add the `setState` to the store's subscriptions
 	React.useEffect(() => {
@@ -173,6 +175,7 @@ function useSelectorImpl(store, selector) {
 
 export function useState(store) {
 	return useStateImpl(store, {
+		originator: "useState",
 		flagIncludeState: true,
 		flagIncludeSetState: true,
 	})
@@ -180,6 +183,7 @@ export function useState(store) {
 
 export function useStateOnlyState(store) {
 	return useStateImpl(store, {
+		originator: "useStateOnlyState",
 		flagIncludeState: true,
 		flagIncludeSetState: false,
 	})[0]
@@ -187,6 +191,7 @@ export function useStateOnlyState(store) {
 
 export function useStateOnlySetState(store) {
 	return useStateImpl(store, {
+		originator: "useStateOnlySetState",
 		flagIncludeState: false,
 		flagIncludeSetState: true,
 	})[1]
@@ -194,6 +199,7 @@ export function useStateOnlySetState(store) {
 
 export function useReducer(store, reducer) {
 	return useReducerImpl(store, reducer, {
+		originator: "useReducer",
 		flagIncludeState: true,
 		flagIncludeSetState: true,
 	})
@@ -201,6 +207,7 @@ export function useReducer(store, reducer) {
 
 export function useReducerOnlyState(store, reducer) {
 	return useReducerImpl(store, reducer, {
+		originator: "useReducerOnlyState",
 		flagIncludeState: true,
 		flagIncludeSetState: false,
 	})[0]
@@ -208,11 +215,14 @@ export function useReducerOnlyState(store, reducer) {
 
 export function useReducerOnlyDispatch(store, reducer) {
 	return useReducerImpl(store, reducer, {
+		originator: "useReducerOnlyDispatch",
 		flagIncludeState: false,
 		flagIncludeSetState: true,
 	})[1]
 }
 
 export function useSelector(store, selector) {
-	return useSelectorImpl(store, selector)
+	return useSelectorImpl(store, selector, {
+		originator: "useSelector",
+	})
 }

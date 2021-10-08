@@ -1,15 +1,15 @@
 // export {
 // 	App,
-// } from "./router"
+// } from "./router/App"
 //
 // export {
 // 	App,
-// } from "./sass"
+// } from "./sass/App"
+//
+// export {
+// 	App,
+// } from "./sass-template-strings/App"
 
 export {
 	App,
-} from "./sass-template-strings"
-
-// export {
-// 	App,
-// } from "./store"
+} from "./store/App"
