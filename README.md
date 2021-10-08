@@ -20,13 +20,19 @@ npx @zaydek/create-retro-app my-retro-app
 
 This will create a new React app at the directory `<dir>` or in the current directory if omitted.
 
-To start your app :
+Start the development server:
 
 ```sh
 retro dev
 ```
 
-To build your app for production:
+Build the production-ready build:
+
+```sh
+retro build
+```
+
+Serve the production-ready build:
 
 ```sh
 retro build

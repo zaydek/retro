@@ -1,6 +1,6 @@
 import nodeReadline from "readline"
 
-export default (function readline(): (() => Promise<string>) {
+export default ((): (() => Promise<string>) => {
 	async function* createReadlineGenerator(): AsyncGenerator<string> {
 		const nodeReadlineInterface = nodeReadline.createInterface({ input: process.stdin })
 		for await (const line of nodeReadlineInterface) {

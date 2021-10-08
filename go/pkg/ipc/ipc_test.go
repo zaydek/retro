@@ -177,7 +177,7 @@ func TestNodeStdinSuccess(t *testing.T) {
 	const js = `
 		const nodeReadline = require("readline")
 
-		const readline = (function () {
+		const readline = (() => {
 			async function* createReadlineGenerator() {
 				const nodeReadlineInterface = nodeReadline.createInterface({ input: process.stdin })
 				for await (const line of nodeReadlineInterface) {

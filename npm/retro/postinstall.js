@@ -4,7 +4,7 @@ const fsPromises = require("fs/promises")
 const os = require("os")
 const path = require("path")
 
-const CANONICAL_BINARY_FILENAME = (function () {
+const CANONICAL_BINARY_FILENAME = (() => {
 	const package = require("./package.json")
 	const binaryKey = Object.keys(package.bin)[0]
 	return binaryKey + (process.platform === "win32" ? ".exe" : "")

@@ -5,7 +5,7 @@ if (typeof window === "undefined") {
 	ReactDOMServer = require("react-dom/server")
 } else {
 	// For client-side rendering (CSR)
-	window.require = function resolveVendorDepsAtRuntime(moduleName) {
+	window.require = moduleName => {
 		switch (moduleName) {
 			case "react":
 				return window["React"]

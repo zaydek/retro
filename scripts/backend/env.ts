@@ -1,4 +1,4 @@
-export const NODE_ENV = (function () {
+export const NODE_ENV = (() => {
 	const env = process.env["NODE_ENV"]
 	if (env === "") {
 		throw new Error(`process.env["NODE_ENV"] === ""`)
@@ -6,7 +6,7 @@ export const NODE_ENV = (function () {
 	return env
 })()
 
-export const RETRO_CMD = (function () {
+export const RETRO_CMD = (() => {
 	const env = process.env["RETRO_CMD"]
 	if (env === "") {
 		throw new Error(`process.env["RETRO_CMD"] === ""`)
@@ -14,7 +14,7 @@ export const RETRO_CMD = (function () {
 	return env
 })()
 
-export const RETRO_WWW_DIR = (function () {
+export const RETRO_WWW_DIR = (() => {
 	const env = process.env["RETRO_WWW_DIR"]
 	if (env === "") {
 		throw new Error(`process.env["RETRO_WWW_DIR"] === ""`)
@@ -22,7 +22,7 @@ export const RETRO_WWW_DIR = (function () {
 	return env
 })()
 
-export const RETRO_SRC_DIR = (function () {
+export const RETRO_SRC_DIR = (() => {
 	const env = process.env["RETRO_SRC_DIR"]
 	if (env === "") {
 		throw new Error(`process.env["RETRO_SRC_DIR"] === ""`)
@@ -30,7 +30,7 @@ export const RETRO_SRC_DIR = (function () {
 	return env
 })()
 
-export const RETRO_OUT_DIR = (function () {
+export const RETRO_OUT_DIR = (() => {
 	const env = process.env["RETRO_OUT_DIR"]
 	if (env === "") {
 		throw new Error(`process.env["RETRO_OUT_DIR"] === ""`)

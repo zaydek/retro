@@ -86,7 +86,7 @@ func NewPersistentCommand(ctx context.Context, args ...string) (chan string, <-c
 				stdout <- line
 			}
 		}
-		must(scanner.Err())
+		// must(scanner.Err())
 	}()
 
 	go func() {
@@ -99,26 +99,14 @@ func NewPersistentCommand(ctx context.Context, args ...string) (chan string, <-c
 			return len(data), data, nil
 		})
 		scanner.Scan()
-		// // NOTE: As of Sass v1.42.1, deprecation warnings are uncontrollable. To
-		// // suppress these warnings, add a micro-delay and guard for deprecation
-		// // warnings.
-		// time.Sleep(50 * time.Millisecond)
 		if text := scanner.Text(); text != "" {
+			// Suppress Sass stderr (as of v1.32)
 			if !strings.HasPrefix(text, "DEPRECATION WARNING") {
 				stderr <- strings.TrimRight(text, "\n")
 			}
 		}
-		must(scanner.Err())
+		// must(scanner.Err())
 	}()
-
-	// close := func() {
-	// 	stdinPipe.Close()
-	// 	close(stdin)
-	// 	stdoutPipe.Close()
-	// 	close(stdout)
-	// 	stderrPipe.Close()
-	// 	close(stderr)
-	// }
 
 	if err := cmd.Start(); err != nil {
 		return nil, nil, nil, err
