@@ -1,8 +1,8 @@
+import "./reset.css"
+
 import {
 	App,
 } from "./App"
-
-import "./reset.css"
 
 if (document.getElementById("root").hasChildNodes()) {
 	// For static-site generation (SSG) and server-side rendering (SSR)

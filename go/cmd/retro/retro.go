@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/zaydek/retro/go/cmd/format"
@@ -54,40 +53,40 @@ func (a *App) Dev(options DevOptions) error {
 		dev   = make(chan TimedMessage)
 	)
 
-	var tm time.Time
+	// go func() {
+	stdin <- "build"
+	// defer cancel()
 
-	go func() {
-		tm = time.Now()
-		stdin <- "build"
-		defer cancel()
-
-		var once sync.Once
-		for {
-			select {
-			case line := <-stdout:
-				var message Message
-				if err := json.Unmarshal([]byte(line), &message); err != nil {
-					// // Log unmarshal errors so users can debug plugins, etc.
-					// fmt.Println(formatStdoutLine(line))
-				} else {
-					once.Do(func() {
-						entries := message.getChunkedEntrypoints()
-						must(copyIndexHTMLEntryPoint(entries))
-						ready <- struct{}{}
-					})
-					dev <- TimedMessage{
-						message:  message,
-						duration: time.Since(tm),
-					}
-					tm = time.Now()
-				}
-			case text := <-stderr:
-				fmt.Fprintln(os.Stderr, format.StderrIPC(text))
-				cancel()
-				os.Exit(1)
-			}
+	// var once sync.Once
+	// for {
+	tm := time.Now()
+	select {
+	case line := <-stdout:
+		var message Message
+		if err := json.Unmarshal([]byte(line), &message); err != nil {
+			// // Log unmarshal errors so users can debug plugins, etc.
+			// fmt.Println(formatStdoutLine(line))
+			cancel()
+			return err
 		}
-	}()
+		// once.Do(func() {
+		entries := message.getChunkedEntrypoints()
+		must(copyIndexHTMLEntryPoint(entries))
+		ready <- struct{}{}
+		// })
+		dev <- TimedMessage{
+			message:  message,
+			duration: time.Since(tm),
+		}
+		// // TODO: Shouldn't we reset at the start of the select-statement?
+		// tm = time.Now()
+	case text := <-stderr:
+		fmt.Fprintln(os.Stderr, format.StderrIPC(text))
+		// cancel()
+		// os.Exit(1)
+	}
+	// }
+	// }()
 
 	go func() {
 		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {

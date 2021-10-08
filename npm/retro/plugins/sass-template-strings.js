@@ -77,9 +77,9 @@ module.exports = {
 			return {
 				contents: `
 					import "data:text/css,${encodeURI(css)}"
-					function sass() {}
+					function sass() { /* No-op */ }
 					Object.assign(sass, {
-						global() {}
+						global() { /* No-op */ }
 					})
 					export default sass
 				`,

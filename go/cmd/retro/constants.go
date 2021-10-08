@@ -41,9 +41,11 @@ const (
 	htmlServerSentEvents = `<script type="module">const dev=new EventSource("/__dev__");dev.addEventListener("reload",()=>{localStorage.setItem("__dev__",""+Date.now()),window.location.reload()}),dev.addEventListener("error",e=>{try{console.error(JSON.parse(e.data))}catch{}}),window.addEventListener("storage",e=>{e.key==="__dev__"&&window.location.reload()});</script>`
 
 	// The JS entry point
-	jsEntryPoint = `import App from "./App"
+	jsEntryPoint = `import "./reset.css"
 
-import "./reset.css"
+import {
+	App,
+} from "./App"
 
 if (document.getElementById("root").hasChildNodes()) {
 	// For static-site generation (SSG) and server-side rendering (SSR)
