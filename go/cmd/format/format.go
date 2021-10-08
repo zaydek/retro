@@ -25,11 +25,10 @@ func Stdout(x interface{}) string {
 		if el == "" {
 			continue
 		}
-		arr[arrIndex] =
-			accentRegex.ReplaceAllString(
-				strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
-				terminal.Cyan("`$1`"),              // Accent
-			)
+		arr[arrIndex] = accentRegex.ReplaceAllString(
+			strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
+			terminal.Cyan("`$1`"),              // Accent
+		)
 	}
 	return strings.Join(arr, "\n")
 }
@@ -49,12 +48,11 @@ func Stderr(x interface{}) string {
 		if el == "" {
 			continue
 		}
-		arr[arrIndex] =
-			terminal.BoldRed("error:") + " " +
-				accentRegex.ReplaceAllString(
-					strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
-					terminal.Magenta("`$1`"),           // Accent
-				)
+		arr[arrIndex] = terminal.BoldRed("error:") + " " +
+			accentRegex.ReplaceAllString(
+				strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
+				terminal.Magenta("`$1`"),           // Accent
+			)
 	}
 	return strings.Join(arr, "\n")
 }
@@ -66,11 +64,10 @@ func StderrIPC(str string) string {
 		if lineIndex > 0 {
 			ret += "\n"
 		}
-		ret +=
-			fmt.Sprintf("%s  %s",
-				terminal.BoldRed("stderr"),
-				line,
-			)
+		ret += fmt.Sprintf("%s  %s",
+			terminal.BoldRed("stderr"),
+			line,
+		)
 	}
 	return ret
 }

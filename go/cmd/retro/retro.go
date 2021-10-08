@@ -180,7 +180,7 @@ func (a *App) Serve(options ServeOptions) error {
 	// out/index.html
 	var contents string
 	if a.getCommandKind() == KindDevCommand {
-		bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+		bstr, err := os.ReadFile(filepath.Join(RETRO_OUT_DIR, "index.html"))
 		if err != nil {
 			return err
 		}
@@ -222,7 +222,7 @@ func (a *App) Serve(options ServeOptions) error {
 			fmt.Fprint(w, contents)
 			return
 		}
-		http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, RETRO_WWW_DIR, "index.html"))
+		http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
 	})
 
 	// Path for server-sent events (SSE)

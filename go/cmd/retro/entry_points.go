@@ -221,8 +221,8 @@ type entryPoints struct {
 
 func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	// www/index.html
-	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
-	bstr, err := os.ReadFile(filename)
+	srcPath := filepath.Join(RETRO_WWW_DIR, "index.html")
+	bstr, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}
@@ -248,13 +248,9 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 		fmt.Sprintf(`<script src="/%s"></script>`, entries.clientJS),
 		1,
 	)
-	// out/www
-	path := filepath.Join(RETRO_OUT_DIR, filename)
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return err
-	}
-	// out/www/index.html
-	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
+	// out/index.html
+	dstPath := filepath.Join(RETRO_OUT_DIR, "index.html")
+	if err := os.WriteFile(dstPath, []byte(contents), 0644); err != nil {
 		return err
 	}
 	return nil
