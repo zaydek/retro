@@ -1,0 +1,15 @@
+.center {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+}
+.min-h-screen {
+	min-height: 100vh;
+}
+.modal {
+	width: 300px;
+	height: 200px;
+	background-color: #fff;
+	border-radius: 16px;
+}

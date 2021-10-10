@@ -7,7 +7,7 @@ import {
 
 import {
 	Title,
-} from "../../title" // -> "@zaydek/retro/title"
+} from "../../npm/retro/title" // -> "@zaydek/retro/title"
 
 function Links() {
 	return (

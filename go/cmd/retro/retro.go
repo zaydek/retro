@@ -262,6 +262,7 @@ func (a *App) Serve(options ServeOptions) error {
 
 	port := a.getPort()
 	for {
+		// FIXME: Go doesn't error on used ports?
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
 			if err.Error() == fmt.Sprintf("listen tcp :%d: bind: address already in use", port) {
 				port++

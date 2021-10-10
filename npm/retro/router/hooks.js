@@ -38,8 +38,22 @@ export function useSyncRouterToWindow() {
 		}
 		if (state.path !== getBrowserPathSSR()) {
 			if (state.type === REPLACE_STATE) {
+				// TODO: Add support for push or replacing relative URLs. For example:
+				//
+				//   window.history.pushState({}, "", state.path.startsWith("/")
+				//     ? state.path
+				//     : window.location.pathname + "/" + state.path
+				//   )
+				//
 				window.history.replaceState({}, "", state.path)
 			} else if (state.type === PUSH_STATE) {
+				// TODO: Add support for push or replacing relative URLs. For example:
+				//
+				//   window.history.pushState({}, "", state.path.startsWith("/")
+				//     ? state.path
+				//     : window.location.pathname + "/" + state.path
+				//   )
+				//
 				window.history.pushState({}, "", state.path)
 			}
 		}
