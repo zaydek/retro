@@ -1,5 +1,4 @@
-// Gets the browser path or the home path
-export function getBrowserPathSSR() {
+export function getCurrentPathSSR() {
 	let path = "/"
 	if (typeof window !== "undefined") {
 		path = window.location.pathname

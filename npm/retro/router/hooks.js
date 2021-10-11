@@ -1,64 +1,67 @@
 import * as store from "../store"
 
 import {
-	getBrowserPathSSR
+	getCurrentPathSSR
 } from "./helpers"
 
 import {
-	PUSH_STATE,
-	REPLACE_STATE,
+	actions,
+	routerStore
+} from "./router"
 
-	routerStore,
-} from "./store"
-
-// Syncs the window state to the router state
 export function useSyncWindowToRouter() {
 	const setState = store.useStateOnlySetState(routerStore)
 	React.useEffect(() => {
 		function handlePopState() {
-			setState({
-				type: REPLACE_STATE,
-				path: getBrowserPathSSR(),
+			setState(current => ({
+				...current,
+				type: actions.REPLACE_STATE,
+				path: getCurrentPathSSR(),
 				scrollTo: undefined,
-			})
+			}))
 		}
 		window.addEventListener("popstate", handlePopState)
 		return () => window.removeEventListener("popstate", handlePopState)
 	}, [])
 }
 
-// Syncs the router state to the window state
 export function useSyncRouterToWindow() {
-	const state = store.useStateOnlyState(routerStore)
+	const type = store.useSelector(routerStore, ["type"])
+	const path = store.useSelector(routerStore, ["path"])
+	const scrollTo = store.useSelector(routerStore, ["scrollTo"])
 	const didMountRef = React.useRef(false)
 	React.useEffect(() => {
 		if (!didMountRef.current) {
 			didMountRef.current = true
 			return
 		}
-		if (state.path !== getBrowserPathSSR()) {
-			if (state.type === REPLACE_STATE) {
+		if (path !== getCurrentPathSSR()) {
+			if (type === actions.REPLACE_STATE) {
 				// TODO: Add support for push or replacing relative URLs. For example:
 				//
-				//   window.history.pushState({}, "", state.path.startsWith("/")
-				//     ? state.path
-				//     : window.location.pathname + "/" + state.path
+				//   window.history.pushState({}, "", path.startsWith("/")
+				//     ? path
+				//     : window.location.pathname + "/" + path
 				//   )
 				//
-				window.history.replaceState({}, "", state.path)
-			} else if (state.type === PUSH_STATE) {
+				window.history.replaceState({}, "", path)
+			} else if (type === actions.PUSH_STATE) {
 				// TODO: Add support for push or replacing relative URLs. For example:
 				//
-				//   window.history.pushState({}, "", state.path.startsWith("/")
-				//     ? state.path
-				//     : window.location.pathname + "/" + state.path
+				//   window.history.pushState({}, "", path.startsWith("/")
+				//     ? path
+				//     : window.location.pathname + "/" + path
 				//   )
 				//
-				window.history.pushState({}, "", state.path)
+				window.history.pushState({}, "", path)
 			}
 		}
-		if (state.scrollTo !== undefined) {
-			window.scrollTo(0, state.scrollTo)
+		if (scrollTo !== undefined) {
+			window.scrollTo(0, scrollTo)
 		}
-	}, [state])
+	}, [
+		type,
+		path,
+		scrollTo,
+	])
 }

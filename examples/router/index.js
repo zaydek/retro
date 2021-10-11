@@ -68,50 +68,48 @@ function ComponentC() {
 	return <div>You are currently on the <code>{PATHS.C}</code> page</div>
 }
 
-export function App() {
+export function Routes() {
 	return (
 		<>
 
-			<Links />
+			<router.Route path={PATHS.A}>
+				<Title title={`Welcome to the ${PATHS.A} page`}>
+					<ComponentA />
+				</Title>
+			</router.Route>
 
-			<router.Router>
+			<router.Route path={PATHS.B}>
+				<Title title={`Welcome to the ${PATHS.B} page`}>
+					<ComponentB />
+				</Title>
+			</router.Route>
 
-				<router.Route path={PATHS.A}>
-					<Title title={`Welcome to the ${PATHS.A} page`}>
-						<ComponentA />
-					</Title>
-				</router.Route>
+			<router.Route path={PATHS.C}>
+				<Title title={`Welcome to the ${PATHS.C} page`}>
+					<ComponentC />
+				</Title>
+			</router.Route>
 
-				<router.Route path={PATHS.B}>
-					<Title title={`Welcome to the ${PATHS.B} page`}>
-						<ComponentB />
-					</Title>
-				</router.Route>
+			<router.Route path={PATHS.D}>
+				<router.Redirect path={PATHS.A} />
+			</router.Route>
 
-				<router.Route path={PATHS.C}>
-					<Title title={`Welcome to the ${PATHS.C} page`}>
-						<ComponentC />
-					</Title>
-				</router.Route>
+			<router.Route path={PATHS.INLINE}>
+				<Title title={`Welcome to the ${PATHS.INLINE} page`}>
+					<div>You are currently on the <code>{PATHS.INLINE}</code> page</div>
+				</Title>
+			</router.Route>
 
-				<router.Route path={PATHS.D}>
-					<router.Redirect path={PATHS.A} />
-				</router.Route>
-
-				<router.Route path={PATHS.INLINE}>
-					<Title title={`Welcome to the ${PATHS.INLINE} page`}>
-						<div>You are currently on the <code>{PATHS.INLINE}</code> page</div>
-					</Title>
-				</router.Route>
-
-				<router.Route path={PATHS.FOUR_ZERO_FOUR}>
-					<Title title={`Welcome to the ${PATHS.FOUR_ZERO_FOUR} page`}>
-						<div>You are currently on the <code>{PATHS.FOUR_ZERO_FOUR}</code> page</div>
-					</Title>
-				</router.Route>
-
-			</router.Router>
+			<router.Route path={PATHS.FOUR_ZERO_FOUR}>
+				<Title title={`Welcome to the ${PATHS.FOUR_ZERO_FOUR} page`}>
+					<div>You are currently on the <code>{PATHS.FOUR_ZERO_FOUR}</code> page</div>
+				</Title>
+			</router.Route>
 
 		</>
 	)
+}
+
+export function App() {
+	return <Links />
 }

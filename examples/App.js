@@ -1,7 +1,9 @@
 import * as router from "../npm/retro/router" // -> @zaydek/retro/router
+import * as store from "../npm/retro/store" // -> @zaydek/retro/router
 
 import {
 	App as RouterApp,
+	Routes as RouterAppRoutes,
 } from "./router"
 
 import {
@@ -21,8 +23,19 @@ import {
 } from "./transition"
 
 export function App() {
+	// const state = store.useStateOnlyState(router.routerStore, ["routeMap"])
+
 	return (
 		<>
+
+			{/* <pre>
+				{JSON.stringify(state, (k, v) => {
+					if (React.isValidElement(v)) {
+						return null
+					}
+					return v
+				}, 2)}
+			</pre> */}
 
 			<ul>
 				<li>
@@ -52,23 +65,24 @@ export function App() {
 				</li>
 			</ul>
 
-			<router.Router>
-				<router.Route path="/router">
-					<RouterApp />
-				</router.Route>
-				<router.Route path="/sass">
-					<SassApp />
-				</router.Route>
-				<router.Route path="/sass-template-strings">
-					<SassTemplateStringsApp />
-				</router.Route>
-				<router.Route path="/store">
-					<StoreApp />
-				</router.Route>
-				<router.Route path="/transition">
-					<TransitionApp />
-				</router.Route>
-			</router.Router>
+			<router.Route path="/router">
+				<RouterApp />
+			</router.Route>
+			<router.Route path="/sass">
+				<SassApp />
+			</router.Route>
+			<router.Route path="/sass-template-strings">
+				<SassTemplateStringsApp />
+			</router.Route>
+			<router.Route path="/store">
+				<StoreApp />
+			</router.Route>
+			<router.Route path="/transition">
+				<TransitionApp />
+			</router.Route>
+			<RouterAppRoutes />
+
+			<router.RenderRoute />
 
 		</>
 	)

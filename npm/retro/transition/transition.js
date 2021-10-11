@@ -35,9 +35,6 @@ export function Transition({
 	const memoTo = React.useMemo(() => {
 		return to
 	}, [to])
-	const memoChildren = React.useMemo(() => {
-		return children
-	}, [children])
 
 	const memoKeys = React.useMemo(() => {
 		return [
@@ -60,10 +57,10 @@ export function Transition({
 			const setDir = dir => {
 				setComputedChildren(
 					React.cloneElement(
-						memoChildren,
+						children,
 						{
 							style: {
-								...memoChildren.props.style,
+								...children.props.style,
 								...buildStyles(dir, { flagIncludeTranslateZ }),
 								willChange: memoKeys.join(", "),
 								transition: memoKeys.map(property =>
@@ -89,19 +86,16 @@ export function Transition({
 
 			let dir1 = null
 			let dir2 = null
-			let flagUmountOnDir1 = false
 			let flagUmountOnDir2 = false
 			if (!on) {
 				// Backwards
 				dir1 = memoTo
 				dir2 = memoFrom
-				flagUmountOnDir1 = flagUnmountTo ?? false
 				flagUmountOnDir2 = flagUnmountFrom ?? false
 			} else {
 				// Forwards
 				dir1 = memoFrom
 				dir2 = memoTo
-				flagUmountOnDir1 = flagUnmountFrom ?? false
 				flagUmountOnDir2 = flagUnmountTo ?? false
 			}
 
@@ -142,7 +136,7 @@ export function Transition({
 			duration,                   // Value
 			ease,                       // Value
 			delay,                      // Value
-			memoChildren,               // Reference
+			children,                   // Reference
 			memoKeys,                   // Reference
 			flagDisableMountTransition, // Value
 			flagUnmountFrom,            // Value

@@ -1,17 +1,11 @@
 export {
-	getBrowserPathSSR,
+	getCurrentPathSSR,
 } from "./helpers"
 
 export {
 	Link,
 	Redirect,
+	RenderRoute,
 	Route,
-	Router,
-} from "./router"
-
-export {
-	PUSH_STATE,
-	REPLACE_STATE,
-
 	routerStore,
-} from "./store"
+} from "./router"

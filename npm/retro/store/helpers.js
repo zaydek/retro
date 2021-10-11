@@ -2,22 +2,24 @@ import {
 	STORE_KEY,
 } from "./store-key"
 
-export function isFunction(v) {
-	return typeof v === "function"
+export function isFunction(arg) {
+	return typeof arg === "function"
 }
 
-export function isSelector(v) {
-	return v !== undefined && Array.isArray(v) && v.length > 0
+export function isSelector(arg) {
+	return arg !== undefined &&
+		Array.isArray(arg) &&
+		arg.length > 0
 }
 
-export function isStore(v) {
-	return v?.$$key === STORE_KEY
+export function isStore(arg) {
+	return arg?.$$key === STORE_KEY
 }
 
 export function querySelector(state, selector) {
-	let selected = state
+	let focus = state
 	for (const id of selector) {
-		selected = selected[id]
+		focus = focus[id]
 	}
-	return selected
+	return focus
 }
