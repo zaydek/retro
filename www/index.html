@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<!-- DEBUG -->
+		<script>
+window.addEventListener("error", e => {
+	// fetch("/__err__", {
+	// 	body: e.error.stack,
+	// 	headers: { "Content-Type": "application/json" },
+	// 	method: "POST",
+	// })
+	console.log(e)
+})
+		</script>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Hello, world!</title>

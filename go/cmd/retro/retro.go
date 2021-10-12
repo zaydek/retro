@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	render "github.com/buildkite/terminal-to-html/v3"
 	"github.com/zaydek/retro/go/cmd/format"
 	"github.com/zaydek/retro/go/cmd/retro/cli"
 	"github.com/zaydek/retro/go/pkg/ipc"
@@ -27,6 +29,13 @@ type DevOptions struct {
 type TimedMessage struct {
 	msg Message
 	dur time.Duration
+}
+
+// TODO
+type DevError interface {
+	IsDirty() bool
+	String() string
+	HTML() string
 }
 
 func (a *App) Dev(options DevOptions) error {
@@ -51,13 +60,13 @@ func (a *App) Dev(options DevOptions) error {
 	defer cancel()
 
 	var (
-		dev   = make(chan TimedMessage)
+		dev   = make(chan DevError)
 		ready = make(chan struct{})
 	)
 
-	var tm time.Time
+	// var tm time.Time // TODO
 	go func() {
-		tm = time.Now()
+		// tm = time.Now() // TODO
 		stdin <- "build"
 		var once sync.Once
 		for {
@@ -70,10 +79,7 @@ func (a *App) Dev(options DevOptions) error {
 					must(copyIndexHTMLEntryPoint(entries))
 					ready <- struct{}{}
 				})
-				dev <- TimedMessage{
-					msg: msg,
-					dur: time.Since(tm),
-				}
+				dev <- msg
 			case text := <-stderr:
 				fmt.Fprintln(os.Stderr, format.StderrIPC(text))
 				cancel()
@@ -83,9 +89,9 @@ func (a *App) Dev(options DevOptions) error {
 	}()
 
 	go func() {
-		for result := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
-			must(result.Err)
-			tm = time.Now()
+		for event := range watch.Directory(RETRO_SRC_DIR, 100*time.Millisecond) {
+			must(event.Err)
+			// tm = time.Now() // TODO
 			stdin <- "rebuild"
 		}
 	}()
@@ -132,17 +138,17 @@ loop:
 	for {
 		select {
 		case line := <-stdout:
-			var message Message
-			if err := json.Unmarshal([]byte(line), &message); err != nil {
+			var msg Message
+			if err := json.Unmarshal([]byte(line), &msg); err != nil {
 				return err
 			}
 			// Log to stdout and crash
-			if dirty := message.GetDirty(); dirty.IsDirty() {
-				fmt.Print(dirty.String())
+			if msg.IsDirty() {
+				fmt.Print(msg.String())
 				cancel()
 				os.Exit(1)
 			}
-			entries := message.getChunkedEntrypoints()
+			entries := msg.getChunkedEntrypoints()
 			if err := copyIndexHTMLEntryPoint(entries); err != nil {
 				return err
 			}
@@ -165,9 +171,94 @@ loop:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type RuntimeError struct {
+	stack string
+}
+
+func newRuntimeError(stack string) RuntimeError {
+	return RuntimeError{stack: stack}
+}
+
+func (r *RuntimeError) Reset() {
+	(*r).stack = ""
+}
+
+func (r RuntimeError) IsDirty() bool {
+	return r.stack != ""
+}
+
+// TODO: Upgrade to use esbuild-style errors
+func (r RuntimeError) String() string {
+	return r.stack
+}
+
+func (r RuntimeError) HTML() string {
+	renderStr := string(
+		render.Render(
+			[]byte(
+				r.String(),
+			),
+		),
+	)
+	return `<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Runtime Error</title>
+		<style>
+:root {
+	-webkit-font-smoothing: antialiased; /* macOS */
+	-moz-osx-font-smoothing: grayscale;  /* Firefox */
+
+	color: #c7c7c7;
+	background-color: #000000;
+}
+
+code {
+	font: 18px / 1.45
+		"Monaco",   /* macOS */
+		"Consolas", /* Windows */
+		monospace;
+}
+
+a { color: unset; text-decoration: unset; }
+a:hover { text-decoration: underline; }
+
+.term-fg1 {
+	font-weight: bold;
+	color: #feffff;
+}
+
+.term-fg30 { color: #000000; }
+.term-fg31 { color: #c91b00; }
+.term-fg32 { color: #00c200; }
+.term-fg33 { color: #c7c400; }
+.term-fg34 { color: #0225c7; }
+.term-fg35 { color: #c930c7; }
+.term-fg36 { color: #00c5c7; }
+.term-fg37 { color: #c7c7c7; }
+
+.term-fg1.term-fg30 { color: #676767; }
+.term-fg1.term-fg31 { color: #ff6d67; }
+.term-fg1.term-fg32 { color: #5ff967; }
+.term-fg1.term-fg33 { color: #fefb67; }
+.term-fg1.term-fg34 { color: #6871ff; }
+.term-fg1.term-fg35 { color: #ff76ff; }
+.term-fg1.term-fg36 { color: #5ffdff; }
+.term-fg1.term-fg37 { color: #feffff; }
+		</style>
+	</head>
+	<body>
+		<pre><code>` + renderStr + `</pre></code>
+		` + htmlServerSentEvents + `
+	</body>
+</html>`
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 type ServeOptions struct {
 	WarmUpFlag bool
-	Dev        chan TimedMessage
+	Dev        chan DevError
 }
 
 func (a *App) Serve(options ServeOptions) error {
@@ -188,18 +279,19 @@ func (a *App) Serve(options ServeOptions) error {
 	}
 
 	var (
-		timedMsg = <-options.Dev
-		logMsg   string
+		msg    = <-options.Dev
+		logMsg string
 	)
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Log to stdout
 		var nextLogMsg string
-		if dirty := timedMsg.msg.GetDirty(); dirty.IsDirty() {
-			nextLogMsg = dirty.String()
+		if msg.IsDirty() {
+			nextLogMsg = msg.String()
 		} else {
-			nextLogMsg = buildServeSuccessString(a.getPort(), timedMsg.dur)
+			// nextLogMsg = buildServeSuccessString(a.getPort(), msg.dur) // FIXME
+			nextLogMsg = buildServeSuccessString(a.getPort(), 0) // TODO
 		}
 		if logMsg != nextLogMsg {
 			logMsg = nextLogMsg
@@ -207,8 +299,8 @@ func (a *App) Serve(options ServeOptions) error {
 			fmt.Println(logMsg)
 		}
 		// Log to the browser and eagerly return
-		if dirty := timedMsg.msg.GetDirty(); dirty.IsDirty() {
-			fmt.Fprintln(w, dirty.HTML())
+		if msg.IsDirty() {
+			fmt.Fprintln(w, msg.HTML())
 			return
 		}
 		// Serve non-HTML
@@ -225,7 +317,11 @@ func (a *App) Serve(options ServeOptions) error {
 		http.ServeFile(w, r, filepath.Join(RETRO_OUT_DIR, "index.html"))
 	})
 
-	// Path for server-sent events (SSE)
+	// Paths for dev events and errors
+	//
+	// - /__dev__
+	// - /__err__
+	//
 	if a.getCommandKind() == KindDevCommand {
 		http.HandleFunc("/__dev__", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
@@ -237,7 +333,7 @@ func (a *App) Serve(options ServeOptions) error {
 			}
 			for {
 				select {
-				case timedMsg = <-options.Dev:
+				case msg = <-options.Dev:
 					fmt.Fprint(w, "event: reload\ndata\n\n")
 					flusher.Flush()
 				case <-r.Context().Done():
@@ -245,14 +341,20 @@ func (a *App) Serve(options ServeOptions) error {
 				}
 			}
 		})
+		http.HandleFunc("/__err__", func(w http.ResponseWriter, r *http.Request) {
+			bstr, err := io.ReadAll(r.Body)
+			must(err)
+			options.Dev <- newRuntimeError(string(bstr))
+		})
 	}
 
 	// Log to stdout
 	var nextLogMsg string
-	if dirty := timedMsg.msg.GetDirty(); dirty.IsDirty() {
-		nextLogMsg = dirty.String()
+	if msg.IsDirty() {
+		nextLogMsg = msg.String()
 	} else {
-		nextLogMsg = buildServeSuccessString(a.getPort(), timedMsg.dur)
+		// nextLogMsg = buildServeSuccessString(a.getPort(), msg.dur) // FIXME
+		nextLogMsg = buildServeSuccessString(a.getPort(), 0) // TODO
 	}
 	if logMsg != nextLogMsg {
 		logMsg = nextLogMsg

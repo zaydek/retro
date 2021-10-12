@@ -6,20 +6,20 @@ import (
 	"time"
 )
 
-type WatchResult struct {
+type WatchEvent struct {
 	Err error
 }
 
-func Directory(dir string, poll time.Duration) <-chan WatchResult {
+func Directory(dir string, poll time.Duration) <-chan WatchEvent {
 	var (
-		ch         = make(chan WatchResult)
+		ch         = make(chan WatchEvent)
 		modTimeMap = map[string]time.Time{}
 	)
 
 	go func() {
 		defer close(ch)
 
-		//https://stackoverflow.com/a/47448177
+		// https://stackoverflow.com/a/47448177
 		ticker := time.NewTicker(poll)
 		defer ticker.Stop()
 		for ; true; <-ticker.C {
@@ -33,13 +33,13 @@ func Directory(dir string, poll time.Duration) <-chan WatchResult {
 				} else {
 					if next := info.ModTime(); prev != next {
 						modTimeMap[root] = next
-						ch <- WatchResult{nil}
+						ch <- WatchEvent{nil}
 					}
 				}
 				return nil
 			})
 			if err != nil {
-				ch <- WatchResult{err}
+				ch <- WatchEvent{err}
 			}
 		}
 	}()

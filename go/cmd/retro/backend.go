@@ -33,11 +33,13 @@ func (b BundleInfo) String() string {
 }
 
 func (b BundleInfo) HTML() string {
-	str := b.String()
-	// str = strings.ReplaceAll(str, "╷", "|") // For Sass errors
-	// str = strings.ReplaceAll(str, "│", "|")
-	// str = strings.ReplaceAll(str, "╵", "|")
-
+	renderStr := string(
+		render.Render(
+			[]byte(
+				b.String(),
+			),
+		),
+	)
 	return `<!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -86,7 +88,7 @@ a:hover { text-decoration: underline; }
 		</style>
 	</head>
 	<body>
-		<pre><code>` + string(render.Render([]byte(str))) + `</pre></code>
+		<pre><code>` + renderStr + `</pre></code>
 		` + htmlServerSentEvents + `
 	</body>
 </html>`
@@ -100,15 +102,35 @@ type Message struct {
 	ClientAppInfo BundleInfo
 }
 
-func (m Message) GetDirty() BundleInfo {
+// Conforms to `DevError`
+func (m Message) IsDirty() bool {
+	return m.VendorInfo.IsDirty() ||
+		m.ClientInfo.IsDirty() ||
+		m.ClientAppInfo.IsDirty()
+}
+
+// Conforms to `DevError`
+func (m Message) String() string {
 	if m.VendorInfo.IsDirty() {
-		return m.VendorInfo
+		return m.VendorInfo.String()
 	} else if m.ClientInfo.IsDirty() {
-		return m.ClientInfo
+		return m.ClientInfo.String()
 	} else if m.ClientAppInfo.IsDirty() {
-		return m.ClientAppInfo
+		return m.ClientAppInfo.String()
 	}
-	return BundleInfo{}
+	return ""
+}
+
+// Conforms to `DevError`
+func (m Message) HTML() string {
+	if m.VendorInfo.IsDirty() {
+		return m.VendorInfo.HTML()
+	} else if m.ClientInfo.IsDirty() {
+		return m.ClientInfo.HTML()
+	} else if m.ClientAppInfo.IsDirty() {
+		return m.ClientAppInfo.HTML()
+	}
+	return ""
 }
 
 func (m Message) getChunkedEntrypoints() entryPoints {
