@@ -9,10 +9,6 @@ import {
 	STORE_KEY,
 } from "./store-key"
 
-import {
-	useLayoutEffectSSR,
-} from "../use-layout-effect-ssr"
-
 const ERR_BAD_STORE = originator => `${originator}: Bad store; expected \`createStore({ ... })\`.`
 const ERR_BAD_REDUCER = originator => `${originator}: Bad reducer; expected \`function reducer(state, action) { ... }\`.`
 const ERR_BAD_SELECTOR = (originator, selector) => `${originator}: Bad selector; want \`["foo", "bar", ...]\` got ${JSON.stringify(selector)}.`
@@ -50,7 +46,7 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 	const [state, setState] = React.useState(store.cachedState)
 
 	// Add the `setState` to the store's subscriptions
-	useLayoutEffectSSR(!flagIncludeState ? () => { /* No-op */ } : () => {
+	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
 		store.subscriptions.set(setState, undefined /* selector=undefined */)
 		return () => {
 			store.subscriptions.delete(setState)
@@ -107,7 +103,7 @@ function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncl
 	const [state, setState] = React.useState(store.cachedState)
 
 	// Add the `setState` to the store's subscriptions
-	useLayoutEffectSSR(!flagIncludeState ? () => { /* No-op */ } : () => {
+	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
 		store.subscriptions.set(setState, undefined /* selector=undefined */)
 		return () => {
 			store.subscriptions.delete(setState)
@@ -171,7 +167,7 @@ function useSelectorImpl(store, selector, { originator }) {
 	}, [selector])
 
 	// Add the `setState` to the store's subscriptions
-	useLayoutEffectSSR(() => {
+	React.useEffect(() => {
 		store.subscriptions.set(setState, memoSelector)
 		return () => {
 			store.subscriptions.delete(setState)

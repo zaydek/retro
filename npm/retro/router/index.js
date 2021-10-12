@@ -5,7 +5,7 @@ export {
 export {
 	Link,
 	Redirect,
-	RenderRoute,
 	Route,
+	Router,
 	routerStore,
 } from "./router"

@@ -1,15 +1,20 @@
 import * as router from "../../npm/retro/router" // -> "@zaydek/retro/router"
 
-import {
-	PATHS,
-	URLS,
-} from "./paths"
+export const PATHS = {
+	A: "/router/a",
+	B: "/router/b",
+	C: "/router/c",
+	D: "/router/d",
+	INLINE: "/router/inline",
+	FOUR_ZERO_FOUR: "/router/404",
+	FOUR_ZERO_FOUR_ZERO_FOUR: "/router/40404",
+}
 
-import {
-	Title,
-} from "../../npm/retro/title" // -> "@zaydek/retro/title"
+export const URLS = {
+	GOOGLE: "https://google.com",
+}
 
-function Links() {
+export function App() {
 	return (
 		<ul>
 			<li>
@@ -33,11 +38,6 @@ function Links() {
 				</router.Link>
 			</li>
 			<li>
-				<router.Link path={PATHS.INLINE}>
-					Click to open the <code>{PATHS.INLINE}</code> page
-				</router.Link>
-			</li>
-			<li>
 				<router.Link path={PATHS.FOUR_ZERO_FOUR}>
 					Click to open the <code>{PATHS.FOUR_ZERO_FOUR}</code> page
 				</router.Link>
@@ -54,62 +54,4 @@ function Links() {
 			</li>
 		</ul>
 	)
-}
-
-function ComponentA() {
-	return <div>You are currently on the <code>{PATHS.A}</code> page</div>
-}
-
-function ComponentB() {
-	return <div>You are currently on the <code>{PATHS.B}</code> page</div>
-}
-
-function ComponentC() {
-	return <div>You are currently on the <code>{PATHS.C}</code> page</div>
-}
-
-export function Routes() {
-	return (
-		<>
-
-			<router.Route path={PATHS.A}>
-				<Title title={`Welcome to the ${PATHS.A} page`}>
-					<ComponentA />
-				</Title>
-			</router.Route>
-
-			<router.Route path={PATHS.B}>
-				<Title title={`Welcome to the ${PATHS.B} page`}>
-					<ComponentB />
-				</Title>
-			</router.Route>
-
-			<router.Route path={PATHS.C}>
-				<Title title={`Welcome to the ${PATHS.C} page`}>
-					<ComponentC />
-				</Title>
-			</router.Route>
-
-			<router.Route path={PATHS.D}>
-				<router.Redirect path={PATHS.A} />
-			</router.Route>
-
-			<router.Route path={PATHS.INLINE}>
-				<Title title={`Welcome to the ${PATHS.INLINE} page`}>
-					<div>You are currently on the <code>{PATHS.INLINE}</code> page</div>
-				</Title>
-			</router.Route>
-
-			<router.Route path={PATHS.FOUR_ZERO_FOUR}>
-				<Title title={`Welcome to the ${PATHS.FOUR_ZERO_FOUR} page`}>
-					<div>You are currently on the <code>{PATHS.FOUR_ZERO_FOUR}</code> page</div>
-				</Title>
-			</router.Route>
-
-		</>
-	)
-}
-
-export function App() {
-	return <Links />
 }

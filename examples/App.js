@@ -1,9 +1,8 @@
 import * as router from "../npm/retro/router" // -> @zaydek/retro/router
-import * as store from "../npm/retro/store" // -> @zaydek/retro/router
 
 import {
 	App as RouterApp,
-	Routes as RouterAppRoutes,
+	PATHS,
 } from "./router"
 
 import {
@@ -19,23 +18,16 @@ import {
 } from "./store"
 
 import {
+	DocumentTitle,
+} from "../npm/retro/document-title" // -> "@zaydek/retro/title"
+
+import {
 	App as TransitionApp,
 } from "./transition"
 
 export function App() {
-	// const state = store.useStateOnlyState(router.routerStore, ["routeMap"])
-
 	return (
 		<>
-
-			{/* <pre>
-				{JSON.stringify(state, (k, v) => {
-					if (React.isValidElement(v)) {
-						return null
-					}
-					return v
-				}, 2)}
-			</pre> */}
 
 			<ul>
 				<li>
@@ -65,24 +57,65 @@ export function App() {
 				</li>
 			</ul>
 
-			<router.Route path="/router">
-				<RouterApp />
-			</router.Route>
-			<router.Route path="/sass">
-				<SassApp />
-			</router.Route>
-			<router.Route path="/sass-template-strings">
-				<SassTemplateStringsApp />
-			</router.Route>
-			<router.Route path="/store">
-				<StoreApp />
-			</router.Route>
-			<router.Route path="/transition">
-				<TransitionApp />
-			</router.Route>
-			<RouterAppRoutes />
+			<router.Router>
 
-			<router.RenderRoute />
+				<router.Route path="/">
+					Hello, world!
+				</router.Route>
+
+				<router.Route path="/router">
+					<RouterApp />
+				</router.Route>
+
+				{/********************************************************************/}
+
+				<router.Route path={PATHS.A}>
+					<DocumentTitle title={`Welcome to the ${PATHS.A} page`}>
+						<div>You are currently on the <code>{PATHS.A}</code> page</div>
+					</DocumentTitle>
+				</router.Route>
+
+				<router.Route path={PATHS.B}>
+					<DocumentTitle title={`Welcome to the ${PATHS.B} page`}>
+						<div>You are currently on the <code>{PATHS.B}</code> page</div>
+					</DocumentTitle>
+				</router.Route>
+
+				<router.Route path={PATHS.C}>
+					<DocumentTitle title={`Welcome to the ${PATHS.C} page`}>
+						<div>You are currently on the <code>{PATHS.C}</code> page</div>
+					</DocumentTitle>
+				</router.Route>
+
+				<router.Route path={PATHS.D}>
+					<router.Redirect path={PATHS.A} />
+				</router.Route>
+
+				<router.Route path={PATHS.FOUR_ZERO_FOUR}>
+					<DocumentTitle title={`Welcome to the ${PATHS.FOUR_ZERO_FOUR} page`}>
+						<div>You are currently on the <code>{PATHS.FOUR_ZERO_FOUR}</code> page</div>
+					</DocumentTitle>
+				</router.Route>
+
+				{/********************************************************************/}
+
+				<router.Route path="/sass">
+					<SassApp />
+				</router.Route>
+
+				<router.Route path="/sass-template-strings">
+					<SassTemplateStringsApp />
+				</router.Route>
+
+				<router.Route path="/store">
+					<StoreApp />
+				</router.Route>
+
+				<router.Route path="/transition">
+					<TransitionApp />
+				</router.Route>
+
+			</router.Router>
 
 		</>
 	)

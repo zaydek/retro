@@ -22,7 +22,6 @@ export const routerStore = store.createStore({
 	type: actions.PUSH_STATE,
 	path: getCurrentPathSSR(),
 	scrollTo: [0, 0],
-	routeMap: {},
 })
 
 export function Link({ path, scrollTo, children, ...props }) {
@@ -67,7 +66,7 @@ export function Link({ path, scrollTo, children, ...props }) {
 
 export function Redirect({ path, scrollTo }) {
 	const setState = store.useStateOnlySetState(routerStore)
-	React.useEffect(() => {
+	useLayoutEffectSSR(() => {
 		setState(current => ({
 			...current,
 			type: actions.REPLACE_STATE,
@@ -78,37 +77,52 @@ export function Redirect({ path, scrollTo }) {
 	return null
 }
 
-export function Route({ path, children }) {
-	// NOTE: Because `children` change every rerender, respond to `path` changes
-	const setState = store.useStateOnlySetState(routerStore)
-	React.useEffect(
-		React.useCallback(() => {
-			setState(current => ({
-				...current,
-				routeMap: {
-					...current.routeMap,
-					[path]: children,
-				},
-			}))
-			return () => {
-				setState(current => ({
-					...current,
-					routeMap: {
-						...current.routeMap,
-						[path]: undefined,
-					},
-				}))
-			}
-		}, [path, children]),
-		[path],
-	)
-	return null
+export function Route({ path: _, children }) {
+	return children
 }
 
-export function RenderRoute() {
+export function Router({ children }) {
 	const path = store.useSelector(routerStore, ["path"])
-	const routeMap = store.useSelector(routerStore, ["routeMap"])
+
 	useSyncWindowToRouter()
 	useSyncRouterToWindow()
-	return routeMap[path] ?? routeMap["/404"] ?? null
+
+	const [Surrounding, RenderRoute] = React.useMemo(() => {
+		const routeMap = {} // Maps paths to route components
+		const above = []
+		const below = []
+
+		let flagIsAbove = false
+		for (const component of [children].flat()) {
+			if (component?.type === Route && typeof component?.props?.path === "string") {
+				routeMap[component.props.path] = component
+				flagIsAbove = true
+				continue
+			}
+			if (!flagIsAbove) {
+				above.push(component)
+			} else {
+				below.push(component)
+			}
+		}
+
+		return [
+			({ children }) => (
+				<>
+					{above}
+					{children}
+					{below}
+				</>
+			),
+			() => routeMap[path]
+				?? routeMap["/404"]
+				?? null,
+		]
+	}, [children, path])
+
+	return (
+		<Surrounding>
+			<RenderRoute />
+		</Surrounding>
+	)
 }
