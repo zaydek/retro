@@ -18,7 +18,7 @@ func main() {
 		},
 	}, api.FormatMessagesOptions{
 		Color: true,
-		// Kind:          api.WarningMessage,
+		// Kind:       api.WarningMessage,
 		Kind:          api.ErrorMessage,
 		TerminalWidth: 80,
 	})
