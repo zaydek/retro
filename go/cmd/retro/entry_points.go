@@ -55,7 +55,7 @@ func copyDefaultAppJSEntryPoint() error {
 	return nil
 }
 
-// Guards for the presence of `www/index.js` and:
+// Guards for the presence of 'www/index.js' and:
 //
 // - <link rel="stylesheet" href="/client.css" />
 // - <div id="root"></div>
@@ -63,7 +63,7 @@ func copyDefaultAppJSEntryPoint() error {
 // - <script src="/client.js"></script>
 //
 func guardHTMLEntryPoint() error {
-	// Guard `www/index.html`
+	// Guard 'www/index.html'
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexHTMLEntryPoint(); err != nil {
@@ -172,7 +172,7 @@ For example:
 	return nil
 }
 
-// Guards for the presence of `src/index.js`
+// Guards for the presence of 'src/index.js'
 func guardJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "index.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -183,7 +183,7 @@ func guardJSEntryPoint() error {
 	return nil
 }
 
-// Guards for the presence of `src/App.js`
+// Guards for the presence of 'src/App.js'
 func guardAppJSEntryPoint() error {
 	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {

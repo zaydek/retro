@@ -2,7 +2,6 @@
 # systems. While the binaries this Makefile produces are highly portable, the
 # development of these binaries is not generally portable.
 
-# Get the working version from `version.txt`
 VERSION = $(shell cat version.txt)
 
 ################################################################################
@@ -19,8 +18,8 @@ bundle:
 
 ################################################################################
 
-# Makes all binaries; `create-retro-app` and `retro`. Note that these binaries
-# are moved to `~/github/bin` so that they may be tested locally. Aliasing these
+# Makes all binaries; 'create-retro-app' and 'retro'. Note that these binaries
+# are moved to '~/github/bin' so that they may be tested locally. Aliasing these
 # binaries is recommended for active development.
 #
 # ~/.bash_profile
@@ -31,11 +30,11 @@ bundle:
 all:
 	make bin
 
-# Makes `create-retro-app`
+# Makes 'create-retro-app'
 bin-create-retro-app:
 	go build -o=create-retro-app main_create_retro_app.go && mv create-retro-app ~/github/bin
 
-# Makes `retro`
+# Makes 'retro'
 bin-retro:
 	make bundle
 	go build -o=retro main_retro.go && mv retro ~/github/bin
@@ -48,11 +47,11 @@ bin:
 
 ################################################################################
 
-# Run all Go tests for `create-retro-app`
+# Run all Go tests for 'create-retro-app'
 test-create-retro-app:
 	go test ./cmd/create_retro_app/...
 
-# Run all Go tests for `retro`
+# Run all Go tests for 'retro'
 test-retro:
 	go test ./cmd/retro/...
 
@@ -108,32 +107,32 @@ build:
 
 ################################################################################
 
-# Versions `create-retro-app` and `retro`
+# Versions 'create-retro-app' and 'retro'
 version:
 	cd npm/create-retro-app && npm version "$(VERSION)" --allow-same-version
 	cd npm/retro && npm version "$(VERSION)" --allow-same-version
 
 ################################################################################
 
-# Releases (dry-run) `create-retro-app` and `retro`
+# Releases (dry-run) 'create-retro-app' and 'retro'
 release-dry-run:
 	cd npm/create-retro-app && npm publish --dry-run
 	cd npm/retro && npm publish --dry-run
 
-# Releases `create-retro-app` and `retro`
+# Releases 'create-retro-app' and 'retro'
 release:
 	cd npm/create-retro-app && npm publish
 	cd npm/retro && npm publish
 
 ################################################################################
 
-# Publishes (dry-run) `create-retro-app` and `retro`
+# Publishes (dry-run) 'create-retro-app' and 'retro'
 publish-dry-run:
 	make build && \
 		make version && \
 		make release-dry-run
 
-# Publishes `create-retro-app` and `retro`
+# Publishes 'create-retro-app' and 'retro'
 publish:
 	make build && \
 		make version && \

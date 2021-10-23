@@ -45,7 +45,7 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 
 	const [state, setState] = React.useState(store.cachedState)
 
-	// Add the `setState` to the store's subscriptions
+	// Add the 'setState' to the store's subscriptions
 	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
 		store.subscriptions.set(setState, undefined /* selector=undefined */)
 		return () => {
@@ -63,7 +63,7 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 		// Invalidate components
 		setState(nextState)
 		for (const [otherSetState, otherSelector] of store.subscriptions) {
-			// Dedupe `setState`
+			// Dedupe 'setState'
 			if (otherSetState !== setState) {
 				if (isSelector(otherSelector)) {
 					// Suppress useless rerenders
@@ -102,7 +102,7 @@ function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncl
 
 	const [state, setState] = React.useState(store.cachedState)
 
-	// Add the `setState` to the store's subscriptions
+	// Add the 'setState' to the store's subscriptions
 	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
 		store.subscriptions.set(setState, undefined /* selector=undefined */)
 		return () => {
@@ -117,7 +117,7 @@ function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncl
 		// Invalidate components
 		setState(nextState)
 		for (const [otherSetState, otherSelector] of store.subscriptions) {
-			// Dedupe `setState`
+			// Dedupe 'setState'
 			if (otherSetState !== setState) {
 				if (isSelector(otherSelector)) {
 					// Suppress useless rerenders
@@ -166,7 +166,7 @@ function useSelectorImpl(store, selector, { originator }) {
 		return selector
 	}, [selector])
 
-	// Add the `setState` to the store's subscriptions
+	// Add the 'setState' to the store's subscriptions
 	React.useEffect(() => {
 		store.subscriptions.set(setState, memoSelector)
 		return () => {

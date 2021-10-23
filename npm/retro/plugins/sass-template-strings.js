@@ -73,7 +73,7 @@ module.exports = {
 			})
 			const css = result.css.toString()
 
-			// Stub `sass.global` and `sass` functions
+			// Stub 'sass.global' and 'sass' functions
 			return {
 				contents: `
 					import "data:text/css,${encodeURI(css)}"
