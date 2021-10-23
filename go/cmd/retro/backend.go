@@ -102,14 +102,12 @@ type Message struct {
 	ClientAppInfo BundleInfo
 }
 
-// Conforms to `DevError`
 func (m Message) IsDirty() bool {
 	return m.VendorInfo.IsDirty() ||
 		m.ClientInfo.IsDirty() ||
 		m.ClientAppInfo.IsDirty()
 }
 
-// Conforms to `DevError`
 func (m Message) String() string {
 	if m.VendorInfo.IsDirty() {
 		return m.VendorInfo.String()
@@ -121,7 +119,6 @@ func (m Message) String() string {
 	return ""
 }
 
-// Conforms to `DevError`
 func (m Message) HTML() string {
 	if m.VendorInfo.IsDirty() {
 		return m.VendorInfo.HTML()

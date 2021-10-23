@@ -1,12 +1,12 @@
 import * as store from "../store"
 
 import {
-	getCurrentPathSSR
+	getCurrentPathSSR,
 } from "./helpers"
 
 import {
 	actions,
-	routerStore
+	routerStore,
 } from "./router"
 
 export function useSyncWindowToRouter() {

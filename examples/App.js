@@ -25,8 +25,6 @@ import {
 	App as TransitionApp,
 } from "./transition"
 
-throw new Error("Oops")
-
 export function App() {
 	return (
 		<>
