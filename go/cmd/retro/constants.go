@@ -12,35 +12,15 @@ const (
 	</head>
 	<body>
 		<div id="root"></div>
-		<script src="/vendor.js"></script>
-		<script src="/client.js"></script>
+		<script src="/vendor.js" type="module"></script>
+		<script src="/client.js" type="module"></script>
 	</body>
 </html>`
-
-	// // https://github.com/evanw/esbuild/issues/802#issuecomment-778852594
-	// // https://github.com/evanw/esbuild/issues/802#issuecomment-803297488
-	// 	htmlServerSentEvents = `<script type="module">
-	// 	const dev = new EventSource("/__dev__")
-	// 	dev.addEventListener("reload", () => {
-	// 		localStorage.setItem("__dev__", "" + Date.now())
-	// 		window.location.reload()
-	// 	})
-	// 	dev.addEventListener("error", e => {
-	// 		try {
-	// 			console.error(JSON.parse(e.data))
-	// 		} catch { /* No-op */ }
-	// 	})
-	// 	window.addEventListener("storage", e => {
-	// 		if (e.key === "__dev__") {
-	// 			window.location.reload()
-	// 		}
-	// 	})
-	// </script>`
 
 	// Server-sent events (SSE) for the dev command
 	htmlServerSentEvents = `<script type="module">const dev=new EventSource("/__dev__");dev.addEventListener("reload",()=>{localStorage.setItem("__dev__",""+Date.now()),window.location.reload()}),dev.addEventListener("error",e=>{try{console.error(JSON.parse(e.data))}catch{}}),window.addEventListener("storage",e=>{e.key==="__dev__"&&window.location.reload()});</script>`
 
-	// The JS entry point
+	// The JavaScript entry point
 	jsEntryPoint = `import "./reset.css"
 
 import {
@@ -65,7 +45,7 @@ if (document.getElementById("root").hasChildNodes()) {
 	)
 }`
 
-	// The JS app entry point
+	// The JavaScript app entry point
 	appJSEntryPoint = `import "./App.css"
 
 export default function App() {

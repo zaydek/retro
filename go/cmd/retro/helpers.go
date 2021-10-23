@@ -65,7 +65,7 @@ func getDirname() (string, error) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func buildBuildSuccessString(dir string, dur time.Duration) (string, error) {
-	var ret string
+	var out string
 	ls, err := unix.List(dir)
 	if err != nil {
 		return "", err
@@ -86,15 +86,15 @@ func buildBuildSuccessString(dir string, dur time.Duration) (string, error) {
 		case ".js":
 			color = terminal.Yellow
 		}
-		ret += fmt.Sprintf("%v%s%v\n",
+		out += fmt.Sprintf("%v%s%v\n",
 			color(info.Path),
 			strings.Repeat(" ", 60-len("XXX.X KB")-len(info.Path)),
 			terminal.Dim(unix.HumanReadable(info.Size)),
 		)
 	}
-	ret += fmt.Sprintln()
-	ret += fmt.Sprintln(terminal.Dimf("%dms", dur.Milliseconds()))
-	return ret, nil
+	out += fmt.Sprintln()
+	out += fmt.Sprintln(terminal.Dimf("%dms", dur.Milliseconds()))
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

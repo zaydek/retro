@@ -11,63 +11,63 @@ import (
 var accentRegex = regexp.MustCompile("`([^`]+)`")
 
 func Stdout(x interface{}) string {
-	var str string
+	var out string
 	switch v := x.(type) {
 	case string:
-		str = v
+		out = v
 	case error:
-		str = v.Error()
+		out = v.Error()
 	default:
 		panic("Internal error")
 	}
-	arr := strings.Split(str, "\n")
-	for arrIndex, el := range arr {
-		if el == "" {
-			continue
+	arr := strings.Split(out, "\n")
+	for arrIndex, str := range arr {
+		if str != "" {
+			arr[arrIndex] = accentRegex.ReplaceAllString(
+				strings.ReplaceAll(str, "\t", "  "), // Tabs -> spaces
+				terminal.Cyan("'$1'"),               // Accent
+			)
 		}
-		arr[arrIndex] = accentRegex.ReplaceAllString(
-			strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
-			terminal.Cyan("`$1`"),              // Accent
-		)
 	}
 	return strings.Join(arr, "\n")
 }
 
 func Stderr(x interface{}) string {
-	var str string
+	var out string
 	switch v := x.(type) {
 	case string:
-		str = v
+		out = v
 	case error:
-		str = v.Error()
+		out = v.Error()
 	default:
 		panic("Internal error")
 	}
-	arr := strings.Split(str, "\n")
-	for arrIndex, el := range arr {
-		if el == "" {
-			continue
-		}
-		arr[arrIndex] = terminal.BoldRed("error:") + " " +
-			accentRegex.ReplaceAllString(
-				strings.ReplaceAll(el, "\t", "  "), // Tabs -> spaces
-				terminal.Magenta("`$1`"),           // Accent
+	arr := strings.Split(out, "\n")
+	for arrIndex, str := range arr {
+		if str != "" {
+			if arrIndex == 0 {
+				str = terminal.Bold(terminal.Red("error:") + " " + str)
+			}
+			arr[arrIndex] = accentRegex.ReplaceAllString(
+				strings.ReplaceAll(str, "\t", "  "), // Tabs -> spaces
+				terminal.Magenta("'$1'"),            // Accent
 			)
+		}
 	}
 	return strings.Join(arr, "\n")
 }
 
 func StderrIPC(str string) string {
-	var ret string
+	var out string
 	split := strings.Split(strings.TrimRight(str, "\n"), "\n")
 	for lineIndex, line := range split {
 		if lineIndex > 0 {
-			ret += "\n"
+			out += "\n"
 		}
-		ret += fmt.Sprintf("%s  %s",
+		out += fmt.Sprintf("%s  %s",
 			terminal.BoldRed("stderr"),
 			line,
 		)
 	}
-	return ret
+	return out
 }

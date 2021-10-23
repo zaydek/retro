@@ -59,11 +59,11 @@ func copyDefaultAppJSEntryPoint() error {
 //
 // - <link rel="stylesheet" href="/client.css" />
 // - <div id="root"></div>
-// - <script src="/vendor.js"></script>
-// - <script src="/client.js"></script>
+// - <script src="/vendor.js" type="module"></script>
+// - <script src="/client.js" type="module"></script>
 //
 func guardHTMLEntryPoint() error {
-	// Guard 'www/index.html'
+	// www/index.html (1 of 2)
 	filename := filepath.Join(RETRO_WWW_DIR, "index.html")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultIndexHTMLEntryPoint(); err != nil {
@@ -71,7 +71,7 @@ func guardHTMLEntryPoint() error {
 		}
 	}
 
-	// www/index.html
+	// www/index.html (2 of 2)
 	bstr, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func guardHTMLEntryPoint() error {
 	// <link rel="stylesheet" href="/client.css" />
 	if !strings.Contains(contents, `<link rel="stylesheet" href="/client.css" />`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<link rel="stylesheet" href="/client.css" />`)), terminal.Magenta(quote(`<head>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", terminal.Magenta(quote(`<link rel="stylesheet" href="/client.css" />`)), terminal.Magenta(quote(`<head>`))) + `.
 
 For example:
 
@@ -103,7 +103,7 @@ For example:
 	// <div id="root"></div>
 	if !strings.Contains(contents, `<div id="root"></div>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<div id="root"></div>`)), terminal.Magenta(quote(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", terminal.Magenta(quote(`<div id="root"></div>`)), terminal.Magenta(quote(`<body>`))) + `.
 
 For example:
 
@@ -122,10 +122,10 @@ For example:
 		)
 	}
 
-	// <script src="/vendor.js"></script>
-	if !strings.Contains(contents, `<script src="/vendor.js"></script>`) {
+	// <script src="/vendor.js" type="module"></script>
+	if !strings.Contains(contents, `<script src="/vendor.js" type="module"></script>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<script src="/vendor.js"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", terminal.Magenta(quote(`<script src="/vendor.js" type="module"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
 
 For example:
 
@@ -138,17 +138,17 @@ For example:
 	</head>
 	<body>
 		<div id="root"></div>
-		` + terminal.Green(`<script src="/vendor.js"></script>`) + `
+		` + terminal.Green(`<script src="/vendor.js" type="module"></script>`) + `
 		` + terminal.Dim("...") + `
 	</body>
 </html>`,
 		)
 	}
 
-	// <script src="/client.js"></script>
-	if !strings.Contains(contents, `<script src="/client.js"></script>`) {
+	// <script src="/client.js" type="module"></script>
+	if !strings.Contains(contents, `<script src="/client.js" type="module"></script>`) {
 		return newEntryPointError(
-			fmt.Sprintf("Add %s somewhere to %s", `Add `+terminal.Magenta(quote(`<script src="/client.js"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
+			fmt.Sprintf("Add %s somewhere to %s", terminal.Magenta(quote(`<script src="/client.js" type="module"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
 
 For example:
 
@@ -161,8 +161,8 @@ For example:
 	</head>
 	<body>
 		<div id="root"></div>
-		<script src="/vendor.js"></script>
-		` + terminal.Green(`<script src="/client.js"></script>`) + `
+		<script src="/vendor.js" type="module"></script>
+		` + terminal.Green(`<script src="/client.js" type="module"></script>`) + `
 		` + terminal.Dim("...") + `
 	</body>
 </html>`,
@@ -234,17 +234,17 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 		fmt.Sprintf(`<link rel="stylesheet" href="/%s" />`, entries.clientCSS),
 		1,
 	)
-	// <script src="/vendor.js"></script>
+	// <script src="/vendor.js" type="module"></script>
 	contents = strings.Replace(
 		contents,
-		`<script src="/vendor.js"></script>`,
+		`<script src="/vendor.js" type="module"></script>`,
 		fmt.Sprintf(`<script src="/%s"></script>`, entries.vendorJS),
 		1,
 	)
-	// <script src="/client.js"></script>
+	// <script src="/client.js" type="module"></script>
 	contents = strings.Replace(
 		contents,
-		`<script src="/client.js"></script>`,
+		`<script src="/client.js" type="module"></script>`,
 		fmt.Sprintf(`<script src="/%s"></script>`, entries.clientJS),
 		1,
 	)
