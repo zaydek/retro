@@ -13,7 +13,6 @@ const LOCALSTORAGE_DEBOUNCE_MS = 100
 function TodoForm() {
 	const form = store.useSelector(todosStore, ["form"])
 	const dispatch = store.useReducerOnlyDispatch(todosStore, todosReducer)
-
 	return (
 		<form
 			onSubmit={e => {
@@ -56,13 +55,19 @@ function TodoForm() {
 
 function Todos() {
 	const todos = store.useSelector(todosStore, ["todos"])
-	return todos.map((todo, todoIndex) => <Todo key={todo.id} todoIndex={todoIndex} />)
+	return (
+		todos.map((todo, todoIndex) => (
+			<Todo
+				key={todo.id}
+				todoIndex={todoIndex}
+			/>
+		))
+	)
 }
 
 function Todo({ todoIndex }) {
 	const todo = store.useSelector(todosStore, ["todos", todoIndex])
 	const dispatch = store.useReducerOnlyDispatch(todosStore, todosReducer)
-
 	return (
 		<div id={todo.id}>
 			<input

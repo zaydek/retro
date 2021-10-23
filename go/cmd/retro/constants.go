@@ -23,9 +23,7 @@ const (
 	// The JavaScript entry point
 	jsEntryPoint = `import "./reset.css"
 
-import {
-	App,
-} from "./App"
+import { App } from "./App"
 
 if (document.getElementById("root").hasChildNodes()) {
 	// For static-site generation (SSG) and server-side rendering (SSR)

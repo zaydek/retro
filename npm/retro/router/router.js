@@ -1,17 +1,8 @@
 import * as store from "../store"
 
-import {
-	getCurrentPathSSR,
-} from "./helpers"
-
-import {
-	useSyncWindowToRouter,
-	useSyncRouterToWindow,
-} from "./hooks"
-
-import {
-	useLayoutEffectSSR,
-} from "../use-layout-effect-ssr"
+import { getCurrentPathSSR } from "./helpers"
+import { useLayoutEffectSSR } from "../use-layout-effect-ssr"
+import { useSyncWindowToRouter, useSyncRouterToWindow } from "./hooks"
 
 export const actions = {
 	REPLACE_STATE: "REPLACE_STATE",

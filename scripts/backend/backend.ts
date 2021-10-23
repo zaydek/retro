@@ -7,10 +7,7 @@ import {
 	clientConfigFromUserConfig,
 	vendorConfig,
 } from "./configs"
-
-import {
-	RETRO_CMD,
-} from "./env"
+import { RETRO_CMD } from "./env"
 
 let globalClientBundle: esbuild.BuildResult | esbuild.BuildIncremental | null = null
 

@@ -3,10 +3,7 @@ import {
 	getCSSPropertiesForShorthands,
 	safeEase,
 } from "./helpers"
-
-import {
-	useLayoutEffectSSR,
-} from "../use-layout-effect-ssr"
+import { useLayoutEffectSSR } from "../use-layout-effect-ssr"
 
 const DEFAULTS = {
 	duration: 0.3,

@@ -1,6 +1,4 @@
-import {
-	STORE_KEY,
-} from "./store-key"
+import { STORE_KEY } from "./store-key"
 
 export function isFunction(arg) {
 	return typeof arg === "function"

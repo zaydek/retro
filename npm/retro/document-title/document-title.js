@@ -1,6 +1,4 @@
-import {
-	useLayoutEffectSSR,
-} from "../use-layout-effect-ssr"
+import { useLayoutEffectSSR } from "../use-layout-effect-ssr"
 
 export function LayoutDocumentTitle({ title, children }) {
 	useLayoutEffectSSR(() => {

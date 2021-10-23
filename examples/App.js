@@ -1,29 +1,12 @@
 import * as router from "../npm/retro/router" // -> @zaydek/retro/router
 
-import {
-	App as RouterApp,
-	PATHS,
-} from "./router"
-
-import {
-	App as SassApp,
-} from "./sass"
-
-import {
-	App as SassTemplateStringsApp,
-} from "./sass-template-strings"
-
-import {
-	App as StoreApp,
-} from "./store"
-
-import {
-	DocumentTitle,
-} from "../npm/retro/document-title" // -> "@zaydek/retro/title"
-
-import {
-	App as TransitionApp,
-} from "./transition"
+import { App as PluginMDXApp } from "./plugin-mdx"
+import { App as PluginSassApp } from "./plugin-sass"
+import { App as PluginSassTemplateStringsApp } from "./plugin-sass-template-strings"
+import { App as RouterApp, PATHS } from "./router"
+import { App as StoreApp } from "./store"
+import { App as TransitionApp } from "./transition"
+import { DocumentTitle } from "../npm/retro/document-title" // -> "@zaydek/retro/title"
 
 export function App() {
 	return (
@@ -36,16 +19,6 @@ export function App() {
 					</router.Link>
 				</li>
 				<li>
-					<router.Link path="/sass">
-						Open the <code>/sass</code> app
-					</router.Link>
-				</li>
-				<li>
-					<router.Link path="/sass-template-strings">
-						Open the <code>/sass-template-strings</code> app
-					</router.Link>
-				</li>
-				<li>
 					<router.Link path="/store">
 						Open the <code>/store</code> app
 					</router.Link>
@@ -55,13 +28,24 @@ export function App() {
 						Open the <code>/transition</code> app
 					</router.Link>
 				</li>
+				<li>
+					<router.Link path="/plugin-sass">
+						Open the <code>/plugin-sass</code> app
+					</router.Link>
+				</li>
+				<li>
+					<router.Link path="/plugin-sass-template-strings">
+						Open the <code>/plugin-sass-template-strings</code> app
+					</router.Link>
+				</li>
+				<li>
+					<router.Link path="/plugin-mdx">
+						Open the <code>/plugin-mdx</code> app
+					</router.Link>
+				</li>
 			</ul>
 
 			<router.Router>
-
-				<router.Route path="/">
-					Hello, world!
-				</router.Route>
 
 				<router.Route path="/router">
 					<RouterApp />
@@ -99,20 +83,24 @@ export function App() {
 
 				{/********************************************************************/}
 
-				<router.Route path="/sass">
-					<SassApp />
-				</router.Route>
-
-				<router.Route path="/sass-template-strings">
-					<SassTemplateStringsApp />
-				</router.Route>
-
 				<router.Route path="/store">
 					<StoreApp />
 				</router.Route>
 
 				<router.Route path="/transition">
 					<TransitionApp />
+				</router.Route>
+
+				<router.Route path="/plugin-sass">
+					<PluginSassApp />
+				</router.Route>
+
+				<router.Route path="/plugin-sass-template-strings">
+					<PluginSassTemplateStringsApp />
+				</router.Route>
+
+				<router.Route path="/plugin-mdx">
+					<PluginMDXApp />
 				</router.Route>
 
 			</router.Router>

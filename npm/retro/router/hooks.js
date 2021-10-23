@@ -1,13 +1,7 @@
 import * as store from "../store"
 
-import {
-	getCurrentPathSSR,
-} from "./helpers"
-
-import {
-	actions,
-	routerStore,
-} from "./router"
+import { actions, routerStore } from "./router"
+import { getCurrentPathSSR } from "./helpers"
 
 export function useSyncWindowToRouter() {
 	const setState = store.useStateOnlySetState(routerStore)

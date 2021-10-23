@@ -4,10 +4,7 @@ import {
 	isStore,
 	querySelector,
 } from "./helpers"
-
-import {
-	STORE_KEY,
-} from "./store-key"
+import { STORE_KEY } from "./store-key"
 
 const ERR_BAD_STORE = originator => `${originator}: Bad store; expected \`createStore({ ... })\`.`
 const ERR_BAD_REDUCER = originator => `${originator}: Bad reducer; expected \`function reducer(state, action) { ... }\`.`
