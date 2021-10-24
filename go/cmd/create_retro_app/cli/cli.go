@@ -31,10 +31,10 @@ type CommandError struct {
 func (e CommandError) Error() string {
 	switch e.Kind {
 	case BadArgument:
-		return fmt.Sprintf("Unsupported argument `%s`.", e.BadArgument)
+		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
 	case BadDirectoryValue:
 		wd, _ := os.Getwd()
-		return fmt.Sprintf("Use `.` explicitly to use the working directory `%s`.", filepath.Base(wd))
+		return fmt.Sprintf("Use '.' explicitly to use the working directory '%s'.", filepath.Base(wd))
 	}
 	panic("Internal error")
 }

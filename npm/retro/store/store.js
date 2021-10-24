@@ -6,9 +6,9 @@ import {
 } from "./helpers"
 import { STORE_KEY } from "./store-key"
 
-const ERR_BAD_STORE = originator => `${originator}: Bad store; expected \`createStore({ ... })\`.`
-const ERR_BAD_REDUCER = originator => `${originator}: Bad reducer; expected \`function reducer(state, action) { ... }\`.`
-const ERR_BAD_SELECTOR = (originator, selector) => `${originator}: Bad selector; want \`["foo", "bar", ...]\` got ${JSON.stringify(selector)}.`
+const ERR_BAD_STORE = originator => `${originator}: Bad store; expected 'createStore({ ... })'.`
+const ERR_BAD_REDUCER = originator => `${originator}: Bad reducer; expected 'function reducer(state, action) { ... }'.`
+const ERR_BAD_SELECTOR = (originator, selector) => `${originator}: Bad selector; want '["foo", "bar", ...]' got ${JSON.stringify(selector)}.`
 
 export function createStore(initialStateOrInitializer) {
 	const initializerIsFunction = isFunction(initialStateOrInitializer)

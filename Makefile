@@ -18,14 +18,14 @@ bundle:
 
 ################################################################################
 
-# Makes all binaries; 'create-retro-app' and 'retro'. Note that these binaries
-# are moved to '~/github/bin' so that they may be tested locally. Aliasing these
-# binaries is recommended for active development.
+# Makes all binaries in parallel; 'create-retro-app' and 'retro'. Note that
+# these binaries are moved to '~/github/bin' so that they may be tested locally.
+# Aliasing these binaries is recommended for development.
 #
 # ~/.bash_profile
 #
-# alias create-retro-app=~/github/bin/create-retro-app
-# alias retro=~/github/bin/retro
+#   alias create-retro-app=~/github/bin/create-retro-app
+#   alias retro=~/github/bin/retro
 #
 all:
 	make bin

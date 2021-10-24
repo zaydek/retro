@@ -110,7 +110,7 @@ func getIP() (net.IP, error) {
 	return localAddr.IP, nil
 }
 
-func buildServeSuccessString(port int, d time.Duration) string {
+func buildServeSuccessString(port int, dur time.Duration) string {
 	ip, err := getIP()
 	isOffline := err != nil && strings.HasSuffix(err.Error(), "dial udp 8.8.8.8:80: connect: network is unreachable")
 
@@ -126,7 +126,7 @@ You can now view ` + terminal.Bold(base) + ` in the browser.
 Note that the development build is not optimized.
 To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
 
-` + terminal.Dimf("%dms", d.Milliseconds())
+` + terminal.Dimf("%dms", dur.Milliseconds())
 	} else {
 		return terminal.Greenf("Compiled successfully! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_V_VERSION"))) + `
 
@@ -138,6 +138,6 @@ You can now view ` + terminal.Bold(base) + ` in the browser.
 Note that the development build is not optimized.
 To create a production build, use ` + terminal.Cyan("npm run build") + ` or ` + terminal.Cyan("yarn build") + `.
 
-` + terminal.Dimf("%dms", d.Milliseconds())
+` + terminal.Dimf("%dms", dur.Milliseconds())
 	}
 }

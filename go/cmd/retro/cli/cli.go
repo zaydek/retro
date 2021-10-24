@@ -38,15 +38,15 @@ type CommandError struct {
 func (e CommandError) Error() string {
 	switch e.Kind {
 	case BadCommandArgument:
-		return fmt.Sprintf("Unsupported command argument `%s`.", e.BadCmdArgument)
+		return fmt.Sprintf("Unsupported command argument '%s'.", e.BadCmdArgument)
 	case BadArgument:
-		return fmt.Sprintf("Unsupported argument `%s`.", e.BadArgument)
+		return fmt.Sprintf("Unsupported argument '%s'.", e.BadArgument)
 	case BadPortValue:
-		return "`--port` must be a number (default `8000`)."
+		return "'--port' must be a number (default '8000')."
 	case BadSourcemapValue:
-		return "`--sourcemap` must be a `true` or `false` or empty (default `true`)."
+		return "'--sourcemap' must be a 'true' or 'false' or empty (default 'true')."
 	case BadPortRange:
-		return fmt.Sprintf("`--port` must be between `1000` and `10000`; used `%d`.", e.BadPort)
+		return fmt.Sprintf("'--port' must be between '1000' and '10000'; used '%d'.", e.BadPort)
 	}
 	panic("Internal error")
 }

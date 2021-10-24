@@ -25,7 +25,7 @@ async function main() {
 		`endianness=${os.endianness()}`
 	const binaryFilename = supported[architectureKey]
 	if (binaryFilename === undefined) {
-		throw new Error(`postinstall.js: Architecture key \`${architectureKey}\` not supported. ` +
+		throw new Error(`postinstall.js: Architecture key '${architectureKey}' not supported. ` +
 			`Please create an issue at https://github.com/zaydek/retro.`)
 	}
 	const src = path.join(__dirname, "bin", binaryFilename)

@@ -8,7 +8,7 @@ import (
 	"github.com/zaydek/retro/go/pkg/terminal"
 )
 
-var accentRegex = regexp.MustCompile("`([^`]+)`")
+var quoteRegex = regexp.MustCompile("'([^']+)'")
 
 func Stdout(x interface{}) string {
 	var out string
@@ -23,7 +23,7 @@ func Stdout(x interface{}) string {
 	arr := strings.Split(out, "\n")
 	for arrIndex, str := range arr {
 		if str != "" {
-			arr[arrIndex] = accentRegex.ReplaceAllString(
+			arr[arrIndex] = quoteRegex.ReplaceAllString(
 				strings.ReplaceAll(str, "\t", "  "), // Tabs -> spaces
 				terminal.Cyan("'$1'"),               // Accent
 			)
@@ -45,13 +45,13 @@ func Stderr(x interface{}) string {
 	arr := strings.Split(out, "\n")
 	for arrIndex, str := range arr {
 		if str != "" {
-			if arrIndex == 0 {
-				str = terminal.Bold(terminal.Red("error:") + " " + str)
-			}
-			arr[arrIndex] = accentRegex.ReplaceAllString(
+			arr[arrIndex] = quoteRegex.ReplaceAllString(
 				strings.ReplaceAll(str, "\t", "  "), // Tabs -> spaces
 				terminal.Magenta("'$1'"),            // Accent
 			)
+			if arrIndex == 0 {
+				arr[0] = terminal.Bold(terminal.Red("error:") + " " + arr[0])
+			}
 		}
 	}
 	return strings.Join(arr, "\n")

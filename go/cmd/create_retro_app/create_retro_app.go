@@ -23,7 +23,7 @@ type App struct {
 func (r App) CreateApp() error {
 	if r.Command.Directory != "." {
 		if _, err := os.Stat(r.Command.Directory); !os.IsNotExist(err) {
-			errStr := fmt.Sprintf("Refusing to overwrite directory `%s`.", r.Command.Directory)
+			errStr := format.Stderr(fmt.Sprintf("Refusing to overwrite directory '%s'.", r.Command.Directory))
 			fmt.Fprintln(os.Stderr, errStr)
 			os.Exit(1)
 		}
@@ -131,7 +131,7 @@ func (r App) CreateApp() error {
    yarn
    yarn dev
 
-`)
+Happy hacking!`)
 	} else {
 		fmt.Println(fmt.Sprintf(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_V_VERSION")))+`
 
