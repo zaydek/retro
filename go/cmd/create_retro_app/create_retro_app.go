@@ -122,12 +122,10 @@ func (r App) CreateApp() error {
 		fmt.Println(terminal.Cyanf("Success! %s", terminal.Dimf("(%s)", os.Getenv("RETRO_V_VERSION"))) + `
 
  npm:
-   code .
    npm i
    npm run dev
 
  yarn:
-   code .
    yarn
    yarn dev
 
@@ -137,13 +135,11 @@ Happy hacking!`)
 
  npm:
    cd %[1]s
-   code .
    npm i
    npm run dev
 
  yarn:
    cd %[1]s
-   code .
    yarn
    yarn dev
 

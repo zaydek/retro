@@ -110,23 +110,19 @@ async function main(): Promise<void> {
 			case "build":
 				const { vendorInfo, clientInfo, clientAppInfo } = await buildVendorAndClientBundles(userConfig)
 				console.log(
-					JSON.stringify(
-						{
-							vendorInfo,
-							clientInfo,
-							clientAppInfo,
-						},
-					),
+					JSON.stringify({
+						vendorInfo,
+						clientInfo,
+						clientAppInfo,
+					}),
 				)
 				break
 			case "rebuild": {
 				const clientInfo = await rebuildClientBundle(userConfig)
 				console.log(
-					JSON.stringify(
-						{
-							clientInfo,
-						},
-					),
+					JSON.stringify({
+						clientInfo,
+					}),
 				)
 				break
 			}

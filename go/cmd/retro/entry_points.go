@@ -238,14 +238,14 @@ func copyIndexHTMLEntryPoint(entries entryPoints) error {
 	contents = strings.Replace(
 		contents,
 		`<script src="/vendor.js" type="module"></script>`,
-		fmt.Sprintf(`<script src="/%s"></script>`, entries.vendorJS),
+		fmt.Sprintf(`<script src="/%s" type="module"></script>`, entries.vendorJS),
 		1,
 	)
 	// <script src="/client.js" type="module"></script>
 	contents = strings.Replace(
 		contents,
 		`<script src="/client.js" type="module"></script>`,
-		fmt.Sprintf(`<script src="/%s"></script>`, entries.clientJS),
+		fmt.Sprintf(`<script src="/%s" type="module"></script>`, entries.clientJS),
 		1,
 	)
 	// out/index.html
