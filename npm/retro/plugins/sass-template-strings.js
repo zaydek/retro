@@ -1,5 +1,5 @@
-const sassTplStrGlobalRegex = /(?!\/\/\s*)sass\.global`((?:\r?\n?.*?)+)`/gm
-const sassTplStrInlineRegex = /(?!\/\/\s*)sass(?!\.global)`((?:\r?\n?.*?)+)`/gm
+const sassTplStrGlobalRegex = /(?!\/\/\s*)sass\.global`((?:\r?\n.*?)+)`/gm
+const sassTplStrInlineRegex = /(?!\/\/\s*)sass(?!\.global)`((?:\r?\n.*?)+)`/gm
 
 // Scans for global and inline Sass template strings
 function scanMatches(contents) {
