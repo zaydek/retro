@@ -23,6 +23,7 @@ export const vendorConfig: esbuild.BuildOptions = {
 	outdir: RETRO_OUT_DIR,
 	sourcemap: true,
 }
+
 export const clientConfigFromUserConfig = (userConfig: esbuild.BuildOptions): esbuild.BuildOptions => ({
 	...userConfig,
 	bundle: true,
