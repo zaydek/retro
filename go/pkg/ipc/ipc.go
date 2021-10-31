@@ -88,9 +88,7 @@ func NewPersistentCommand(ctx context.Context, args ...string) (chan string, <-c
 		})
 		scanner.Scan()
 		if text := scanner.Text(); text != "" {
-			if !strings.HasPrefix(text, "DEPRECATION WARNING") { // FIXME: For Sass
-				stderr <- strings.TrimRight(text, "\n")
-			}
+			stderr <- strings.TrimRight(text, "\n")
 		}
 		must(scanner.Err())
 	}()
