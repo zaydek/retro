@@ -29,11 +29,11 @@ export const clientConfigFromUserConfig = (userConfig: esbuild.BuildOptions): es
 	bundle: true,
 	define: {
 		...userConfig.define,
-		"process.env.NODE_ENV": NODE_ENV,
-		"process.env.RETRO_CMD": RETRO_CMD,
-		"process.env.RETRO_WWW_DIR": RETRO_WWW_DIR,
-		"process.env.RETRO_SRC_DIR": RETRO_SRC_DIR,
-		"process.env.RETRO_OUT_DIR": RETRO_OUT_DIR,
+		"process.env.NODE_ENV": JSON.stringify(NODE_ENV),
+		"process.env.RETRO_CMD": JSON.stringify(RETRO_CMD),
+		"process.env.RETRO_WWW_DIR": JSON.stringify(RETRO_WWW_DIR),
+		"process.env.RETRO_SRC_DIR": JSON.stringify(RETRO_SRC_DIR),
+		"process.env.RETRO_OUT_DIR": JSON.stringify(RETRO_OUT_DIR),
 	},
 	entryNames: NODE_ENV !== "production"
 		? undefined
