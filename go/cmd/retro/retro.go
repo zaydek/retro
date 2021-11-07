@@ -315,7 +315,7 @@ func Run() {
 	case cli.BuildCommand:
 		err = app.Build(BuildOptions{WarmUpFlag: true})
 	case cli.ServeCommand:
-		err = app.Serve(ServeOptions{WarmUpFlag: true})
+		err = app.Serve(ServeOptions{WarmUpFlag: false})
 	}
 	must(err)
 }
