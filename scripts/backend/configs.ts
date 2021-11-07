@@ -63,14 +63,3 @@ export const clientConfigFromUserConfig = (userConfig: esbuild.BuildOptions): es
 	outdir: RETRO_OUT_DIR,
 	sourcemap: true,
 })
-
-export const clientAppConfigFromUserConfig = (userConfig: esbuild.BuildOptions): esbuild.BuildOptions => ({
-	...clientConfigFromUserConfig(userConfig),
-	entryNames: undefined, // No-op
-	entryPoints: {
-		...userConfig.entryPoints,
-		"App": path.join(RETRO_SRC_DIR, "App.js"),
-	},
-	outdir: path.join(RETRO_OUT_DIR, ".retro"),
-	platform: "node",
-})

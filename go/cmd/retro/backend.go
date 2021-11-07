@@ -97,13 +97,12 @@ a:hover { text-decoration: underline; }
 ////////////////////////////////////////////////////////////////////////////////
 
 type Message struct {
-	VendorInfo    BundleInfo
-	ClientInfo    BundleInfo
-	ClientAppInfo BundleInfo
+	VendorInfo BundleInfo
+	ClientInfo BundleInfo
 }
 
 func (m Message) IsDirty() bool {
-	return m.VendorInfo.IsDirty() || m.ClientInfo.IsDirty() || m.ClientAppInfo.IsDirty()
+	return m.VendorInfo.IsDirty() || m.ClientInfo.IsDirty()
 }
 
 func (m Message) String() string {
@@ -111,8 +110,6 @@ func (m Message) String() string {
 		return m.VendorInfo.String()
 	} else if m.ClientInfo.IsDirty() {
 		return m.ClientInfo.String()
-	} else if m.ClientAppInfo.IsDirty() {
-		return m.ClientAppInfo.String()
 	}
 	return ""
 }
@@ -122,8 +119,6 @@ func (m Message) HTML() string {
 		return m.VendorInfo.HTML()
 	} else if m.ClientInfo.IsDirty() {
 		return m.ClientInfo.HTML()
-	} else if m.ClientAppInfo.IsDirty() {
-		return m.ClientAppInfo.HTML()
 	}
 	return ""
 }
