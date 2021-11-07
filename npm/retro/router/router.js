@@ -84,7 +84,7 @@ export function Router({ children }) {
 		const below = []
 
 		let flagIsAbove = false
-		for (const component of [children].flat()) {
+		for (const component of [...children].flat()) {
 			if (component?.type === Route && typeof component?.props?.path === "string") {
 				routeMap[component.props.path] = component
 				flagIsAbove = true
@@ -97,18 +97,18 @@ export function Router({ children }) {
 			}
 		}
 
-		return [
-			({ children }) => (
-				<>
-					{above}
-					{children}
-					{below}
-				</>
-			),
-			() => routeMap[path]
-				?? routeMap["/404"]
-				?? null,
-		]
+		// Higher-order component for rendering the above and below components
+		// around the render route
+		function Surrounding({ children }) {
+			return <>{above}{children}{below}</>
+		}
+
+		// The render route or the '/404' route or 'null'
+		function RenderRoute() {
+			return routeMap[path] ?? routeMap["/404"] ?? null
+		}
+
+		return [Surrounding, RenderRoute]
 	}, [children, path])
 
 	return (

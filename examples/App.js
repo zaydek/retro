@@ -2,7 +2,6 @@ import * as router from "../npm/retro/router" // -> @zaydek/retro/router
 
 import { App as PluginMDXApp } from "./plugin-mdx"
 import { App as PluginSassApp } from "./plugin-sass"
-import { App as PluginSassTemplateStringsApp } from "./plugin-sass-template-strings"
 import { App as RouterApp, PATHS } from "./router"
 import { App as StoreApp } from "./store"
 import { App as TransitionApp } from "./transition"
@@ -93,10 +92,6 @@ export function App() {
 
 				<router.Route path="/plugin-sass">
 					<PluginSassApp />
-				</router.Route>
-
-				<router.Route path="/plugin-sass-template-strings">
-					<PluginSassTemplateStringsApp />
 				</router.Route>
 
 				<router.Route path="/plugin-mdx">
