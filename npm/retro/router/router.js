@@ -116,7 +116,10 @@ export function Router({ children }) {
 		}
 
 		return [Surrounding, RenderRoute]
-	}, [children, path])
+	}, [
+		children,
+		path,
+	])
 
 	return (
 		<Surrounding>

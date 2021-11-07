@@ -2,10 +2,11 @@ import * as store from "../store"
 
 import { actions, routerStore } from "./router"
 import { getCurrentPathSSR } from "./helpers"
+import { useLayoutEffectSSR } from "../use-layout-effect-ssr"
 
 export function useSyncWindowToRouter() {
 	const setState = store.useStateOnlySetState(routerStore)
-	React.useEffect(() => {
+	useLayoutEffectSSR(() => {
 		function handlePopState() {
 			setState(current => ({
 				...current,
@@ -24,7 +25,7 @@ export function useSyncRouterToWindow() {
 	const path = store.useSelector(routerStore, ["path"])
 	const scrollTo = store.useSelector(routerStore, ["scrollTo"])
 	const didMountRef = React.useRef(false)
-	React.useEffect(() => {
+	useLayoutEffectSSR(() => {
 		if (!didMountRef.current) {
 			didMountRef.current = true
 			return
