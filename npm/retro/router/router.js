@@ -12,8 +12,15 @@ export const actions = {
 export const routerStore = store.createStore({
 	type: actions.PUSH_STATE,
 	path: getCurrentPathSSR(),
-	scrollTo: [0, 0],
+	scrollTo: 0,
 })
+
+function evaluateScrollTo(scrollTo) {
+	if (typeof scrollTo === "function") {
+		return scrollTo()
+	}
+	return scrollTo ?? 0
+}
 
 export function Link({ path, scrollTo, children, ...props }) {
 	const setState = store.useStateOnlySetState(routerStore)
@@ -36,7 +43,7 @@ export function Link({ path, scrollTo, children, ...props }) {
 			...current,
 			type: actions.PUSH_STATE,
 			path,
-			scrollTo: scrollTo ?? [0, 0],
+			scrollTo: evaluateScrollTo(scrollTo),
 		}))
 	}
 

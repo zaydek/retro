@@ -69,7 +69,7 @@ export const clientAppConfigFromUserConfig = (userConfig: esbuild.BuildOptions):
 	entryNames: undefined, // No-op
 	entryPoints: {
 		...userConfig.entryPoints,
-		"App.js": path.join(RETRO_SRC_DIR, "App.js"),
+		"App": path.join(RETRO_SRC_DIR, "App.js"),
 	},
 	outdir: path.join(RETRO_OUT_DIR, ".retro"),
 	platform: "node",
