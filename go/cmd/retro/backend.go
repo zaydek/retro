@@ -103,9 +103,7 @@ type Message struct {
 }
 
 func (m Message) IsDirty() bool {
-	return m.VendorInfo.IsDirty() ||
-		m.ClientInfo.IsDirty() ||
-		m.ClientAppInfo.IsDirty()
+	return m.VendorInfo.IsDirty() || m.ClientInfo.IsDirty() || m.ClientAppInfo.IsDirty()
 }
 
 func (m Message) String() string {

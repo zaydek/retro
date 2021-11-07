@@ -1,7 +1,7 @@
 export function getCurrentPathSSR() {
 	let path = "/"
-	if (typeof window !== "undefined") {
-		path = window.location.pathname
+	if (typeof __location__ !== "undefined") {
+		path = __location__
 	}
 	if (path.endsWith(".html")) {
 		path = path.slice(0, -".html".length)
