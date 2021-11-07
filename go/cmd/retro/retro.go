@@ -188,9 +188,15 @@ func (a *App) Serve(options ServeOptions) error {
 	}
 
 	var (
-		dev    = <-options.Dev
+		dev    TimedMessage
 		logMsg string
 	)
+
+	// dev=true
+	// serve=false
+	if options.Dev != nil {
+		dev = <-options.Dev
+	}
 
 	// Path for HTML and non-HTML resources
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -315,7 +321,7 @@ func Run() {
 	case cli.BuildCommand:
 		err = app.Build(BuildOptions{WarmUpFlag: true})
 	case cli.ServeCommand:
-		err = app.Serve(ServeOptions{WarmUpFlag: false})
+		err = app.Serve(ServeOptions{WarmUpFlag: true})
 	}
 	must(err)
 }
