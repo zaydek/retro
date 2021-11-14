@@ -3,8 +3,8 @@
 # macOS
 .DS_Store
 
-# Node
-/node_modules
+# NPM
+/node_modules/
 
 # Production
-/out
+/out/
