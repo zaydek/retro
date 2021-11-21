@@ -6,9 +6,9 @@ import {
 } from "./helpers"
 import { STORE_KEY } from "./store-key"
 
-const ERR_BAD_STORE = originator => `${originator}: bad store; expected 'createStore({ ... })'`
-const ERR_BAD_REDUCER = originator => `${originator}: bad reducer; expected 'function reducer(state, action) { ... }'`
-const ERR_BAD_SELECTOR = (originator, selector) => `${originator}: bad selector; want '["foo", "bar", ...]' got ${JSON.stringify(selector)}`
+const ERR_BAD_STORE = originator => `${originator}: bad store; use 'createStore({ ... })'`
+const ERR_BAD_REDUCER = originator => `${originator}: bad reducer; use 'function reducer(state, action) { ... }'`
+const ERR_BAD_SELECTOR = (originator, selector) => `${originator}: bad selector; got ${JSON.stringify(selector)}`
 
 export function createStore(initialStateOrInitializer) {
 	const initializerIsFunction = isFunction(initialStateOrInitializer)
@@ -220,7 +220,7 @@ export function useReducerOnlyDispatch(store, reducer) {
 	})[1]
 }
 
-export function useSelector(store, selector) {
+export function useSelector(store, ...selector) {
 	return useSelectorImpl(store, selector, {
 		originator: "useSelector",
 	})

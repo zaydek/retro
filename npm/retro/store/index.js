@@ -8,3 +8,4 @@ export {
 	useStateOnlySetState,
 	useStateOnlyState,
 } from "./store"
+export { get } from "./store"
