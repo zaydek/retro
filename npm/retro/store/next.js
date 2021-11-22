@@ -1,16 +1,13 @@
-export function get(state, ...args) {
-	const keys = args.slice(0, args.length - 1)
-	const newValueOrUpdater = args[args.length - 1]
-
+function nextImpl(state, selector, updater) {
 	// The focus reference for the current state
 	let stateRef = state
 	// The next state
 	let nextState = { ...state }
 	// The focus reference for the next state
 	let nextStateFocusRef = nextState
-	for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
-		const key = keys[keyIndex]
-		const keyIsAtEnd = keyIndex + 1 === keys.length
+	for (let keyIndex = 0; keyIndex < selector.length; keyIndex++) {
+		const key = selector[keyIndex]
+		const keyIsAtEnd = keyIndex + 1 === selector.length
 		if (!keyIsAtEnd) {
 			Object.assign(nextStateFocusRef, {
 				// Allocate new references for arrays and objects
@@ -21,10 +18,10 @@ export function get(state, ...args) {
 		} else {
 			Object.assign(nextStateFocusRef, {
 				// The deepest element needs to copy all properties
-				...stateRef,                                   // Old properties
-				[key]: typeof newValueOrUpdater === "function" // New property
-					? newValueOrUpdater(nextStateFocusRef[key])
-					: newValueOrUpdater,
+				...stateRef,                         // Old properties
+				[key]: typeof updater === "function" // New property
+					? updater(nextStateFocusRef[key])
+					: updater,
 			})
 		}
 		// Update the focus references
@@ -32,4 +29,12 @@ export function get(state, ...args) {
 		nextStateFocusRef = nextStateFocusRef[key]
 	}
 	return nextState
+}
+
+export default function next(state, ...args) {
+	const [selector, updater] = [
+		args.slice(0, args.length - 1),
+		args[args.length - 1],
+	]
+	return nextImpl(state, selector, updater)
 }

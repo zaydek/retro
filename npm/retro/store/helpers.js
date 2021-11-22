@@ -1,13 +1,11 @@
-import { STORE_KEY } from "./store-key"
+import STORE_KEY from "./STORE_KEY"
 
 export function isFunction(arg) {
 	return typeof arg === "function"
 }
 
 export function isSelector(arg) {
-	return arg !== undefined &&
-		Array.isArray(arg) &&
-		arg.length > 0
+	return arg !== undefined && Array.isArray(arg) && arg.length > 0
 }
 
 export function isStore(arg) {
