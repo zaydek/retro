@@ -1,6 +1,6 @@
 import * as helpers from "./helpers"
 import next from "./next"
-import STORE_KEY from "./store-key"
+import STORE_KEY from "./STORE_KEY"
 
 const ERR_BAD_STORE = originator => `${originator}: bad store; use 'createStore({ ... })'`
 const ERR_BAD_REDUCER = originator => `${originator}: bad store reducer; use 'function reducer(state, action) { ... }'`
