@@ -80,37 +80,41 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 }
 
 function useSelectorImpl(store, selector, { originator, flagIncludeState, flagIncludeSetState }) {
+	const memoSelector = React.useMemo(() => {
+		return selector
+	}, [selector])
+
 	React.useMemo(() => {
 		if (!helpers.isStore(store)) {
 			throw new Error(ERR_BAD_STORE(originator))
 		}
 		// Selector guards
-		if (!helpers.isSelector(selector)) {
-			throw new Error(ERR_BAD_SELECTOR(originator, selector))
+		if (!helpers.isSelector(memoSelector)) {
+			throw new Error(ERR_BAD_SELECTOR(originator, memoSelector))
 		}
 		let cachedRef = store.cachedState
-		for (const key of selector) {
+		for (const key of memoSelector) {
 			if (!(key in cachedRef)) {
-				throw new Error(ERR_BAD_SELECTOR(originator, selector))
+				throw new Error(ERR_BAD_SELECTOR(originator, memoSelector))
 			}
 			cachedRef = cachedRef[key]
 		}
-	}, [])
+	}, [memoSelector])
 
 	const [state, setState] = React.useState(store.cachedState)
-	const valueOrReference = helpers.querySelector(state, selector)
+	const valueOrReference = helpers.querySelector(state, memoSelector)
 
 	// Add the 'setState' to the store's subscriptions
 	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
-		store.subscriptions.set(setState, selector)
+		store.subscriptions.set(setState, memoSelector)
 		return () => {
 			store.subscriptions.delete(setState)
 		}
-	}, [])
+	}, [memoSelector])
 
 	const setStore = React.useCallback(!flagIncludeSetState ? () => { /* No-op */ } : updater => {
 		const currState = store.cachedState
-		let nextState = next(currState, ...selector, updater)
+		let nextState = next(currState, ...memoSelector, updater)
 
 		// Invalidate components
 		setState(nextState)
@@ -132,7 +136,7 @@ function useSelectorImpl(store, selector, { originator, flagIncludeState, flagIn
 
 		// Cache the current state
 		store.cachedState = nextState
-	}, [])
+	}, [memoSelector])
 
 	return [
 		valueOrReference,
