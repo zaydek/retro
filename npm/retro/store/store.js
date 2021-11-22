@@ -110,7 +110,7 @@ function useSelectorImpl(store, selector, { originator, flagIncludeState, flagIn
 
 	const setStore = React.useCallback(!flagIncludeSetState ? () => { /* No-op */ } : updater => {
 		const currState = store.cachedState
-		let nextState = next(currState, [...selector, updater])
+		let nextState = next(currState, ...selector, updater)
 
 		// Invalidate components
 		setState(nextState)

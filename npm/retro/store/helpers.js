@@ -14,8 +14,8 @@ export function isStore(arg) {
 
 export function querySelector(state, selector) {
 	let focus = state
-	for (const id of selector) {
-		focus = focus[id]
+	for (const key of selector) {
+		focus = focus[key]
 	}
 	return focus
 }
