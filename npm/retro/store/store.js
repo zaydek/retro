@@ -232,7 +232,7 @@ export function useOnlySelector(store, ...selector) {
 		originator: "useOnlySelector",
 		flagIncludeState: true,
 		flagIncludeSetState: false,
-	})
+	})[0]
 }
 
 export function useOnlySetSelector(store, ...selector) {
@@ -240,7 +240,7 @@ export function useOnlySetSelector(store, ...selector) {
 		originator: "useOnlySetSelector",
 		flagIncludeState: false,
 		flagIncludeSetState: true,
-	})
+	})[1]
 }
 
 export function useReducer(store, reducer) {
