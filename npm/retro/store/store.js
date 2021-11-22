@@ -79,7 +79,7 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 	]
 }
 
-function useSelectorImpl(store, selector, { originator, flagIncludeState, flagIncludeSetState }) {
+function useSelectorImpl(store, selector, updater, { originator, flagIncludeState, flagIncludeSetState }) {
 	React.useMemo(() => {
 		if (!helpers.isStore(store)) {
 			throw new Error(ERR_BAD_STORE(originator))
@@ -108,9 +108,10 @@ function useSelectorImpl(store, selector, { originator, flagIncludeState, flagIn
 		}
 	}, [])
 
-	const setStore = React.useCallback(!flagIncludeSetState ? () => { /* No-op */ } : updater => {
+	const updaterRef = React.useRef(updater)
+	const setStore = React.useCallback(!flagIncludeSetState ? () => { /* No-op */ } : () => {
 		const currState = store.cachedState
-		let nextState = next(currState, selector, updater)
+		let nextState = next(currState, selector, updaterRef.current)
 
 		// Invalidate components
 		setState(nextState)
