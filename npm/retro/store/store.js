@@ -79,7 +79,7 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 	]
 }
 
-function useSelectorImpl(store, selector, updater, { originator, flagIncludeState, flagIncludeSetState }) {
+function useSelectorImpl(store, selector, { originator, flagIncludeState, flagIncludeSetState }) {
 	React.useMemo(() => {
 		if (!helpers.isStore(store)) {
 			throw new Error(ERR_BAD_STORE(originator))
@@ -108,10 +108,9 @@ function useSelectorImpl(store, selector, updater, { originator, flagIncludeStat
 		}
 	}, [])
 
-	const updaterRef = React.useRef(updater)
-	const setStore = React.useCallback(!flagIncludeSetState ? () => { /* No-op */ } : () => {
+	const setStore = React.useCallback(!flagIncludeSetState ? () => { /* No-op */ } : updater => {
 		const currState = store.cachedState
-		let nextState = next(currState, selector, updaterRef.current)
+		let nextState = next(currState, selector, updater)
 
 		// Invalidate components
 		setState(nextState)
@@ -220,36 +219,24 @@ export function useOnlySetState(store) {
 	})[1]
 }
 
-export function useSelector(store, ...args) {
-	const [selector, updater] = [
-		args.slice(0, args.length - 1),
-		args[args.length - 1],
-	]
-	return useSelectorImpl(store, selector, updater, {
+export function useSelector(store, ...selector) {
+	return useSelectorImpl(store, selector, {
 		originator: "useSelector",
 		flagIncludeState: true,
 		flagIncludeSetState: true,
 	})
 }
 
-export function useOnlySelector(store, ...args) {
-	const [selector, updater] = [
-		args.slice(0, args.length - 1),
-		args[args.length - 1],
-	]
-	return useSelectorImpl(store, selector, updater, {
+export function useOnlySelector(store, ...selector) {
+	return useSelectorImpl(store, selector, {
 		originator: "useOnlySelector",
 		flagIncludeState: true,
 		flagIncludeSetState: false,
 	})
 }
 
-export function useOnlySetSelector(store, ...args) {
-	const [selector, updater] = [
-		args.slice(0, args.length - 1),
-		args[args.length - 1],
-	]
-	return useSelectorImpl(store, selector, updater, {
+export function useOnlySetSelector(store, ...selector) {
+	return useSelectorImpl(store, selector, {
 		originator: "useOnlySetSelector",
 		flagIncludeState: false,
 		flagIncludeSetState: true,

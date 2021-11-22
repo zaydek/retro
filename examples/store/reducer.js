@@ -13,13 +13,13 @@ export const actions = {
 export const todosInitialState = {
 	form: {
 		checked: false,
-		value: ""
+		value: "",
 	},
 	todos: [
 		// {
-		// 	id: string
-		// 	checked: boolean
-		// 	value: string
+		// 	id: string,
+		// 	checked: boolean,
+		// 	value: string,
 		// },
 	],
 }
