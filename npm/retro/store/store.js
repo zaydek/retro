@@ -223,22 +223,18 @@ export function useReducerOnlyDispatch(store, reducer) {
 	})[1]
 }
 
+// Based on https://github.com/pelotom/use-methods/blob/master/src/index.ts
 export function useCallbacks(store, methods) {
 	const dispatch = useReducerOnlyDispatch(store, (state, action) => {
-		// Remove 'type' from arguments
-		return methods(state)[action.type]({
-			...action,
-			type: undefined,
-		})
+		return methods(state)[action.type](...action.payload)
 	})
 
 	const memoCallbacks = React.useMemo(() => {
 		const callbacks = {}
 		for (const key of Object.keys(methods(undefined))) {
-			// Add 'type' to arguments
-			callbacks[key] = (...args) => dispatch({
-				...args,
+			callbacks[key] = (...payload) => dispatch({
 				type: key,
+				payload,
 			})
 		}
 		return callbacks
