@@ -33,7 +33,7 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 		}
 	}, [])
 
-	const [state, setState] = React.useState(() => store.cachedState)
+	const [state, setState] = React.useState(store.cachedState)
 
 	// Add 'setState' to the store's subscriptions
 	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
@@ -53,20 +53,18 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 		// Invalidate components
 		setState(nextState)
 		for (const [otherSetState, otherSelector] of store.subscriptions) {
-			// Dedupe
-			if (setState === otherSetState) {
-				continue
-			}
-			// Suppress useless rerenders
-			if (otherSelector !== undefined) {
-				const curr = helpers.querySelector(currState, otherSelector)
-				const next = helpers.querySelector(currState, otherSelector)
-				if (curr !== next) {
-					otherSetState(nextState)
-					continue
+			// Dedupe 'setState'
+			if (setState !== otherSetState) {
+				// Suppress useless rerenders
+				if (otherSelector !== undefined) {
+					const curr = helpers.querySelector(currState, otherSelector)
+					const next = helpers.querySelector(nextState, otherSelector)
+					if (curr === next) {
+						continue
+					}
 				}
+				otherSetState(nextState)
 			}
-			otherSetState(nextState)
 		}
 
 		// Cache the current state
@@ -97,8 +95,8 @@ function useSelectorImpl(store, selector, { originator }) {
 		}
 	}, [])
 
-	const [state, setState] = React.useState(() => store.cachedState)
-	const valueOrReference = helpers.querySelector(state, selector)
+	const [_, setState] = React.useState(store.cachedState)
+	const valueOrReference = helpers.querySelector(store.cachedState, selector)
 
 	const memoSelector = React.useMemo(() => {
 		return selector
@@ -128,7 +126,7 @@ function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncl
 		}
 	}, [])
 
-	const [state, setState] = React.useState(() => store.cachedState)
+	const [state, setState] = React.useState(store.cachedState)
 
 	// Add 'setState' to the store's subscriptions
 	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
@@ -145,20 +143,18 @@ function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncl
 		// Invalidate components
 		setState(nextState)
 		for (const [otherSetState, otherSelector] of store.subscriptions) {
-			// Dedupe
-			if (setState === otherSetState) {
-				continue
-			}
-			// Suppress useless rerenders
-			if (otherSelector !== undefined) {
-				const curr = helpers.querySelector(currState, otherSelector)
-				const next = helpers.querySelector(currState, otherSelector)
-				if (curr !== next) {
-					otherSetState(nextState)
-					continue
+			// Dedupe 'setState'
+			if (setState !== otherSetState) {
+				// Suppress useless rerenders
+				if (otherSelector !== undefined) {
+					const curr = helpers.querySelector(currState, otherSelector)
+					const next = helpers.querySelector(nextState, otherSelector)
+					if (curr === next) {
+						continue
+					}
 				}
+				otherSetState(nextState)
 			}
-			otherSetState(nextState)
 		}
 
 		// Cache the current state
