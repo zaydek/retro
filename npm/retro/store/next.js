@@ -4,29 +4,29 @@ function nextImpl(state, selector, updater) {
 	// The next state
 	let nextState = { ...state }
 	// The focus reference for the next state
-	let nextStateFocusRef = nextState
+	let nextStateRef = nextState
 	for (let keyIndex = 0; keyIndex < selector.length; keyIndex++) {
 		const key = selector[keyIndex]
 		const keyIsAtEnd = keyIndex + 1 === selector.length
 		if (!keyIsAtEnd) {
-			Object.assign(nextStateFocusRef, {
+			Object.assign(nextStateRef, {
 				// Allocate new references for arrays and objects
 				[key]: Array.isArray(stateRef[key])
 					? [...stateRef[key]]    // Array
 					: { ...stateRef[key] }, // Object
 			})
 		} else {
-			Object.assign(nextStateFocusRef, {
+			Object.assign(nextStateRef, {
 				// The deepest element needs to copy all properties
 				...stateRef,                         // Old properties
 				[key]: typeof updater === "function" // New property
-					? updater(nextStateFocusRef[key])
+					? updater(nextStateRef[key])
 					: updater,
 			})
 		}
 		// Update the focus references
 		stateRef = stateRef[key]
-		nextStateFocusRef = nextStateFocusRef[key]
+		nextStateRef = nextStateRef[key]
 	}
 	return nextState
 }

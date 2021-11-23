@@ -36,7 +36,7 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 
 	const [state, setState] = React.useState(store.cachedState)
 
-	// Add the 'setState' to the store's subscriptions
+	// Add 'setState' to the store's subscriptions
 	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
 		store.subscriptions.set(setState, undefined /* selector=undefined */)
 		return () => {
@@ -79,69 +79,40 @@ function useStateImpl(store, { originator, flagIncludeState, flagIncludeSetState
 	]
 }
 
-function useSelectorImpl(store, selector, { originator, flagIncludeState, flagIncludeSetState }) {
-	const memoSelector = React.useMemo(() => {
-		return selector
-	}, [selector])
-
+function useSelectorImpl(store, selector, { originator }) {
 	React.useMemo(() => {
 		if (!helpers.isStore(store)) {
 			throw new Error(ERR_BAD_STORE(originator))
 		}
 		// Selector guards
-		if (!helpers.isSelector(memoSelector)) {
-			throw new Error(ERR_BAD_SELECTOR(originator, memoSelector))
+		if (!helpers.isSelector(selector)) {
+			throw new Error(ERR_BAD_SELECTOR(originator, selector))
 		}
 		let cachedRef = store.cachedState
-		for (const key of memoSelector) {
+		for (const key of selector) {
 			if (!(key in cachedRef)) {
-				throw new Error(ERR_BAD_SELECTOR(originator, memoSelector))
+				throw new Error(ERR_BAD_SELECTOR(originator, selector))
 			}
 			cachedRef = cachedRef[key]
 		}
-	}, [memoSelector])
+	}, [])
 
 	const [state, setState] = React.useState(store.cachedState)
-	const valueOrReference = helpers.querySelector(state, memoSelector)
+	const valueOrReference = helpers.querySelector(state, selector)
 
-	// Add the 'setState' to the store's subscriptions
-	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
+	const memoSelector = React.useMemo(() => {
+		return selector
+	}, [selector])
+
+	// Add 'setState' to the store's subscriptions
+	React.useEffect(() => {
 		store.subscriptions.set(setState, memoSelector)
 		return () => {
 			store.subscriptions.delete(setState)
 		}
 	}, [memoSelector])
 
-	const setStore = React.useCallback(!flagIncludeSetState ? () => { /* No-op */ } : updater => {
-		const currState = store.cachedState
-		let nextState = next(currState, ...memoSelector, updater)
-
-		// Invalidate components
-		setState(nextState)
-		for (const [otherSetState, otherSelector] of store.subscriptions) {
-			// Dedupe 'setState'
-			if (otherSetState !== setState) {
-				if (helpers.isSelector(otherSelector)) {
-					// Suppress useless rerenders
-					const currSelected = helpers.querySelector(currState, otherSelector)
-					const nextSelected = helpers.querySelector(nextState, otherSelector)
-					if (currSelected !== nextSelected) {
-						otherSetState(nextState)
-					}
-				} else {
-					otherSetState(nextState)
-				}
-			}
-		}
-
-		// Cache the current state
-		store.cachedState = nextState
-	}, [memoSelector])
-
-	return [
-		valueOrReference,
-		setStore,
-	]
+	return valueOrReference
 }
 
 function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncludeSetState }) {
@@ -159,7 +130,7 @@ function useReducerImpl(store, reducer, { originator, flagIncludeState, flagIncl
 
 	const [state, setState] = React.useState(store.cachedState)
 
-	// Add the 'setState' to the store's subscriptions
+	// Add 'setState' to the store's subscriptions
 	React.useEffect(!flagIncludeState ? () => { /* No-op */ } : () => {
 		store.subscriptions.set(setState, undefined /* selector=undefined */)
 		return () => {
@@ -207,17 +178,17 @@ export function useState(store) {
 	})
 }
 
-export function useOnlyState(store) {
+export function useStateOnlyState(store) {
 	return useStateImpl(store, {
-		originator: "useOnlyState",
+		originator: "useStateOnlyState",
 		flagIncludeState: true,
 		flagIncludeSetState: false,
 	})[0]
 }
 
-export function useOnlySetState(store) {
+export function useStateOnlySetState(store) {
 	return useStateImpl(store, {
-		originator: "useOnlySetState",
+		originator: "useStateOnlySetState",
 		flagIncludeState: false,
 		flagIncludeSetState: true,
 	})[1]
@@ -226,25 +197,7 @@ export function useOnlySetState(store) {
 export function useSelector(store, ...selector) {
 	return useSelectorImpl(store, selector, {
 		originator: "useSelector",
-		flagIncludeState: true,
-		flagIncludeSetState: true,
 	})
-}
-
-export function useOnlySelector(store, ...selector) {
-	return useSelectorImpl(store, selector, {
-		originator: "useOnlySelector",
-		flagIncludeState: true,
-		flagIncludeSetState: false,
-	})[0]
-}
-
-export function useOnlySetSelector(store, ...selector) {
-	return useSelectorImpl(store, selector, {
-		originator: "useOnlySetSelector",
-		flagIncludeState: false,
-		flagIncludeSetState: true,
-	})[1]
 }
 
 export function useReducer(store, reducer) {
@@ -255,10 +208,42 @@ export function useReducer(store, reducer) {
 	})
 }
 
-export function useOnlyDispatch(store, reducer) {
+export function useReducerOnlyState(store, reducer) {
 	return useReducerImpl(store, reducer, {
-		originator: "useOnlyDispatch",
+		originator: "useReducerOnlyState",
+		flagIncludeState: true,
+		flagIncludeSetState: false,
+	})[0]
+}
+
+export function useReducerOnlyDispatch(store, reducer) {
+	return useReducerImpl(store, reducer, {
+		originator: "useReducerOnlyDispatch",
 		flagIncludeState: false,
 		flagIncludeSetState: true,
 	})[1]
+}
+
+export function useCallbacks(store, methods) {
+	const dispatch = useReducerOnlyDispatch(store, (state, action) => {
+		// Remove 'type' from arguments
+		return methods(state)[action.type]({
+			...action,
+			type: undefined,
+		})
+	})
+
+	const memoCallbacks = React.useMemo(() => {
+		const callbacks = {}
+		for (const key of Object.keys(methods(undefined))) {
+			// Add 'type' to arguments
+			callbacks[key] = (...args) => dispatch({
+				...args,
+				type: key,
+			})
+		}
+		return callbacks
+	}, [])
+
+	return memoCallbacks
 }
