@@ -1,5 +1,4 @@
 import * as helpers from "./helpers"
-import next from "./next"
 import STORE_KEY from "./STORE_KEY"
 
 const ERR_BAD_STORE = originator => `${originator}: bad store; use 'createStore({ ... })'`
