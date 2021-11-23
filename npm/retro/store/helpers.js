@@ -12,10 +12,14 @@ export function isStore(arg) {
 	return arg?.$$key === STORE_KEY
 }
 
+export function toPath(selector) {
+	return `[${selector.map(key => JSON.stringify(key)).join("][")}]`
+}
+
 export function querySelector(state, selector) {
-	let focus = state
+	let stateRef = state
 	for (const key of selector) {
-		focus = focus[key]
+		stateRef = stateRef[key]
 	}
-	return focus
+	return stateRef
 }
