@@ -91,10 +91,10 @@ For example:
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		` + terminal.Green(`<link rel="stylesheet" href="/client.css" />`) + `
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</head>
 	<body>
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</body>
 </html>`,
 		)
@@ -112,18 +112,19 @@ For example:
 	<head lang="en">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</head>
 	<body>
 		` + terminal.Green(`<div id="root"></div>`) + `
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</body>
 </html>`,
 		)
 	}
 
 	// <script src="/vendor.js" type="module"></script>
-	if !strings.Contains(contents, `<script src="/vendor.js" type="module"></script>`) {
+	if !strings.Contains(contents, `<script src="/vendor.js" type="module"></script>`) &&
+		!strings.Contains(contents, `<script src="/vendor.js"></script>`) {
 		return newEntryPointError(
 			fmt.Sprintf("Add %s somewhere to %s", terminal.Magenta(quote(`<script src="/vendor.js" type="module"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
 
@@ -134,19 +135,20 @@ For example:
 	<head lang="en">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</head>
 	<body>
 		<div id="root"></div>
 		` + terminal.Green(`<script src="/vendor.js" type="module"></script>`) + `
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</body>
 </html>`,
 		)
 	}
 
 	// <script src="/client.js" type="module"></script>
-	if !strings.Contains(contents, `<script src="/client.js" type="module"></script>`) {
+	if !strings.Contains(contents, `<script src="/client.js" type="module"></script>`) &&
+		!strings.Contains(contents, `<script src="/client.js"></script>`) {
 		return newEntryPointError(
 			fmt.Sprintf("Add %s somewhere to %s", terminal.Magenta(quote(`<script src="/client.js" type="module"></script>`)), terminal.Magenta(quote(`<body>`))) + `.
 
@@ -157,13 +159,13 @@ For example:
 	<head lang="en">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</head>
 	<body>
 		<div id="root"></div>
 		<script src="/vendor.js" type="module"></script>
 		` + terminal.Green(`<script src="/client.js" type="module"></script>`) + `
-		` + terminal.Dim("...") + `
+		` + terminal.Dim("<!-- ... -->") + `
 	</body>
 </html>`,
 		)
