@@ -1,12 +1,12 @@
 // Inspired by https://simpler-state.js.org
-export function createStore(initialState, initializer) {
+export function createStore(initialStateOrInitializer) {
 	return {
 		/*
 		 * Properties
 		 */
-		__currentState: typeof initializer === "function"
-			? initializer(initialState)
-			: initialState,
+		__currentState: typeof initialStateOrInitializer === "function"
+			? initialStateOrInitializer()
+			: initialStateOrInitializer,
 		__subscriptions: new Map(),
 		/*
 		 * Methods
