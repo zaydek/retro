@@ -187,7 +187,7 @@ func guardJSEntryPoint() error {
 
 // Guards for the presence of 'src/App.js'
 func guardAppJSEntryPoint() error {
-	filename := filepath.Join(RETRO_SRC_DIR, "app.js")
+	filename := filepath.Join(RETRO_SRC_DIR, "App.js")
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if err := copyDefaultAppJSEntryPoint(); err != nil {
 			return err
@@ -200,7 +200,6 @@ func guardAppJSEntryPoint() error {
 //
 // - www/index.html
 // - src/index.js
-// - src/App.js
 //
 func guardEntryPoints() error {
 	if err := guardHTMLEntryPoint(); err != nil {
@@ -209,9 +208,9 @@ func guardEntryPoints() error {
 	if err := guardJSEntryPoint(); err != nil {
 		return err
 	}
-	if err := guardAppJSEntryPoint(); err != nil {
-		return err
-	}
+	// if err := guardAppJSEntryPoint(); err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
