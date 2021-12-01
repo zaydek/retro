@@ -21,20 +21,20 @@ export function createStore(initialStateOrInitializer) {
 		set(updater) {
 			const currentState = this.__currentState
 			let nextState = typeof updater === "function"
-				? updater(this.__currentState)
+				? updater(currentState)
 				: updater
 			// Cache the next state eagerly
 			this.__currentState = nextState
 			for (const [setState, selector] of this.__subscriptions) {
 				if (selector === undefined) {
 					// Force rerender
-					setState(nextState)
+					setState(next)
 				} else {
 					// Suppress useless rerenders
 					const selected1 = selector(currentState)
 					const selected2 = selector(nextState)
 					if (selected1 !== selected2) {
-						setState(nextState)
+						setState(next)
 					}
 				}
 			}
