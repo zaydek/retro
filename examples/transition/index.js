@@ -2,7 +2,7 @@ import "./App.css"
 
 import { ease, Transition } from "../../npm/retro/transition" // -> "@zaydek/retro/transition"
 
-export function App() {
+export default function App() {
 	const [flagIsOpen, setFlagIsOpen] = React.useState(false)
 
 	return (

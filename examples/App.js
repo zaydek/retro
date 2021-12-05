@@ -1,13 +1,13 @@
 import * as router from "../npm/retro/router" // -> @zaydek/retro/router
 
-import { App as PluginMDXApp } from "./plugin-mdx"
-import { App as PluginSassApp } from "./plugin-sass"
-import { App as RouterApp, PATHS } from "./router"
-import { App as StoreApp } from "./store"
-import { App as TransitionApp } from "./transition"
+import PluginMDXApp from "./plugin-mdx"
+import PluginSassApp from "./plugin-sass"
+import RouterApp, { PATHS } from "./router"
+import StoreApp from "./store"
+import TransitionApp from "./transition"
 import { DocumentTitle } from "../npm/retro/document-title" // -> "@zaydek/retro/title"
 
-export function App() {
+export default function App() {
 	return (
 		<>
 

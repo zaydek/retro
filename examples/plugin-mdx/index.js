@@ -2,7 +2,7 @@ import "./App.scss"
 
 import Reference from "./reference.md"
 
-export function App() {
+export default function App() {
 	return (
 		<div className="content">
 			<Reference />

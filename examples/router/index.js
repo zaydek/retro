@@ -14,7 +14,7 @@ export const URLS = {
 	GOOGLE: "https://google.com",
 }
 
-export function App() {
+export default function App() {
 	return (
 		<ul>
 			<li>

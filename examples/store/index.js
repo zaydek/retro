@@ -121,7 +121,7 @@ function DEBUG_Todos() {
 	)
 }
 
-export function App() {
+export default function App() {
 	const [state, setState] = store.useState(todosStore)
 	const [loaded, setLoaded] = React.useState(false)
 
